@@ -5,7 +5,7 @@ const morgan = require('morgan');
 const mongoose = require('mongoose');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
-\n// Import service discovery components
+// Import service discovery components
 const { ServiceRegistry, healthCheck } = require('@agrimaan/shared/service-discovery');
 
 // Import routes

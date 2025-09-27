@@ -3,7 +3,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
 require('dotenv').config();
-\n// Import service discovery components
+// Import service discovery components
 const { ServiceRegistry, healthCheck } = require('@agrimaan/shared/service-discovery');
 
 // Import routes
@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 3006;
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
-\n// Add health check middleware
+// Add health check middleware
 app.use(healthCheck({
   serviceName: 'marketplace-service',
   dependencies: {

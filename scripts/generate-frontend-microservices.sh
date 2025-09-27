@@ -552,7 +552,7 @@ EOL
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { makeStyles } from '@mui/material/styles';
+mport { makeStyles } from '@mui/styles';
 import { 
   AppBar, 
   Toolbar, 

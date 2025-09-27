@@ -5,6 +5,9 @@
  */
 
 const serviceDiscovery = require('./service-discovery');
+// Add other shared components here as needed
+
+
 
 module.exports = {
   serviceDiscovery

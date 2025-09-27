@@ -13,7 +13,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "resilience4j": "^0.14.0",
+    "opossum": "^9.0.0",
     "consul": "^1.2.0",
     "@agrimaan/shared": "^1.0.0",
     "@aws-sdk/client-ses": "^3.414.0",

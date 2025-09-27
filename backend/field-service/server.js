@@ -1,10 +1,15 @@
+
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
+
 require('dotenv').config();
-\n// Import service discovery components
-const { ServiceRegistry, healthCheck } = require('@agrimaan/shared/service-discovery');
+// Import service discovery components
+//const healthCheck = require('@agrimaan/shared/service-discovery').healthCheck;
+//const ServiceRegistry = require('@agrimaan/shared').serviceDiscovery.ServiceRegistry;
+//const healthCheck = require('@agrimaan/shared').serviceDiscovery.healthCheck;
+const { ServiceRegistry, healthCheck } = require('@agrimaan/shared').serviceDiscovery
 
 // Import routes
 const fieldRoutes = require('./routes/fieldRoutes');
@@ -19,15 +24,17 @@ const PORT = process.env.PORT || 3003;
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
-\n// Add health check middleware
-app.use(healthCheck({
-  serviceName: 'field-service',
-  dependencies: {
-    database: async () => {
-      return mongoose.connection.readyState === 1;
-    }
-  }
-}));
+// Add health check middleware
+app.use(healthCheck
+//  ({
+ //serviceName: 'field-service',
+ // dependencies: {
+ //   database: async () => {
+ //     return mongoose.connection.readyState === 1;
+ //   }
+ // }
+//})
+);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI, {

@@ -9,7 +9,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "resilience4j": "^0.14.0",
+    "opossum": "^9.0.0",
     "axios": "^1.4.0",
     "consul": "^1.2.0",
     "@agrimaan/shared": "^1.0.0",

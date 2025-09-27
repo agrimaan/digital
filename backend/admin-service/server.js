@@ -1,11 +1,12 @@
+
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
 require('dotenv').config();
-\n// Import service discovery components
-const { ServiceRegistry, healthCheck } = require('@agrimaan/shared/service-discovery');
-
+//Import service discovery components
+//const { ServiceRegistry, healthCheck } = require('@agrimaan/shared/serviceDiscovery');
+const { ServiceRegistry, healthCheck } = require('@agrimaan/shared').serviceDiscovery
 // Import routes
 const adminRoutes = require('./routes/adminRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
@@ -100,3 +101,6 @@ const server = app.listen(PORT, () => {
 });
 
 module.exports = app; // For testing purposes
+
+//go to shared folder and run npm link
+//then go to each service folder and run npm link @agrimaan/shared
