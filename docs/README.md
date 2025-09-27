@@ -52,12 +52,12 @@ microservices/
 ├── blockchain-service/         # Blockchain integration
 ├── admin-service/              # Administrative functionality
 ├── frontend/                   # Frontend microservices
-│   ├── farmer-service/         # Farmer UI
-│   ├── buyer-service/          # Buyer UI
-│   ├── logistics-service/      # Logistics UI
-│   ├── investor-service/       # Investor UI
-│   ├── agronomist-service/     # Agronomist UI
-│   └── admin-service/          # Admin UI
+│   ├── farmer-ui/         # Farmer UI
+│   ├── buyer-ui/          # Buyer UI
+│   ├── logistics-ui/      # Logistics UI
+│   ├── investor-ui/       # Investor UI
+│   ├── agronomist-ui/     # Agronomist UI
+│   └── admin-ui/          # Admin UI
 ├── shared/                     # Shared components
 │   ├── service-discovery/      # Service discovery components
 │   ├── resilience/             # Resilience patterns
