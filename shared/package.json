@@ -1,0 +1,41 @@
+{
+  "name": "agrimaan-shared",
+  "version": "1.0.0",
+  "description": "Shared components for Agrimaan microservices",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "author": "Agrimaan Team",
+  "license": "ISC",
+  "dependencies": {
+    "consul": "^1.2.0",
+    "http-proxy-middleware": "^2.0.6",
+    "axios": "^1.6.0",
+    "amqplib": "^0.10.3",
+    "ioredis": "^5.3.2",
+    "uuid": "^9.0.1",
+    "resilience4js": "^1.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  "winston": "^3.8.2",
+  "prom-client": "^14.1.0",
+  "@opentelemetry/api": "^1.4.0",
+  "@opentelemetry/auto-instrumentations-node": "^0.36.0",
+  "@opentelemetry/exporter-trace-otlp-proto": "^0.39.1",
+  "@opentelemetry/resources": "^1.13.0",
+  "@opentelemetry/sdk-node": "^0.39.1",
+  "@opentelemetry/sdk-trace-base": "^1.13.0",
+  "@opentelemetry/semantic-conventions": "^1.13.0",
+  }
+  "winston": "^3.8.2",
+  "prom-client": "^14.1.0",
+  "@opentelemetry/api": "^1.4.0",
+  "@opentelemetry/auto-instrumentations-node": "^0.36.0",
+  "@opentelemetry/exporter-trace-otlp-proto": "^0.39.1",
+  "@opentelemetry/resources": "^1.13.0",
+  "@opentelemetry/sdk-node": "^0.39.1",
+  "@opentelemetry/sdk-trace-base": "^1.13.0",
+  "@opentelemetry/semantic-conventions": "^1.13.0",
+}
