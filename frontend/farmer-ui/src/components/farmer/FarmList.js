@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   Paper, 
   Typography, 
-  makeStyles, 
   Table, 
   TableBody, 
   TableCell, 
@@ -13,6 +12,8 @@ import {
   IconButton,
   Tooltip
 } from '@mui/material';
+import { makeStyles } from '@mui/styles'; // For the legacy makeStyles hook
+
 import { 
   Add as AddIcon,
   Edit as EditIcon,

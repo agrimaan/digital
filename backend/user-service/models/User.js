@@ -1,16 +1,20 @@
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const UserSchema = new mongoose.Schema({
   firstName: {
     type: String,
     required: [true, 'First name is required'],
-    trim: true
+    trim: true,
+    maxlength: [50, 'First name cannot exceed 50 characters']
   },
   lastName: {
     type: String,
     required: [true, 'Last name is required'],
-    trim: true
+    trim: true,
+    maxlength: [50, 'Last name cannot exceed 50 characters']
   },
   email: {
     type: String,
@@ -18,7 +22,7 @@ const UserSchema = new mongoose.Schema({
     unique: true,
     trim: true,
     lowercase: true,
-    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please provide a valid email address']
+    match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please provide a valid email address']
   },
   password: {
     type: String,
@@ -28,7 +32,8 @@ const UserSchema = new mongoose.Schema({
   },
   phoneNumber: {
     type: String,
-    trim: true
+    trim: true,
+    match: [/^[+]?[0-9]{10,15}$/, 'Please provide a valid phone number']
   },
   role: {
     type: String,
@@ -36,14 +41,19 @@ const UserSchema = new mongoose.Schema({
     default: 'farmer'
   },
   address: {
-    street: String,
-    city: String,
-    state: String,
-    country: String,
-    postalCode: String
+    street: { type: String, trim: true },
+    city: { type: String, trim: true },
+    state: { type: String, trim: true },
+    country: { type: String, trim: true },
+    postalCode: { type: String, trim: true },
+    coordinates: {
+      latitude: { type: Number },
+      longitude: { type: Number }
+    }
   },
   profileImage: {
-    type: String
+    type: String,
+    default: 'default-avatar.jpg'
   },
   isVerified: {
     type: Boolean,
@@ -52,6 +62,16 @@ const UserSchema = new mongoose.Schema({
   verificationToken: String,
   resetPasswordToken: String,
   resetPasswordExpire: Date,
+  lastLogin: Date,
+  preferences: {
+    notifications: {
+      email: { type: Boolean, default: true },
+      sms: { type: Boolean, default: false },
+      push: { type: Boolean, default: true }
+    },
+    language: { type: String, default: 'en' },
+    timezone: { type: String, default: 'UTC' }
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -73,15 +93,38 @@ UserSchema.pre('save', async function(next) {
   next();
 });
 
-// Match user entered password to hashed password in database
-UserSchema.methods.matchPassword = async function(enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
-};
-
 // Update the updatedAt field on save
 UserSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
 });
+
+// Match user entered password to hashed password in database
+UserSchema.methods.matchPassword = async function(enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Generate JWT token
+UserSchema.methods.getSignedJwtToken = function() {
+  return jwt.sign(
+    { id: this._id, email: this.email, role: this.role },
+    process.env.JWT_SECRET || 'fallback-secret',
+    { expiresIn: process.env.JWT_EXPIRE || '30d' }
+  );
+};
+
+// Generate reset password token
+UserSchema.methods.getResetPasswordToken = function() {
+  const resetToken = crypto.randomBytes(20).toString('hex');
+  
+  this.resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+    
+  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+  
+  return resetToken;
+};
 
 module.exports = mongoose.model('User', UserSchema);

@@ -8,10 +8,11 @@ import {
   TextField, 
   Button, 
   Grid, 
-  makeStyles, 
   CircularProgress, 
   Snackbar 
 } from '@mui/material';
+import { makeStyles } from '@mui/styles'; // For the legacy makeStyles hook
+
 import { Alert } from '@mui/lab';
 import { login } from '../store/actions/authActions';
 

@@ -1,179 +1,127 @@
+
 const mongoose = require('mongoose');
 
 const CropSchema = new mongoose.Schema({
   name: {
     type: String,
     required: [true, 'Crop name is required'],
-    trim: true
+    trim: true,
+    maxlength: [100, 'Crop name cannot exceed 100 characters']
   },
   scientificName: {
     type: String,
     trim: true
   },
-  category: {
+  variety: {
     type: String,
-    enum: ['cereal', 'pulse', 'oilseed', 'vegetable', 'fruit', 'cash_crop', 'fodder', 'other'],
-    required: [true, 'Crop category is required']
+    required: [true, 'Crop variety is required'],
+    trim: true
   },
-  growthDuration: {
-    min: {
-      type: Number, // in days
-      required: [true, 'Minimum growth duration is required']
-    },
-    max: {
-      type: Number, // in days
-      required: [true, 'Maximum growth duration is required']
-    }
+  farmId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Farm',
+    required: [true, 'Farm ID is required']
   },
-  waterRequirement: {
+  farmerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: [true, 'Farmer ID is required']
+  },
+  plantedArea: {
+    type: Number,
+    required: [true, 'Planted area is required'],
+    min: [0.1, 'Planted area must be greater than 0']
+  },
+  plantingDate: {
+    type: Date,
+    required: [true, 'Planting date is required']
+  },
+  expectedHarvestDate: {
+    type: Date,
+    required: [true, 'Expected harvest date is required']
+  },
+  actualHarvestDate: {
+    type: Date
+  },
+  expectedYield: {
+    type: Number,
+    required: [true, 'Expected yield is required'],
+    min: [0, 'Expected yield must be positive']
+  },
+  actualYield: {
+    type: Number,
+    min: [0, 'Actual yield must be positive']
+  },
+  unit: {
     type: String,
-    enum: ['low', 'medium', 'high'],
-    default: 'medium'
+    enum: ['kg', 'ton', 'quintal'],
+    default: 'kg'
   },
-  idealTemperature: {
-    min: {
-      type: Number, // in Celsius
-      required: [true, 'Minimum ideal temperature is required']
-    },
-    max: {
-      type: Number, // in Celsius
-      required: [true, 'Maximum ideal temperature is required']
-    }
+  pricePerUnit: {
+    type: Number,
+    min: [0, 'Price per unit must be positive']
   },
-  idealSoilTypes: [{
+  totalValue: {
+    type: Number,
+    min: [0, 'Total value must be positive']
+  },
+  location: {
+    latitude: { type: Number, required: true },
+    longitude: { type: Number, required: true },
+    address: { type: String }
+  },
+  soilType: {
     type: String,
-    enum: [
-      'clay', 
-      'silty clay', 
-      'sandy clay', 
-      'clay loam', 
-      'silty clay loam', 
-      'sandy clay loam', 
-      'loam', 
-      'silt loam', 
-      'silt', 
-      'sandy loam', 
-      'loamy sand', 
-      'sand'
-    ]
+    enum: ['loam', 'clay', 'sandy', 'silty', 'peaty', 'chalky', 'alluvial'],
+    required: true
+  },
+  irrigationMethod: {
+    type: String,
+    enum: ['drip', 'sprinkler', 'flood', 'rainfed', 'center-pivot'],
+    required: true
+  },
+  seedSource: {
+    type: String,
+    enum: ['own', 'market', 'government', 'supplier'],
+    required: true
+  },
+  fertilizerUsed: [{
+    name: { type: String, required: true },
+    quantity: { type: Number, required: true },
+    unit: { type: String, required: true },
+    applicationDate: { type: Date, required: true }
   }],
-  idealSoilPh: {
-    min: {
-      type: Number,
-      default: 5.5
-    },
-    max: {
-      type: Number,
-      default: 7.5
-    }
-  },
-  plantingSeasons: [{
-    name: {
-      type: String,
-      required: true
-    },
-    startMonth: {
-      type: Number, // 1-12
-      required: true
-    },
-    endMonth: {
-      type: Number, // 1-12
-      required: true
-    }
+  pesticidesUsed: [{
+    name: { type: String, required: true },
+    quantity: { type: Number, required: true },
+    unit: { type: String, required: true },
+    applicationDate: { type: Date, required: true }
   }],
-  yieldEstimate: {
-    min: {
-      type: Number, // in kg/hectare
-      required: [true, 'Minimum yield estimate is required']
-    },
-    max: {
-      type: Number, // in kg/hectare
-      required: [true, 'Maximum yield estimate is required']
-    }
+  healthStatus: {
+    type: String,
+    enum: ['excellent', 'good', 'fair', 'poor', 'diseased'],
+    default: 'good'
   },
-  fertilizers: [{
-    name: {
-      type: String,
-      required: true
-    },
-    applicationRate: {
-      type: String,
-      required: true
-    },
-    applicationTime: {
-      type: String,
-      required: true
-    }
+  growthStage: {
+    type: String,
+    enum: ['seedling', 'vegetative', 'flowering', 'fruiting', 'maturity', 'harvested'],
+    default: 'seedling'
+  },
+  weatherConditions: [{
+    date: { type: Date, required: true },
+    temperature: { type: Number, required: true },
+    humidity: { type: Number, required: true },
+    rainfall: { type: Number, default: 0 },
+    weatherCondition: { type: String, required: true }
   }],
-  pesticides: [{
-    name: {
-      type: String,
-      required: true
-    },
-    targetPests: [String],
-    applicationRate: {
-      type: String,
-      required: true
-    },
-    safetyPeriod: {
-      type: Number, // in days
-      required: true
-    }
+  images: [{
+    url: { type: String, required: true },
+    caption: { type: String },
+    date: { type: Date, default: Date.now }
   }],
-  commonDiseases: [{
-    name: {
-      type: String,
-      required: true
-    },
-    symptoms: [String],
-    preventiveMeasures: [String],
-    treatments: [String]
-  }],
-  harvestingIndicators: [String],
-  storageConditions: {
-    temperature: {
-      min: Number, // in Celsius
-      max: Number // in Celsius
-    },
-    humidity: {
-      min: Number, // percentage
-      max: Number // percentage
-    },
-    notes: String
-  },
-  marketValue: {
-    min: {
-      type: Number, // in currency/kg
-      default: 0
-    },
-    max: {
-      type: Number, // in currency/kg
-      default: 0
-    },
-    currency: {
-      type: String,
-      default: 'INR'
-    },
-    lastUpdated: {
-      type: Date,
-      default: Date.now
-    }
-  },
-  nutritionalValue: {
-    calories: Number, // per 100g
-    protein: Number, // g per 100g
-    carbohydrates: Number, // g per 100g
-    fat: Number, // g per 100g
-    fiber: Number, // g per 100g
-    vitamins: [String],
-    minerals: [String]
-  },
-  imageUrl: {
-    type: String
-  },
-  createdBy: {
-    type: String, // User ID from user-service
-    required: [true, 'Created by is required']
+  notes: {
+    type: String,
+    maxlength: [1000, 'Notes cannot exceed 1000 characters']
   },
   isActive: {
     type: Boolean,
@@ -193,6 +141,34 @@ const CropSchema = new mongoose.Schema({
 CropSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
+});
+
+// Calculate total value before saving
+CropSchema.pre('save', function(next) {
+  if (this.actualYield && this.pricePerUnit) {
+    this.totalValue = this.actualYield * this.pricePerUnit;
+  }
+  next();
+});
+
+// Calculate days to harvest
+CropSchema.virtual('daysToHarvest').get(function() {
+  if (!this.expectedHarvestDate) return null;
+  const today = new Date();
+  const harvestDate = new Date(this.expectedHarvestDate);
+  const diffTime = harvestDate - today;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays > 0 ? diffDays : 0;
+});
+
+// Calculate days since planting
+CropSchema.virtual('daysSincePlanting').get(function() {
+  if (!this.plantingDate) return null;
+  const today = new Date();
+  const plantingDate = new Date(this.plantingDate);
+  const diffTime = today - plantingDate;
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
 });
 
 module.exports = mongoose.model('Crop', CropSchema);

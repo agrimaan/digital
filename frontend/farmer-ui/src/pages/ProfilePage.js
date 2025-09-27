@@ -3,13 +3,14 @@ import { useSelector } from 'react-redux';
 import { 
   Paper, 
   Typography, 
-  makeStyles, 
   Grid, 
   TextField, 
   Button, 
   Avatar, 
   Divider 
 } from '@mui/material';
+import { makeStyles } from '@mui/styles'; // For the legacy makeStyles hook
+
 import api from '../services/api';
 
 const useStyles = makeStyles((theme) => ({

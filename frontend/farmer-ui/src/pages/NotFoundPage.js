@@ -4,9 +4,9 @@ import {
   Container, 
   Typography, 
   Button, 
-  makeStyles, 
   Paper 
 } from '@mui/material';
+import { makeStyles } from '@mui/styles'; // For the legacy makeStyles hook
 
 const useStyles = makeStyles((theme) => ({
   root: {

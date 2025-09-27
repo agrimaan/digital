@@ -39,4 +39,51 @@ api.interceptors.response.use(
   }
 );
 
-export default api;
+// Generic CRUD operations
+const apiService = {
+  // GET request
+  get: async (endpoint, params = {}) => {
+    try {
+      const response = await api.get(endpoint, { params });
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching data from ${endpoint}:`, error);
+      throw error;
+    }
+  },
+
+  // POST request
+  post: async (endpoint, data = {}) => {
+    try {
+      const response = await api.post(endpoint, data);
+      return response.data;
+    } catch (error) {
+      console.error(`Error posting data to ${endpoint}:`, error);
+      throw error;
+    }
+  },
+
+  // PUT request
+  put: async (endpoint, data = {}) => {
+    try {
+      const response = await api.put(endpoint, data);
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating data at ${endpoint}:`, error);
+      throw error;
+    }
+  },
+
+  // DELETE request
+  delete: async (endpoint) => {
+    try {
+      const response = await api.delete(endpoint);
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting data at ${endpoint}:`, error);
+      throw error;
+    }
+  }
+};
+
+export default apiService;

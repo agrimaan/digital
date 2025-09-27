@@ -3,11 +3,12 @@ import {
   Grid, 
   Paper, 
   Typography, 
-  makeStyles, 
   Card, 
   CardContent, 
   CardHeader 
 } from '@mui/material';
+import { makeStyles } from '@mui/styles'; // For the legacy makeStyles hook
+
 import api from '../services/api';
 
 const useStyles = makeStyles((theme) => ({
