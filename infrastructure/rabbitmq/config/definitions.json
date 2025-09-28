@@ -6,7 +6,7 @@
   "users": [
     {
       "name": "agrimaan",
-      "password_hash": "agrimaan123",
+      "password_hash": "aLIuSMf2p5NThj6z1aQOkjXso0yOU8i/s5nJ1o/i33oIeM7f",
       "hashing_algorithm": "rabbit_password_hashing_sha256",
       "tags": "administrator"
     }

@@ -3,10 +3,18 @@
   "version": "1.0.0",
   "description": "Shared utilities and common code for Agrimaan services",
   "main": "index.js",
+  "private": false,
   "scripts": {
     "test": "jest",
     "build": "babel src --out-dir dist",
     "dev": "nodemon src/index.js"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agrimaan/digital"
   },
   "keywords": [
     "agrimaan",
@@ -16,6 +24,7 @@
   "author": "Agrimaan Team",
   "license": "MIT",
   "dependencies": {
+    "admin-service": "file:../backend/admin-service",
     "bcryptjs": "^2.4.3",
     "consul": "^2.0.1",
     "cors": "^2.8.5",

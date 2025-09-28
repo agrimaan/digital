@@ -6,9 +6,7 @@ const mongoose = require('mongoose');
 
 require('dotenv').config();
 // Import service discovery components
-//const healthCheck = require('@agrimaan/shared/service-discovery').healthCheck;
-//const ServiceRegistry = require('@agrimaan/shared').serviceDiscovery.ServiceRegistry;
-//const healthCheck = require('@agrimaan/shared').serviceDiscovery.healthCheck;
+
 const { ServiceRegistry, healthCheck } = require('@agrimaan/shared').serviceDiscovery
 
 // Import routes
@@ -25,16 +23,8 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 // Add health check middleware
-app.use(healthCheck
-//  ({
- //serviceName: 'field-service',
- // dependencies: {
- //   database: async () => {
- //     return mongoose.connection.readyState === 1;
- //   }
- // }
-//})
-);
+app.use(healthCheck);
+
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI, {

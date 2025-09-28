@@ -19,7 +19,7 @@ services:
 
   # RabbitMQ for messaging
   rabbitmq:
-    build: ./integration/rabbitmq
+    build: ./infrastructure/rabbitmq
     container_name: agrimaan-rabbitmq
     restart: always
     ports:
@@ -54,7 +54,7 @@ services:
 
   # Consul Server for Service Discovery
   consul-server:
-    build: ./integration//consul-server
+    build: ./infrastructure//consul-server
     container_name: agrimaan-consul
     restart: always
     ports:
@@ -67,7 +67,7 @@ services:
 
   # API Gateway
   api-gateway:
-    build: ./integration//api-gateway
+    build: ./infrastructure//api-gateway
     container_name: agrimaan-api-gateway
     restart: always
     ports:

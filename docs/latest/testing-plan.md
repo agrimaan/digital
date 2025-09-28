@@ -654,7 +654,7 @@ jobs:
           cache-dependency-path: microservices/${{ matrix.service }}/package-lock.json
       
       - name: Install dependencies
-        run: cd microservices/${{ matrix.service }} && npm ci
+        run: cd microservices/${{ matrix.service }} && npm i
       
       - name: Run unit tests
         run: cd microservices/${{ matrix.service }} && npm test
@@ -689,7 +689,7 @@ jobs:
           cache-dependency-path: microservices/${{ matrix.service }}/package-lock.json
       
       - name: Install dependencies
-        run: cd microservices/${{ matrix.service }} && npm ci
+        run: cd microservices/${{ matrix.service }} && npm i
       
       - name: Run integration tests
         run: cd microservices/${{ matrix.service }} && npm run test:integration
@@ -710,8 +710,8 @@ jobs:
       
       - name: Install dependencies
         run: |
-          cd microservices/user-service && npm ci
-          cd ../../microservices/frontend/admin-service && npm ci
+          cd microservices/user-service && npm i
+          cd ../../microservices/frontend/admin-service && npm i
       
       - name: Run consumer contract tests
         run: cd microservices/frontend/admin-service && npm run test:pact:consumer

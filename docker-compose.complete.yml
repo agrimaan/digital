@@ -10,6 +10,7 @@ version: '3.8'
 services:
   # Include services from other docker-compose files
   # Base services are included from docker-compose.yml
+
   
   # ELK Stack
   elasticsearch:
@@ -24,7 +25,7 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - ./integration/elk/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+      - ./infrastructure/elk/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
       - elasticsearch-data:/usr/share/elasticsearch/data
     ports:
       - "9200:9200"
@@ -35,7 +36,7 @@ services:
     image: docker.elastic.co/logstash/logstash:7.17.0
     container_name: logstash
     volumes:
-      - ./integration/elk/logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - ./infrastructure/elk/logstash/pipeline:/usr/share/logstash/pipeline:ro
     ports:
       - "5044:5044"
     depends_on:
@@ -60,7 +61,7 @@ services:
     container_name: filebeat
     user: root
     volumes:
-      - ./integration/elk/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./infrastructure/elk/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:
@@ -73,7 +74,7 @@ services:
     image: prom/prometheus:v2.37.0
     container_name: prometheus
     volumes:
-      - ./integration/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infrastructure/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -119,8 +120,8 @@ services:
     image: grafana/grafana:9.0.0
     container_name: grafana
     volumes:
-      - ./integration/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./integration/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./infrastructure/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infrastructure/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana
     environment:
       - GF_SECURITY_ADMIN_USER=admin
@@ -163,3 +164,521 @@ volumes:
 networks:
   agrimaan-network:
     name: agrimaan-network
+
+
+
+#Application services are defined in docker-compose.yml and included here implicitly.
+
+
+
+  # MongoDB database
+  mongodb:
+    image: mongo:5.0
+    container_name: agrimaan-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=agrimaan
+      - MONGO_INITDB_ROOT_PASSWORD=agrimaan123
+    networks:
+      - agrimaan-network
+
+  # RabbitMQ for messaging
+  rabbitmq:
+    build: ./infrastructure/rabbitmq
+    container_name: agrimaan-rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+      - "15692:15692"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - agrimaan-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # MQTT Broker for IoT devices
+  mqtt-broker:
+    image: eclipse-mosquitto:2.0
+    container_name: agrimaan-mqtt
+    restart: always
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - mqtt_data:/mosquitto/data
+      - mqtt_log:/mosquitto/log
+      - ./mqtt-config:/mosquitto/config
+    networks:
+      - agrimaan-network
+
+  # Consul Server for Service Discovery
+  consul-server:
+    build: ./infrastructure//consul-server
+    container_name: agrimaan-consul
+    restart: always
+    ports:
+      - "8500:8500"
+      - "8600:8600/udp"
+    volumes:
+      - consul_data:/consul/data
+    networks:
+      - agrimaan-network
+
+  # API Gateway
+  api-gateway:
+    build: ./infrastructure//api-gateway
+    container_name: agrimaan-api-gateway
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - USER_SERVICE_URL=http://user-service:3002
+      - FIELD_SERVICE_URL=http://field-service:3003
+      - IOT_SERVICE_URL=http://iot-service:3004
+      - CROP_SERVICE_URL=http://crop-service:3005
+      - MARKETPLACE_SERVICE_URL=http://marketplace-service:3006
+      - LOGISTICS_SERVICE_URL=http://logistics-service:3007
+      - WEATHER_SERVICE_URL=http://weather-service:3008
+      - ANALYTICS_SERVICE_URL=http://analytics-service:3009
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3010
+      - BLOCKCHAIN_SERVICE_URL=http://blockchain-service:3011
+      - ADMIN_SERVICE_URL=http://admin-service:3012
+      - NODE_ENV=development
+      - CONSUL_HOST=consul-server
+      - CONSUL_PORT=8500
+      - SERVICE_NAME=api-gateway
+      - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
+    depends_on:
+      - user-service
+      - field-service
+      - iot-service
+      - consul-server
+      - rabbitmq
+    networks:
+      - agrimaan-network
+
+  # User Service
+  user-service:
+    build: ./backend/user-service
+    container_name: agrimaan-user-service
+    restart: always
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-user-service?authSource=admin
+      - JWT_SECRET=your_jwt_secret_key_here
+      - NODE_ENV=development
+      - CONSUL_HOST=consul-server
+      - CONSUL_PORT=8500
+      - SERVICE_NAME=user-service
+      - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
+      - EVENT_EXCHANGE=agrimaan.events
+    depends_on:
+      - mongodb
+      - consul-server
+      - rabbitmq
+    networks:
+      - agrimaan-network
+
+  # Field Service
+  field-service:
+    build: ./backend/field-service
+    container_name: agrimaan-field-service
+    restart: always
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-field-service?authSource=admin
+      - USER_SERVICE_URL=http://user-service:3002
+      - NODE_ENV=development
+      - CONSUL_HOST=consul-server
+      - CONSUL_PORT=8500
+      - SERVICE_NAME=field-service
+      - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
+      - EVENT_EXCHANGE=agrimaan.events
+    depends_on:
+      - mongodb
+      - user-service
+      - consul-server
+      - rabbitmq
+    networks:
+      - agrimaan-network
+
+  # IoT Service
+  iot-service:
+    build: ./backend/iot-service
+    container_name: agrimaan-iot-service
+    restart: always
+    ports:
+      - "3004:3004"
+    environment:
+      - PORT=3004
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-iot-service?authSource=admin
+      - USER_SERVICE_URL=http://user-service:3002
+      - FIELD_SERVICE_URL=http://field-service:3003
+      - MQTT_ENABLED=true
+      - MQTT_BROKER_URL=mqtt://mqtt-broker:1883
+      - MQTT_USERNAME=agrimaan
+      - MQTT_PASSWORD=agrimaan123
+      - MQTT_CLIENT_ID=agrimaan-iot-service
+      - MQTT_TOPIC_PREFIX=agrimaan/iot
+      - NODE_ENV=development
+      - CONSUL_HOST=consul-server
+      - CONSUL_PORT=8500
+      - SERVICE_NAME=iot-service
+      - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
+      - EVENT_EXCHANGE=agrimaan.events
+    depends_on:
+      - mongodb
+      - mqtt-broker
+      - user-service
+      - field-service
+      - consul-server
+      - rabbitmq
+    networks:
+      - agrimaan-network
+
+  # Crop Service
+  crop-service:
+    build: ./backend/crop-service
+    container_name: agrimaan-crop-service
+    restart: always
+    ports:
+      - "3005:3005"
+    environment:
+      - PORT=3005
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-crop-service?authSource=admin
+      - USER_SERVICE_URL=http://user-service:3002
+      - FIELD_SERVICE_URL=http://field-service:3003
+      - NODE_ENV=development
+      - CONSUL_HOST=consul-server
+      - CONSUL_PORT=8500
+      - SERVICE_NAME=crop-service
+      - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
+      - EVENT_EXCHANGE=agrimaan.events
+    depends_on:
+      - mongodb
+      - user-service
+      - field-service
+      - consul-server
+      - rabbitmq
+    networks:
+      - agrimaan-network
+
+  # Marketplace Service
+  marketplace-service:
+    build: ./backend/marketplace-service
+    container_name: agrimaan-marketplace-service
+    restart: always
+    ports:
+      - "3006:3006"
+    environment:
+      - PORT=3006
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-marketplace-service?authSource=admin
+      - USER_SERVICE_URL=http://user-service:3002
+      - CROP_SERVICE_URL=http://crop-service:3005
+      - NODE_ENV=development
+      - CONSUL_HOST=consul-server
+      - CONSUL_PORT=8500
+      - SERVICE_NAME=marketplace-service
+      - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
+      - EVENT_EXCHANGE=agrimaan.events
+    depends_on:
+      - mongodb
+      - user-service
+      - crop-service
+      - consul-server
+      - rabbitmq
+    networks:
+      - agrimaan-network
+
+  # Logistics Service
+  logistics-service:
+    build: ./backend/logistics-service
+    container_name: agrimaan-logistics-service
+    restart: always
+    ports:
+      - "3007:3007"
+    environment:
+      - PORT=3007
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-logistics-service?authSource=admin
+      - USER_SERVICE_URL=http://user-service:3002
+      - MARKETPLACE_SERVICE_URL=http://marketplace-service:3006
+      - NODE_ENV=development
+      - CONSUL_HOST=consul-server
+      - CONSUL_PORT=8500
+      - SERVICE_NAME=logistics-service
+      - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
+      - EVENT_EXCHANGE=agrimaan.events
+    depends_on:
+      - mongodb
+      - user-service
+      - marketplace-service
+      - consul-server
+      - rabbitmq
+    networks:
+      - agrimaan-network
+
+  # Weather Service
+  weather-service:
+    build: ./backend/weather-service
+    container_name: agrimaan-weather-service
+    restart: always
+    ports:
+      - "3008:3008"
+    environment:
+      - PORT=3008
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-weather-service?authSource=admin
+      - USER_SERVICE_URL=http://user-service:3002
+      - FIELD_SERVICE_URL=http://field-service:3003
+      - WEATHER_API_KEY=your_weather_api_key_here
+      - NODE_ENV=development
+      - CONSUL_HOST=consul-server
+      - CONSUL_PORT=8500
+      - SERVICE_NAME=weather-service
+      - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
+      - EVENT_EXCHANGE=agrimaan.events
+    depends_on:
+      - mongodb
+      - user-service
+      - consul-server
+      - rabbitmq
+    networks:
+      - agrimaan-network
+
+  # Analytics Service
+  analytics-service:
+    build: ./backend/analytics-service
+    container_name: agrimaan-analytics-service
+    restart: always
+    ports:
+      - "3009:3009"
+    environment:
+      - PORT=3009
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-analytics-service?authSource=admin
+      - USER_SERVICE_URL=http://user-service:3002
+      - FIELD_SERVICE_URL=http://field-service:3003
+      - IOT_SERVICE_URL=http://iot-service:3004
+      - CROP_SERVICE_URL=http://crop-service:3005
+      - MARKETPLACE_SERVICE_URL=http://marketplace-service:3006
+      - NODE_ENV=development
+      - CONSUL_HOST=consul-server
+      - CONSUL_PORT=8500
+      - SERVICE_NAME=analytics-service
+      - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
+      - EVENT_EXCHANGE=agrimaan.events
+    depends_on:
+      - mongodb
+      - user-service
+      - field-service
+      - iot-service
+      - crop-service
+      - marketplace-service
+      - consul-server
+      - rabbitmq
+    networks:
+      - agrimaan-network
+
+  # Notification Service
+  notification-service:
+    build: ./backend/notification-service
+    container_name: agrimaan-notification-service
+    restart: always
+    ports:
+      - "3010:3010"
+    environment:
+      - PORT=3010
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-notification-service?authSource=admin
+      - USER_SERVICE_URL=http://user-service:3002
+      - EMAIL_SERVICE=smtp
+      - EMAIL_HOST=smtp.example.com
+      - EMAIL_PORT=587
+      - EMAIL_USER=notifications@agrimaan.com
+      - EMAIL_PASSWORD=your_email_password_here
+      - SMS_PROVIDER=twilio
+      - SMS_API_KEY=your_sms_api_key_here
+      - NODE_ENV=development
+      - CONSUL_HOST=consul-server
+      - CONSUL_PORT=8500
+      - SERVICE_NAME=notification-service
+      - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
+      - EVENT_EXCHANGE=agrimaan.events
+    depends_on:
+      - mongodb
+      - user-service
+      - consul-server
+      - rabbitmq
+    networks:
+      - agrimaan-network
+
+  # Blockchain Service
+  blockchain-service:
+    build: ./backend/blockchain-service
+    container_name: agrimaan-blockchain-service
+    restart: always
+    ports:
+      - "3011:3011"
+    environment:
+      - PORT=3011
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-blockchain-service?authSource=admin
+      - USER_SERVICE_URL=http://user-service:3002
+      - BLOCKCHAIN_PROVIDER=https://mainnet.infura.io/v3/your_infura_key
+      - BLOCKCHAIN_NETWORK=matic
+      - CONTRACT_ADDRESS=0x1234567890abcdef1234567890abcdef12345678
+      - WALLET_PRIVATE_KEY=your_wallet_private_key_here
+      - NODE_ENV=development
+      - CONSUL_HOST=consul-server
+      - CONSUL_PORT=8500
+      - SERVICE_NAME=blockchain-service
+      - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
+      - EVENT_EXCHANGE=agrimaan.events
+    depends_on:
+      - mongodb
+      - user-service
+      - consul-server
+      - rabbitmq
+    networks:
+      - agrimaan-network
+
+  # Admin Service
+  admin-service:
+    build: ./backend/admin-service
+    container_name: agrimaan-admin-service
+    restart: always
+    ports:
+      - "3012:3012"
+    environment:
+      - PORT=3012
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-admin-service?authSource=admin
+      - USER_SERVICE_URL=http://user-service:3002
+      - FIELD_SERVICE_URL=http://field-service:3003
+      - IOT_SERVICE_URL=http://iot-service:3004
+      - CROP_SERVICE_URL=http://crop-service:3005
+      - MARKETPLACE_SERVICE_URL=http://marketplace-service:3006
+      - LOGISTICS_SERVICE_URL=http://logistics-service:3007
+      - WEATHER_SERVICE_URL=http://weather-service:3008
+      - ANALYTICS_SERVICE_URL=http://analytics-service:3009
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3010
+      - BLOCKCHAIN_SERVICE_URL=http://blockchain-service:3011
+      - NODE_ENV=development
+      - CONSUL_HOST=consul-server
+      - CONSUL_PORT=8500
+      - SERVICE_NAME=admin-service
+      - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
+      - EVENT_EXCHANGE=agrimaan.events
+    depends_on:
+      - mongodb
+      - user-service
+      - consul-server
+      - rabbitmq
+    networks:
+      - agrimaan-network
+
+  # Frontend Services
+  farmer-frontend:
+    build: ./frontend/farmer-ui
+    container_name: agrimaan-farmer-frontend
+    restart: always
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - API_GATEWAY_URL=http://api-gateway:3000
+      - NODE_ENV=development
+    depends_on:
+      - api-gateway
+    networks:
+      - agrimaan-network
+
+  buyer-frontend:
+    build: ./frontend/buyer-ui
+    container_name: agrimaan-buyer-frontend
+    restart: always
+    ports:
+      - "5002:5002"
+    environment:
+      - PORT=5002
+      - API_GATEWAY_URL=http://api-gateway:3000
+      - NODE_ENV=development
+    depends_on:
+      - api-gateway
+    networks:
+      - agrimaan-network
+
+  logistics-frontend:
+    build: ./frontend/logistics-ui
+    container_name: agrimaan-logistics-frontend
+    restart: always
+    ports:
+      - "5003:5003"
+    environment:
+      - PORT=5003
+      - API_GATEWAY_URL=http://api-gateway:3000
+      - NODE_ENV=development
+    depends_on:
+      - api-gateway
+    networks:
+      - agrimaan-network
+
+  investor-frontend:
+    build: ./frontend/investor-ui
+    container_name: agrimaan-investor-frontend
+    restart: always
+    ports:
+      - "5004:5004"
+    environment:
+      - PORT=5004
+      - API_GATEWAY_URL=http://api-gateway:3000
+      - NODE_ENV=development
+    depends_on:
+      - api-gateway
+    networks:
+      - agrimaan-network
+
+  agronomist-frontend:
+    build: ./frontend/agronomist-ui
+    container_name: agrimaan-agronomist-frontend
+    restart: always
+    ports:
+      - "5005:5005"
+    environment:
+      - PORT=5005
+      - API_GATEWAY_URL=http://api-gateway:3000
+      - NODE_ENV=development
+    depends_on:
+      - api-gateway
+    networks:
+      - agrimaan-network
+
+  admin-frontend:
+    build: ./frontend/admin-ui
+    container_name: agrimaan-admin-frontend
+    restart: always
+    ports:
+      - "5006:5006"
+    environment:
+      - PORT=5006
+      - API_GATEWAY_URL=http://api-gateway:3000
+      - NODE_ENV=development
+    depends_on:
+      - api-gateway
+    networks:
+      - agrimaan-network
+
+networks:
+  agrimaan-network:
+    driver: bridge
+

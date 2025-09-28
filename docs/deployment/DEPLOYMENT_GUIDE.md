@@ -403,7 +403,7 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm i --only=production && npm cache clean --force
 
 FROM node:18-alpine
 
@@ -431,7 +431,7 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm i
 
 COPY . .
 RUN npm run build

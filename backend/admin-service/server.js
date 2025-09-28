@@ -5,7 +5,6 @@ const morgan = require('morgan');
 const mongoose = require('mongoose');
 require('dotenv').config();
 //Import service discovery components
-//const { ServiceRegistry, healthCheck } = require('@agrimaan/shared/serviceDiscovery');
 const { ServiceRegistry, healthCheck } = require('@agrimaan/shared').serviceDiscovery
 // Import routes
 const adminRoutes = require('./routes/adminRoutes');
