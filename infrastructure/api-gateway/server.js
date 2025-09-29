@@ -53,7 +53,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Proxy routes for backend services
+ // Proxy routes for backend services
 app.use('/api/users', createProxyMiddleware({
   target: serviceUrls['user-service'],
   changeOrigin: true,
@@ -62,14 +62,26 @@ app.use('/api/users', createProxyMiddleware({
   }
 }));
 
+
 app.use('/api/auth', createProxyMiddleware({
   target: serviceUrls['user-service'],
   changeOrigin: true,
-  pathRewrite: {
-    '^/api/auth': '/api/auth'
+  pathRewrite: { '^/api/auth': '/api/auth' },
+  onProxyReq: (proxyReq, req, res) => {
+    // Forward all headers including content-type
+    Object.keys(req.headers).forEach(key => {
+      proxyReq.setHeader(key, req.headers[key]);
+    });
+    // Handle POST body
+    if (req.body) {
+      const bodyData = JSON.stringify(req.body);
+      proxyReq.setHeader('Content-Type', 'application/json');
+      proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+      proxyReq.write(bodyData);
+    }
   }
-}));
-
+}));    
+    
 // Additional proxy routes can be added here
 app.use('/api/fields', createProxyMiddleware({
   target: serviceUrls['field-service'],
