@@ -5,6 +5,9 @@ WORKDIR /usr/src/app
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
+# Copy shared library first
+#COPY shared ../../shared/
+
 # Install dependencies
 RUN npm i --only=production --legacy-peer-deps
 # Copy app source code

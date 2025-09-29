@@ -24,7 +24,6 @@
   "author": "Agrimaan Team",
   "license": "MIT",
   "dependencies": {
-    "admin-service": "file:../backend/admin-service",
     "bcryptjs": "^2.4.3",
     "consul": "^2.0.1",
     "cors": "^2.8.5",

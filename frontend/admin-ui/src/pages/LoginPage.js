@@ -9,42 +9,13 @@ import {
   Button, 
   Grid, 
   CircularProgress, 
-  Snackbar 
+  Snackbar,
+  Box
 } from '@mui/material';
-import { makeStyles } from '@mui/styles'; // For the legacy makeStyles hook
-
 import { Alert } from '@mui/lab';
 import { login } from '../store/actions/authActions';
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    height: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.palette.background.default,
-  },
-  paper: {
-    padding: theme.spacing(4),
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    maxWidth: 400,
-  },
-  form: {
-    width: '100%',
-    marginTop: theme.spacing(1),
-  },
-  submit: {
-    margin: theme.spacing(3, 0, 2),
-  },
-  logo: {
-    marginBottom: theme.spacing(3),
-  },
-}));
-
 const LoginPage = () => {
-  const classes = useStyles();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error } = useSelector(state => state.auth);
@@ -56,7 +27,7 @@ const LoginPage = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   
   const { email, password } = formData;
-  
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -76,16 +47,40 @@ const LoginPage = () => {
   };
   
   return (
-    <div className={classes.root}>
+    <Box
+      sx={{
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f5f5f5',
+      }}
+    >
       <Container component="main" maxWidth="xs">
-        <Paper className={classes.paper} elevation={3}>
-          <Typography variant="h4" className={classes.logo}>
+        <Paper 
+          elevation={3} 
+          sx={{
+            padding: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            maxWidth: 400,
+          }}
+        >
+          <Typography variant="h4" sx={{ marginBottom: 3, color: 'primary.main' }}>
             Agrimaan Admin Service
           </Typography>
           <Typography component="h1" variant="h5">
             Sign in
           </Typography>
-          <form className={classes.form} onSubmit={handleSubmit}>
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{
+              width: '100%',
+              marginTop: 1,
+            }}
+          >
             <TextField
               variant="outlined"
               margin="normal"
@@ -117,7 +112,9 @@ const LoginPage = () => {
               fullWidth
               variant="contained"
               color="primary"
-              className={classes.submit}
+              sx={{
+                margin: (theme) => theme.spacing(3, 0, 2),
+              }}
               disabled={loading}
             >
               {loading ? <CircularProgress size={24} /> : 'Sign In'}
@@ -129,7 +126,7 @@ const LoginPage = () => {
                 </Button>
               </Grid>
             </Grid>
-          </form>
+          </Box>
         </Paper>
         <Snackbar 
           open={snackbarOpen} 
@@ -141,7 +138,7 @@ const LoginPage = () => {
           </Alert>
         </Snackbar>
       </Container>
-    </div>
+    </Box>
   );
 };
 

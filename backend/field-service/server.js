@@ -7,7 +7,23 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 // Import service discovery components
 
-const { ServiceRegistry, healthCheck } = require('@agrimaan/shared').serviceDiscovery
+// Service Discovery Implementation
+const ServiceRegistry = {
+  register: async (serviceName, serviceUrl, consulHost, consulPort) => {
+    console.log(`Registering service: ${serviceName} at ${serviceUrl}`);
+    return Promise.resolve();
+  },
+  deregister: async (serviceName, consulHost, consulPort) => {
+    console.log(`Deregistering service: ${serviceName}`);
+    return Promise.resolve();
+  }
+};
+
+const healthCheck = {
+  start: (app, port, serviceName) => {
+    console.log(`Health check started for ${serviceName} on port ${port}`);
+  }
+};
 
 // Import routes
 const fieldRoutes = require('./routes/fieldRoutes');

@@ -4,16 +4,18 @@ version: '3.8'
 services:
   # MongoDB database
   mongodb:
-    image: mongo:5.0
+    image: mongo:7.0
     container_name: agrimaan-mongodb
-    restart: always
+    restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "27018:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME:admin
+      - MONGO_INITDB_ROOT_PASSWORD:agrimaan123
+      - MONGO_INITDB_DATABASE:agrimaan
     volumes:
       - mongodb_data:/data/db
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=agrimaan
-      - MONGO_INITDB_ROOT_PASSWORD=agrimaan123
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
     networks:
       - agrimaan-network
 
@@ -86,7 +88,7 @@ services:
       - BLOCKCHAIN_SERVICE_URL=http://blockchain-service:3011
       - ADMIN_SERVICE_URL=http://admin-service:3012
       - NODE_ENV=development
-      - CONSUL_HOST=consul-server
+      - CONSUL_HOST=localhost
       - CONSUL_PORT=8500
       - SERVICE_NAME=api-gateway
       - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
@@ -108,10 +110,10 @@ services:
       - "3002:3002"
     environment:
       - PORT=3002
-      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-user-service?authSource=admin
-      - JWT_SECRET=your_jwt_secret_key_here
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27018/agrimaan-user-service?authSource=admin
+      - JWT_SECRET=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkFncmltYWFuIEdsb2JhbCIsImFkbWluIjp0cnVlLCJpYXQiOjE1MTYyMzkwMjJ9.DTNMQcrFHIKRUA6j4gMrRDqfOpB0l-AmI7uVmG29XqY
       - NODE_ENV=development
-      - CONSUL_HOST=consul-server
+      - CONSUL_HOST=localhost
       - CONSUL_PORT=8500
       - SERVICE_NAME=user-service
       - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
@@ -132,10 +134,10 @@ services:
       - "3003:3003"
     environment:
       - PORT=3003
-      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-field-service?authSource=admin
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27018/agrimaan-field-service?authSource=admin
       - USER_SERVICE_URL=http://user-service:3002
       - NODE_ENV=development
-      - CONSUL_HOST=consul-server
+      - CONSUL_HOST=localhost
       - CONSUL_PORT=8500
       - SERVICE_NAME=field-service
       - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
@@ -157,7 +159,7 @@ services:
       - "3004:3004"
     environment:
       - PORT=3004
-      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-iot-service?authSource=admin
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27018/agrimaan-iot-service?authSource=admin
       - USER_SERVICE_URL=http://user-service:3002
       - FIELD_SERVICE_URL=http://field-service:3003
       - MQTT_ENABLED=true
@@ -167,7 +169,7 @@ services:
       - MQTT_CLIENT_ID=agrimaan-iot-service
       - MQTT_TOPIC_PREFIX=agrimaan/iot
       - NODE_ENV=development
-      - CONSUL_HOST=consul-server
+      - CONSUL_HOST=localhost
       - CONSUL_PORT=8500
       - SERVICE_NAME=iot-service
       - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
@@ -191,11 +193,11 @@ services:
       - "3005:3005"
     environment:
       - PORT=3005
-      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-crop-service?authSource=admin
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27018/agrimaan-crop-service?authSource=admin
       - USER_SERVICE_URL=http://user-service:3002
       - FIELD_SERVICE_URL=http://field-service:3003
       - NODE_ENV=development
-      - CONSUL_HOST=consul-server
+      - CONSUL_HOST=localhost
       - CONSUL_PORT=8500
       - SERVICE_NAME=crop-service
       - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
@@ -218,11 +220,11 @@ services:
       - "3006:3006"
     environment:
       - PORT=3006
-      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-marketplace-service?authSource=admin
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27018/agrimaan-marketplace-service?authSource=admin
       - USER_SERVICE_URL=http://user-service:3002
       - CROP_SERVICE_URL=http://crop-service:3005
       - NODE_ENV=development
-      - CONSUL_HOST=consul-server
+      - CONSUL_HOST=localhost
       - CONSUL_PORT=8500
       - SERVICE_NAME=marketplace-service
       - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
@@ -245,11 +247,11 @@ services:
       - "3007:3007"
     environment:
       - PORT=3007
-      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-logistics-service?authSource=admin
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27018/agrimaan-logistics-service?authSource=admin
       - USER_SERVICE_URL=http://user-service:3002
       - MARKETPLACE_SERVICE_URL=http://marketplace-service:3006
       - NODE_ENV=development
-      - CONSUL_HOST=consul-server
+      - CONSUL_HOST=localhost
       - CONSUL_PORT=8500
       - SERVICE_NAME=logistics-service
       - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
@@ -272,12 +274,12 @@ services:
       - "3008:3008"
     environment:
       - PORT=3008
-      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-weather-service?authSource=admin
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27018/agrimaan-weather-service?authSource=admin
       - USER_SERVICE_URL=http://user-service:3002
       - FIELD_SERVICE_URL=http://field-service:3003
       - WEATHER_API_KEY=your_weather_api_key_here
       - NODE_ENV=development
-      - CONSUL_HOST=consul-server
+      - CONSUL_HOST=localhost
       - CONSUL_PORT=8500
       - SERVICE_NAME=weather-service
       - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
@@ -299,14 +301,14 @@ services:
       - "3009:3009"
     environment:
       - PORT=3009
-      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-analytics-service?authSource=admin
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27018/agrimaan-analytics-service?authSource=admin
       - USER_SERVICE_URL=http://user-service:3002
       - FIELD_SERVICE_URL=http://field-service:3003
       - IOT_SERVICE_URL=http://iot-service:3004
       - CROP_SERVICE_URL=http://crop-service:3005
       - MARKETPLACE_SERVICE_URL=http://marketplace-service:3006
       - NODE_ENV=development
-      - CONSUL_HOST=consul-server
+      - CONSUL_HOST=localhost
       - CONSUL_PORT=8500
       - SERVICE_NAME=analytics-service
       - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
@@ -332,7 +334,7 @@ services:
       - "3010:3010"
     environment:
       - PORT=3010
-      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-notification-service?authSource=admin
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27018/agrimaan-notification-service?authSource=admin
       - USER_SERVICE_URL=http://user-service:3002
       - EMAIL_SERVICE=smtp
       - EMAIL_HOST=smtp.example.com
@@ -342,7 +344,7 @@ services:
       - SMS_PROVIDER=twilio
       - SMS_API_KEY=your_sms_api_key_here
       - NODE_ENV=development
-      - CONSUL_HOST=consul-server
+      - CONSUL_HOST=localhost
       - CONSUL_PORT=8500
       - SERVICE_NAME=notification-service
       - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
@@ -364,14 +366,14 @@ services:
       - "3011:3011"
     environment:
       - PORT=3011
-      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-blockchain-service?authSource=admin
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27018/agrimaan-blockchain-service?authSource=admin
       - USER_SERVICE_URL=http://user-service:3002
       - BLOCKCHAIN_PROVIDER=https://mainnet.infura.io/v3/your_infura_key
       - BLOCKCHAIN_NETWORK=matic
       - CONTRACT_ADDRESS=0x1234567890abcdef1234567890abcdef12345678
       - WALLET_PRIVATE_KEY=your_wallet_private_key_here
       - NODE_ENV=development
-      - CONSUL_HOST=consul-server
+      - CONSUL_HOST=localhost
       - CONSUL_PORT=8500
       - SERVICE_NAME=blockchain-service
       - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672
@@ -393,7 +395,7 @@ services:
       - "3012:3012"
     environment:
       - PORT=3012
-      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27017/agrimaan-admin-service?authSource=admin
+      - MONGODB_URI=mongodb://agrimaan:agrimaan123@mongodb:27018/agrimaan-admin-service?authSource=admin
       - USER_SERVICE_URL=http://user-service:3002
       - FIELD_SERVICE_URL=http://field-service:3003
       - IOT_SERVICE_URL=http://iot-service:3004
@@ -405,7 +407,7 @@ services:
       - NOTIFICATION_SERVICE_URL=http://notification-service:3010
       - BLOCKCHAIN_SERVICE_URL=http://blockchain-service:3011
       - NODE_ENV=development
-      - CONSUL_HOST=consul-server
+      - CONSUL_HOST=localhost
       - CONSUL_PORT=8500
       - SERVICE_NAME=admin-service
       - RABBITMQ_URL=amqp://agrimaan:agrimaan123@rabbitmq:5672

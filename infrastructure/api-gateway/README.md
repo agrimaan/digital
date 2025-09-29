@@ -105,7 +105,7 @@ docker build -t agrimaan/api-gateway .
 
 Run the container:
 ```
-docker run -p 3000:3000 -e JWT_SECRET=your_jwt_secret_key_here agrimaan/api-gateway
+docker run -p 3000:3000 -e JWT_SECRET=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkFncmltYWFuIEdsb2JhbCIsImFkbWluIjp0cnVlLCJpYXQiOjE1MTYyMzkwMjJ9.DTNMQcrFHIKRUA6j4gMrRDqfOpB0l-AmI7uVmG29XqY agrimaan/api-gateway
 ```
 
 ## Testing

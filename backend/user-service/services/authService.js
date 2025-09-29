@@ -44,6 +44,7 @@ exports.registerUser = async (userData) => {
  * @returns {Promise<Object|null>} User and token or null
  */
 exports.loginUser = async (email, password) => {
+  console.log('Attempting to log in user with email:', email);
   const user = await User.findOne({ email }).select('+password');
   
   if (!user) {

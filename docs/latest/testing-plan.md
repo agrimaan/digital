@@ -673,7 +673,7 @@ jobs:
       mongodb:
         image: mongo:5.0
         ports:
-          - 27017:27017
+          - 27018:27017
     
     strategy:
       matrix:
@@ -770,7 +770,7 @@ services:
   mongodb:
     image: mongo:5.0
     ports:
-      - "27017:27017"
+      - "27018:27017"
     environment:
       - MONGO_INITDB_ROOT_USERNAME=test
       - MONGO_INITDB_ROOT_PASSWORD=test123

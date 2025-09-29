@@ -1,6 +1,10 @@
 FROM node:18-alpine AS build
 WORKDIR /app
 
+# Copy shared library first
+#COPY shared ../../shared/
+
+
 COPY package*.json ./
 RUN npm cache clean --force && npm install --legacy-peer-deps
 COPY . .

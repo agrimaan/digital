@@ -1162,7 +1162,7 @@ Each service's environment configuration needs to be updated to include the new 
 # Add to each service's .env file
 
 # Service Discovery
-CONSUL_HOST=consul-server
+CONSUL_HOST=localhost
 CONSUL_PORT=8500
 SERVICE_NAME=service-name
 SERVICE_PORT=port-number

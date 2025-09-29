@@ -318,7 +318,7 @@ app.get('/health', (req, res) => {
 1. Update environment variables in docker-compose.yml for all services:
 ```yaml
 environment:
-  - CONSUL_HOST=consul-server
+  - CONSUL_HOST=localhost
   - CONSUL_PORT=8500
 ```
 

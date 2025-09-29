@@ -2,6 +2,10 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
+# Copy shared library first
+#COPY shared ../../shared/
+
+
 COPY package*.json ./
 RUN npm i 
 

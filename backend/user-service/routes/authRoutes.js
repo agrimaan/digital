@@ -2,7 +2,7 @@
 const express = require('express');
 const { check, validationResult } = require('express-validator');
 const User = require('../models/User');
-const auth = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 const router = express.Router();
 
 // @route   POST /api/auth/register
@@ -143,7 +143,7 @@ router.post('/login', [
 // @route   GET /api/auth/me
 // @desc    Get current logged in user
 // @access  Private
-router.get('/me', auth, async (req, res) => {
+router.get('/me', protect, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
     res.json({
@@ -162,7 +162,7 @@ router.get('/me', auth, async (req, res) => {
 // @route   PUT /api/auth/change-password
 // @desc    Change user password
 // @access  Private
-router.put('/change-password', auth, [
+router.put('/change-password', protect, [
   check('currentPassword', 'Current password is required').exists(),
   check('newPassword', 'New password must be at least 6 characters').isLength({ min: 6 })
 ], async (req, res) => {

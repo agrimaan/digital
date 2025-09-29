@@ -9,7 +9,6 @@
     "test": "jest"
   },
   "dependencies": {
-    "@agrimaan/shared": "1.0.0", 
     "opossum": "^9.0.0",
     "consul": "^1.2.0",
     "cors": "^2.8.5",

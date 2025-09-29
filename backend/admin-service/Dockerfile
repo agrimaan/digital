@@ -2,6 +2,9 @@ FROM node:18-alpine
 
 WORKDIR /usr/src/app
 
+# Copy shared library first
+##COPY shared ../../shared/
+
 # Copy package.json and package-lock.json
 COPY package*.json ./
 

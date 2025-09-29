@@ -35,7 +35,7 @@ for SERVICE_DIR in $BACKEND_DIR/*-service; do
   # Update the .env file to include Consul configuration
   if ! grep -q "CONSUL_HOST" $SERVICE_DIR/.env; then
     echo "Updating .env file..."
-    echo "CONSUL_HOST=consul-server" >> $SERVICE_DIR/.env
+    echo "CONSUL_HOST=localhost" >> $SERVICE_DIR/.env
     echo "CONSUL_PORT=8500" >> $SERVICE_DIR/.env
   fi
   

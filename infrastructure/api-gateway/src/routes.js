@@ -15,9 +15,12 @@ const authenticate = (req, res, next) => {
 
   const token = req.headers.authorization?.split(' ')[1];
   
+  console.log('Authenticating request to:', req.path);
   if (!token) {
+    console.log('No token provided');
     return res.status(401).json({ message: 'Authentication required' });
   }
+  console.log('Token provided:', token);
 
   try {
     // Verify token (in a real implementation, you'd use a shared secret)

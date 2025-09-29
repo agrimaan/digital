@@ -31,7 +31,7 @@ for service in user-service field-service iot-service crop-service marketplace-s
 do
   # Find the environment section for each service and add Consul variables
   sed -i "/environment:/a \
-      - CONSUL_HOST=consul-server\
+      - CONSUL_HOST=localhost\
       - CONSUL_PORT=8500\
       - SERVICE_NAME=$service" docker-compose.yml
   
