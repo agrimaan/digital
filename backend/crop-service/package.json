@@ -14,6 +14,7 @@
   "author": "Agrimaan Team",
   "license": "MIT",
   "dependencies": {
+    "@agrimaan/shared": "file:../../shared",
     "express": "^4.18.2",
     "mongoose": "^7.5.0",
     "cors": "^2.8.5",
@@ -24,6 +25,7 @@
     "moment": "^2.29.4"
   },
   "devDependencies": {
+    "@agrimaan/shared": "1.0.1",
     "nodemon": "^3.0.1",
     "jest": "^29.6.2",
     "supertest": "^6.3.3"

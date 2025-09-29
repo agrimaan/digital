@@ -13,6 +13,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@agrimaan/shared": "file:../../shared",
     "opossum": "^9.0.0",
     "consul": "^1.2.0",
     "@aws-sdk/client-ses": "^3.414.0",

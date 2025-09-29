@@ -9,6 +9,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@agrimaan/shared": "file:../../shared",
     "axios": "^1.5.0",
     "bcryptjs": "^2.4.3",
     "consul": "^1.2.0",
@@ -25,7 +26,7 @@
     "nodemailer": "^6.9.5",
     "opossum": "^9.0.0",
     "winston": "^3.10.0",
-    "xlsx": "^0.18.5"  
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "jest": "^29.6.4",

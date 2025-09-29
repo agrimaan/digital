@@ -9,6 +9,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@agrimaan/shared": "file:../../shared",
     "axios": "^1.5.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",

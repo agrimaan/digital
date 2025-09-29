@@ -1,6 +1,6 @@
 {
   "name": "@agrimaan/shared",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shared utilities and common code for Agrimaan services",
   "main": "index.js",
   "private": false,
@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/agrimaan/digital"
+    "url": "git+https://github.com/agrimaan/digital.git"
   },
   "keywords": [
     "agrimaan",

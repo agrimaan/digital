@@ -5,8 +5,7 @@ const morgan = require('morgan');
 const mongoose = require('mongoose');
 require('dotenv').config();
 //Import service discovery components
-const { ServiceRegistry, healthCheck } = require('@agrimaan/shared').serviceDiscovery
-// Import routes
+const { ServiceRegistry, healthCheck } = require('@agrimaan/shared').serviceDiscovery;
 const adminRoutes = require('./routes/adminRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
@@ -79,6 +78,7 @@ app.use((err, req, res, next) => {
 const server = app.listen(PORT, () => {
   logger.info(`Admin service running on port ${PORT}`);
 
+ 
   // Register service with Consul
   const serviceRegistry = new ServiceRegistry({
     serviceName: '""$SERVICE_NAME""',

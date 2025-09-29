@@ -102,7 +102,7 @@ The Agrimaan platform has been successfully converted to a microservices archite
 - Reporting and analytics
 
 
-## Integration Components
+## Infrastructure Components
 
 ### API Gateway
 - Routes requests to appropriate microservices

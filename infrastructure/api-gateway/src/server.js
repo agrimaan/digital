@@ -9,8 +9,8 @@ const routes = require('./routes');
 require('dotenv').config();
 
 // Import service registry
-//const ServiceRegistry = require('../../shared/service-discovery/service-registry');
-const { ServiceRegistry } = require('@agrimaan/shared/service-discovery');
+//const ServiceRegistry = require('../../../shared/service-discovery/service-registry');
+const { ServiceRegistry } = require('@agrimaan/shared').serviceDiscovery
 
 // Initialize express app
 const app = express();

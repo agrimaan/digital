@@ -14,6 +14,7 @@
   "author": "Agrimaan Team",
   "license": "MIT",
   "dependencies": {
+    "@agrimaan/shared": "file:../../shared",
     "express": "^4.18.2",
     "axios": "^1.5.0",
     "cors": "^2.8.5",
