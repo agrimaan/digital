@@ -85,11 +85,11 @@ yarn-debug.log
 package-lock.json
 
 # Environment variables
-.env
-.env.local
-.env.development
-.env.test
-.env.production
+#.env
+#.env.local
+#.env.development
+#.env.test
+#.env.production
 
 # Build files
 dist/
