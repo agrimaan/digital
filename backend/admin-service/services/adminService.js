@@ -107,8 +107,11 @@ exports.loginAdmin = async (email, password, requestData = {}) => {
     });
     
     // Create token
-    const token = admin.getSignedJwtToken();
-    
+    const token = jwt.sign(
+      { id: admin._id, email: admin.email, role: admin.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN}
+    );    
     // Remove password from response
     admin.password = undefined;
     

@@ -35,7 +35,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 .catch(err => logger.error('MongoDB connection error:', err));
 
 // Routes
-app.use('/api/admins', adminRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/dashboards', dashboardRoutes);
 app.use('/api/reports', reportRoutes);
@@ -54,7 +54,7 @@ app.get('/', (req, res) => {
     service: 'Admin Service',
     version: '1.0.0',
     endpoints: [
-      '/api/admins',
+      '/api/admin',
       '/api/settings',
       '/api/dashboards',
       '/api/reports',

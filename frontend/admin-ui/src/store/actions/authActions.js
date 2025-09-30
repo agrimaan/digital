@@ -13,8 +13,7 @@ import { setAuthToken } from '../../utils/setAuthToken';
 export const login = (email, password) => async (dispatch) => {
   try {
     dispatch(loginStart());
-
-    const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/login`, { 
+    const res = await axios.post(`${process.env.REACT_APP_API_URL}/admin/login`, { 
       email, 
       password 
     });
