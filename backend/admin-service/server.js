@@ -81,7 +81,7 @@ const server = app.listen(PORT, () => {
  
   // Register service with Consul
   const serviceRegistry = new ServiceRegistry({
-    serviceName: '""$SERVICE_NAME""',
+    serviceName:  process.env.SERVICE_NAME || 'admin-service',
     servicePort: PORT,
     tags: ['api'],
     healthCheckUrl: '/health',
@@ -90,7 +90,7 @@ const server = app.listen(PORT, () => {
   
   serviceRegistry.register()
     .then(() => {
-      console.log('Service registered with Consul');
+      console.info('Service registered with Consul');
       // Setup graceful shutdown to deregister service
       serviceRegistry.setupGracefulShutdown(server);
     })

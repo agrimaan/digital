@@ -5,10 +5,18 @@
  */
 
 const serviceDiscovery = require('./service-discovery');
+const logging = require('./logging');
+const tracing = require('./tracing');
+const metrics = require('./metrics');
+const resilience = require('./resilience');
 // Add other shared components here as needed
 
 
 
 module.exports = {
-  serviceDiscovery
+  serviceDiscovery,
+  logging,
+  tracing,
+  metrics,
+  resilience
 };

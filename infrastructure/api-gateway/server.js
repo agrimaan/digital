@@ -1,129 +1,94 @@
-
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const { createProxyMiddleware } = require('http-proxy-middleware');
-const { v4: uuidv4 } = require('uuid');
-const routes = require('./routes');
 require('dotenv').config();
 
-// Simple proxy configuration without service registry
-const serviceUrls = {
-  'user-service': 'http://localhost:3002',
-  'field-service': 'http://localhost:3003',
-  'iot-service': 'http://localhost:3004',
-  'crop-service': 'http://localhost:3005',
-  'marketplace-service': 'http://localhost:3006',
-  'logistics-service': 'http://localhost:3007',
-  'weather-service': 'http://localhost:3008',
-  'analytics-service': 'http://localhost:3009',
-  'notification-service': 'http://localhost:3010',
-  'blockchain-service': 'http://localhost:3011',
-  'admin-service': 'http://localhost:3012'
-};
-
-// Initialize express app
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
-app.use(helmet());
-app.use(morgan('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Service URLs from environment
+const serviceUrls = {
+  'user-service': process.env.USER_SERVICE_URL || 'http://user-service:3002',
+  'field-service': process.env.FIELD_SERVICE_URL || 'http://field-service:3003',
+  'crop-service': process.env.CROP_SERVICE_URL || 'http://crop-service:3005',
+  'marketplace-service': process.env.MARKETPLACE_SERVICE_URL || 'http://marketplace-service:3006',
+  'logistics-service': process.env.LOGISTICS_SERVICE_URL || 'http://logistics-service:3007',
+  'weather-service': process.env.WEATHER_SERVICE_URL || 'http://weather-service:3008',
+  'analytics-service': process.env.ANALYTICS_SERVICE_URL || 'http://analytics-service:3009',
+  'notification-service': process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3010',
+  'blockchain-service': process.env.BLOCKCHAIN_SERVICE_URL || 'http://blockchain-service:3011',
+  'admin-service': process.env.ADMIN_SERVICE_URL || 'http://admin-service:3012'
+};
 
-// Rate limiting
+// Middleware
+app.use(cors({ origin: true, credentials: true }));
+app.use(helmet());
+app.use(morgan('combined'));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Rate limiting - exclude auth routes
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  skip: (req) => req.path.startsWith('/api/auth/'),
+  message: { error: 'Too many requests' }
 });
 app.use('/api/', limiter);
 
-// Health check endpoint
+// Health check
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
     service: 'api-gateway',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    services: Object.keys(serviceUrls)
   });
 });
 
- // Proxy routes for backend services
-app.use('/api/users', createProxyMiddleware({
-  target: serviceUrls['user-service'],
+// Enhanced proxy configuration
+const createServiceProxy = (serviceName, path) => createProxyMiddleware({
+  target: serviceUrls[serviceName],
   changeOrigin: true,
-  pathRewrite: {
-    '^/api/users': '/api/users'
-  }
-}));
-
-
-app.use('/api/auth', createProxyMiddleware({
-  target: serviceUrls['user-service'],
-  changeOrigin: true,
-  pathRewrite: { '^/api/auth': '/api/auth' },
+  pathRewrite: { [`^${path}`]: path },
   onProxyReq: (proxyReq, req, res) => {
-    // Forward all headers including content-type
+    // Forward all headers
     Object.keys(req.headers).forEach(key => {
       proxyReq.setHeader(key, req.headers[key]);
     });
-    // Handle POST body
-    if (req.body) {
+    
+    // Handle request body
+    if (req.body && Object.keys(req.body).length > 0) {
       const bodyData = JSON.stringify(req.body);
       proxyReq.setHeader('Content-Type', 'application/json');
       proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
       proxyReq.write(bodyData);
     }
-  }
-}));    
-    
-// Additional proxy routes can be added here
-app.use('/api/fields', createProxyMiddleware({
-  target: serviceUrls['field-service'],
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/fields': '/api/fields'
-  }
-}));
+  },
+  onError: (err, req, res) => {
+    console.error(`Service ${serviceName} error:`, err);
+    res.status(503).json({ error: `${serviceName} unavailable` });
+  },
+  timeout: 30000
+});
+
+// Routes
+app.use('/api/auth', createServiceProxy('user-service', '/api/auth'));
+app.use('/api/users', createServiceProxy('user-service', '/api/users'));
+app.use('/api/fields', createServiceProxy('field-service', '/api/fields'));
+app.use('/api/crops', createServiceProxy('crop-service', '/api/crops'));
+app.use('/api/marketplace', createServiceProxy('marketplace-service', '/api/marketplace'));
+app.use('/api/logistics', createServiceProxy('logistics-service', '/api/logistics'));
 
 // Error handling
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || 'Server Error'
-  });
+  res.status(500).json({ error: 'Internal server error' });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found'
-  });
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 API Gateway running on port ${PORT}`);
 });
-
-// Start server
-const server = app.listen(PORT, () => {
-  console.log(`API Gateway running on port ${PORT}`);
-  console.log('Available services:');
-  Object.keys(serviceUrls).forEach(service => {
-    console.log(`  ${service} -> ${serviceUrls[service]}`);
-  });
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    console.log('Process terminated');
-    process.exit(0);
-  });
-});
-
-module.exports = app;

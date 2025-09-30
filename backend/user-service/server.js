@@ -1,92 +1,58 @@
-
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
-// Import routes
-const userRoutes = require('./routes/userRoutes');
-const authRoutes = require('./routes/authRoutes');
+const { ServiceRegistry, healthCheck } = require('@agrimaan/shared/service-discovery');
+const { createLogger } = require('@agrimaan/shared/logging');
 
-// Initialize express app
+const SERVICE_NAME = process.env.SERVICE_NAME || 'user-service';
+const logger = createLogger({ serviceName: SERVICE_NAME });
+
 const app = express();
 const PORT = process.env.PORT || 3002;
 
-// Security middleware
-app.use(helmet());
+// Middleware
 app.use(cors());
-app.use(morgan('dev'));
+app.use(express.json());
+app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } }));
+//app.use(healthCheck);
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
-});
-app.use('/api/', limiter);
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => logger.info('MongoDB connected'))
+  .catch(err => logger.error('MongoDB connection error:', { error: err.message }));
 
-// Body parser middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/agrimaan_users', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.error('MongoDB connection error:', err));
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    service: 'user-service',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
-
-// API routes
-app.use('/api/users', userRoutes);
-app.use('/api/auth', authRoutes);
+// Routes
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || 'Server Error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
-});
-
-// 404 handler
-app.use('*', (req, res) => {
-  console.log(`404 - Not Found - ${req.originalUrl}`);
-  res.status(404).json({
-    success: false,
-    message: 'Route not found'
-  });
+  logger.error('Unhandled error:', { error: err.stack });
+  res.status(500).json({ message: 'Something went wrong!' });
 });
 
 // Start server
 const server = app.listen(PORT, () => {
-  console.log(`User service running on port ${PORT}`);
-});
+  logger.info(`User service running on port ${PORT}`);
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    mongoose.connection.close(false, () => {
-      console.log('Process terminated');
-      process.exit(0);
-    });
+  const serviceRegistry = new ServiceRegistry({
+    serviceName: SERVICE_NAME,
+    servicePort: PORT,
+    healthCheckUrl: '/health',
   });
+
+  serviceRegistry.register()
+    .then(() => {
+      logger.info('Service registered with Consul');
+      serviceRegistry.setupGracefulShutdown(server);
+    })
+    .catch(err => {
+      logger.error('Failed to register service with Consul:', { error: err.message });
+      process.exit(1);
+    });
 });
 
 module.exports = app;

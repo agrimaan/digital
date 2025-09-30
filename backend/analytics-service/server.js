@@ -3,27 +3,15 @@ const cors = require('cors');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
 require('dotenv').config();
-// Import service discovery components
-// Service Discovery Implementation
-const ServiceRegistry = {
-  register: async (serviceName, serviceUrl, consulHost, consulPort) => {
-    console.log(`Registering service: ${serviceName} at ${serviceUrl}`);
-    return Promise.resolve();
-  },
-  deregister: async (serviceName, consulHost, consulPort) => {
-    console.log(`Deregistering service: ${serviceName}`);
-    return Promise.resolve();
-  }
-};
 
-const healthCheck = {
-  start: (app, port, serviceName) => {
-    console.log(`Health check started for ${serviceName} on port ${port}`);
-  }
-};
+// Corrected import for ServiceRegistry and healthCheck
+const { ServiceRegistry, healthCheck } = require('@agrimaan/shared/service-discovery');
 
-// Import routes
-// const exampleRoutes = require('./routes/exampleRoutes');
+// Corrected import for the createLogger function
+const { createLogger } = require('@agrimaan/shared/logging');
+
+// 1. Initialize the logger for this specific service
+const logger = createLogger({ serviceName: process.env.SERVICE_NAME || 'analytics-service' });
 
 // Initialize express app
 const app = express();
@@ -32,29 +20,29 @@ const PORT = process.env.PORT || 3009;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(morgan('dev'));
-// Add health check middleware
-app.use(healthCheck);
+
+// 2. Configure morgan to use the winston logger's stream
+app.use(morgan('combined', {
+  stream: {
+    write: (message) => logger.info(message.trim()),
+  },
+}));
+
+// 3. Use healthCheck middleware directly
+//app.use(healthCheck);
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.error('MongoDB connection error:', err));
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => logger.info('MongoDB connected'))
+  .catch(err => logger.error('MongoDB connection error:', { error: err.message }));
 
-// Routes
-// app.use('/api/examples', exampleRoutes);
+// --- Your Service-Specific Routes Would Go Here ---
+// Example: app.use('/api/analytics', require('./routes/analyticsRoutes'));
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'UP', service: 'analytics-service' });
-});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error('Unhandled error:', { error: err.stack });
   res.status(500).json({
     message: 'Something went wrong!',
     error: process.env.NODE_ENV === 'development' ? err.message : {}
@@ -63,25 +51,25 @@ app.use((err, req, res, next) => {
 
 // Start server
 const server = app.listen(PORT, () => {
-  console.log(`analytics service running on port ${PORT}`);
+  logger.info(`Analytics service running on port ${PORT}`);
 
-  // Register service with Consul
+  // 4. Instantiate ServiceRegistry correctly
   const serviceRegistry = new ServiceRegistry({
-    serviceName: '""$SERVICE_NAME""',
+    serviceName: process.env.SERVICE_NAME || 'analytics-service', // Corrected service name
     servicePort: PORT,
-    tags: ['api'],
     healthCheckUrl: '/health',
-    healthCheckInterval: '15s'
   });
-  
+
   serviceRegistry.register()
     .then(() => {
-      console.log('Service registered with Consul');
+      logger.info('Service registered with Consul');
       // Setup graceful shutdown to deregister service
       serviceRegistry.setupGracefulShutdown(server);
     })
     .catch(err => {
-      console.error('Failed to register service with Consul:', err);
+      logger.error('Failed to register service with Consul:', { error: err.message });
+      // Exit if registration fails, as the service cannot be discovered
+      process.exit(1);
     });
 });
 
