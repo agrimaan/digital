@@ -2,14 +2,12 @@ FROM node:18-alpine
 
 WORKDIR /usr/src/app
 
-# Copy shared library first
-##COPY shared ../../shared/
-
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
 # Install dependencies
-RUN npm i --only=production --legacy-peer-deps
+RUN npm install --production
+
 # Copy app source code
 COPY . .
 
