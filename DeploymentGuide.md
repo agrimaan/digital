@@ -7,6 +7,9 @@ infrastructure
 1. Mongodb
 docker-compose up mongodb
 
+2. NPM install on shared library
+npm i
+
 2. API Gateway (needed for admin-ui, runs on port 3012)
 cd /opt/agm/digital/infrastructure/api-gateway 
 npm i && npm start
@@ -46,6 +49,6 @@ npm i && npm start
 
 
 Frontend
-cd /opt/agm/digital/backend/admin-ui ( runs on port 5006)
+cd /opt/agm/digital/frontend/admin-ui ( runs on port 5006)
 npm i && npm start
 

@@ -114,7 +114,7 @@ const server = app.listen(PORT, () => {
 
   // Register service with Consul
   const serviceRegistry = new ServiceRegistry({
-    serviceName: '""$SERVICE_NAME""',
+    serviceName: process.env.SERVICE_NAME || 'notification-service',
     servicePort: PORT,
     tags: ['api'],
     healthCheckUrl: '/health',
