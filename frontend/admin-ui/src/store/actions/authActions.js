@@ -45,7 +45,12 @@ export const checkAuth = () => async (dispatch) => {
     const res = await axios.get(`${process.env.REACT_APP_API_URL}/auth/me`);
     dispatch(authLoaded(res.data));
   } catch (err) {
-    dispatch(authError());
+     // Handle 401 Unauthorized gracefully
+     if (err.response?.status === 401) {
+      localStorage.removeItem('token');
+      setAuthToken(null);
+    }
+    dispatch(authError(err.response?.data?.message || 'Authentication failed'));
   }
 };
 

@@ -7,32 +7,34 @@ import {
   CardContent, 
   CardHeader 
 } from '@mui/material';
-import { makeStyles } from '@mui/styles'; // For the legacy makeStyles hook
+import { styled } from '@mui/material/styles';
 
 import api from '../services/api';
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    flexGrow: 1,
-  },
-  paper: {
-    padding: theme.spacing(2),
-    height: '100%',
-  },
-  title: {
-    marginBottom: theme.spacing(3),
-  },
-  card: {
-    height: '100%',
-  },
-  cardHeader: {
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.primary.contrastText,
-  },
+
+const Root = styled('div')({
+  flexGrow: 1,
+});
+
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(2),
+  height: '100%',
+}));
+
+const Title = styled(Typography)(({ theme }) => ({
+  marginBottom: theme.spacing(3),
+}));
+
+const StyledCard = styled(Card)({
+  height: '100%',
+});
+
+const StyledCardHeader = styled(CardHeader)(({ theme }) => ({
+  backgroundColor: theme.palette.primary.main,
+  color: theme.palette.primary.contrastText,
 }));
 
 const DashboardPage = () => {
-  const classes = useStyles();
   const [dashboardData, setDashboardData] = useState({
     loading: true,
     data: null,
@@ -44,6 +46,7 @@ const DashboardPage = () => {
       try {
         // Replace with actual API endpoint
         const response = await api.get('/dashboard');
+        console.log('Dashboard API response:', response);
         setDashboardData({
           loading: false,
           data: response.data,
@@ -57,6 +60,7 @@ const DashboardPage = () => {
         });
         console.error('Dashboard data fetch error:', error);
       }
+        
     };
     
     // Simulate API call for now
@@ -82,7 +86,7 @@ const DashboardPage = () => {
     }, 1000);
     
     // Uncomment to use real API
-    // fetchDashboardData();
+     //fetchDashboardData();
   }, []);
   
   if (dashboardData.loading) {
@@ -96,52 +100,52 @@ const DashboardPage = () => {
   const { stats, recentActivity } = dashboardData.data;
   
   return (
-    <div className={classes.root}>
-      <Typography variant="h4" className={classes.title}>
+    <Root>
+      <Typography variant="h4" sx={{ marginBottom: 3 }}>
         Dashboard
       </Typography>
       
       <Grid container spacing={3}>
         {/* Stats Cards */}
         <Grid item xs={12} sm={6} md={3}>
-          <Card className={classes.card}>
-            <CardHeader title="Total Users" className={classes.cardHeader} />
+          <StyledCard>
+            <StyledCardHeader title="Total Users" />
             <CardContent>
               <Typography variant="h3">{stats.totalUsers}</Typography>
             </CardContent>
-          </Card>
+          </StyledCard>
         </Grid>
         
         <Grid item xs={12} sm={6} md={3}>
-          <Card className={classes.card}>
-            <CardHeader title="Active Users" className={classes.cardHeader} />
+          <StyledCard>
+            <StyledCardHeader title="Active Users" />
             <CardContent>
               <Typography variant="h3">{stats.activeUsers}</Typography>
             </CardContent>
-          </Card>
+          </StyledCard>
         </Grid>
         
         <Grid item xs={12} sm={6} md={3}>
-          <Card className={classes.card}>
-            <CardHeader title="Transactions" className={classes.cardHeader} />
+          <StyledCard>
+            <StyledCardHeader title="Transactions" />
             <CardContent>
               <Typography variant="h3">{stats.totalTransactions}</Typography>
             </CardContent>
-          </Card>
+          </StyledCard>
         </Grid>
         
         <Grid item xs={12} sm={6} md={3}>
-          <Card className={classes.card}>
-            <CardHeader title="Revenue" className={classes.cardHeader} />
+          <StyledCard>
+            <StyledCardHeader title="Revenue" />
             <CardContent>
               <Typography variant="h3">${stats.revenue.toLocaleString()}</Typography>
             </CardContent>
-          </Card>
+          </StyledCard>
         </Grid>
         
         {/* Recent Activity */}
         <Grid item xs={12}>
-          <Paper className={classes.paper}>
+          <StyledPaper>
             <Typography variant="h6" gutterBottom>
               Recent Activity
             </Typography>
@@ -152,10 +156,10 @@ const DashboardPage = () => {
                 </Typography>
               </div>
             ))}
-          </Paper>
+          </StyledPaper>
         </Grid>
       </Grid>
-    </div>
+    </Root>
   );
 };
 

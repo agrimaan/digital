@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { makeStyles } from '@mui/styles';
+import { styled, useTheme } from '@mui/material/styles';
 import { 
   AppBar, 
   Toolbar, 
@@ -22,7 +22,13 @@ import {
   Menu as MenuIcon, 
   Dashboard as DashboardIcon, 
   Person as PersonIcon, 
-  ExitToApp as LogoutIcon 
+  ExitToApp as LogoutIcon,
+  People as PeopleIcon,
+  Description as DescriptionIcon,
+  BarChart as BarChartIcon,
+  Settings as SettingsIcon,
+  History as HistoryIcon,
+  Notifications as NotificationsIcon
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { toggleSidebar } from '../../store/reducers/uiReducer';
@@ -30,44 +36,51 @@ import { logoutUser } from '../../store/actions/authActions';
 
 const drawerWidth = 240;
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    display: 'flex',
-  },
-  appBar: {
-    zIndex: theme.zIndex.drawer + 1,
-  },
-  menuButton: {
-    marginRight: theme.spacing(2),
-  },
-  title: {
-    flexGrow: 1,
-  },
-  drawer: {
+const Root = styled('div')({
+  display: 'flex',
+});
+
+const StyledAppBar = styled(AppBar)(({ theme }) => ({
+  zIndex: theme.zIndex.drawer + 1,
+}));
+
+const MenuButton = styled(IconButton)(({ theme }) => ({
+  marginRight: theme.spacing(2),
+}));
+
+const Title = styled(Typography)({
+  flexGrow: 1,
+});
+
+const StyledDrawer = styled(Drawer)(({ theme }) => ({
+  width: drawerWidth,
+  flexShrink: 0,
+  '& .MuiDrawer-paper': {
     width: drawerWidth,
-    flexShrink: 0,
-  },
-  drawerPaper: {
-    width: drawerWidth,
-  },
-  drawerContainer: {
-    overflow: 'auto',
-  },
-  content: {
-    flexGrow: 1,
-    padding: theme.spacing(3),
-  },
-  toolbar: theme.mixins.toolbar,
-  avatar: {
-    cursor: 'pointer',
   },
 }));
 
+const DrawerContainer = styled('div')({
+  overflow: 'auto',
+});
+
+const Content = styled('main')(({ theme }) => ({
+  flexGrow: 1,
+  padding: theme.spacing(3),
+}));
+
+const ToolbarSpacer = styled('div')(({ theme }) => ({
+  ...theme.mixins.toolbar,
+}));
+
+const StyledAvatar = styled(Avatar)({
+  cursor: 'pointer',
+});
+
 const MainLayout = () => {
-  const classes = useStyles();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { sidebarOpen } = useSelector(state => state.ui);
+  const { sidebarOpen } = useSelector(state => state.ui || { sidebarOpen: true });
   const { user } = useSelector(state => state.auth);
   const [anchorEl, setAnchorEl] = React.useState(null);
   
@@ -95,27 +108,24 @@ const MainLayout = () => {
   };
   
   return (
-    <div className={classes.root}>
-      <AppBar position="fixed" className={classes.appBar}>
+    <Root>
+      <StyledAppBar position="fixed">
         <Toolbar>
-          <IconButton
+          <MenuButton
             color="inherit"
             aria-label="open drawer"
             edge="start"
-            onClick={handleDrawerToggle}
-            className={classes.menuButton}
           >
             <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" className={classes.title}>
+          </MenuButton>
+          <Title variant="h6">
             Agrimaan Admin Service
-          </Typography>
-          <Avatar 
-            className={classes.avatar}
+          </Title>
+          <StyledAvatar 
             onClick={handleMenuOpen}
           >
             {user?.name?.charAt(0) || 'U'}
-          </Avatar>
+          </StyledAvatar>
           <Menu
             anchorEl={anchorEl}
             keepMounted
@@ -136,36 +146,67 @@ const MainLayout = () => {
             </MenuItem>
           </Menu>
         </Toolbar>
-      </AppBar>
-      <Drawer
-        className={classes.drawer}
-        variant="persistent"
-        open={sidebarOpen}
-        classes={{
-          paper: classes.drawerPaper,
-        }}
+      </StyledAppBar>
+      <StyledDrawer
+        variant="permanent"
+        open={true}
       >
-        <div className={classes.toolbar} />
-        <div className={classes.drawerContainer}>
+        <ToolbarSpacer />
+        <DrawerContainer>
           <List>
-            <ListItem button component={Link} to="/">
+            <ListItem button component={Link} to="/dashboard">
               <ListItemIcon>
                 <DashboardIcon />
               </ListItemIcon>
               <ListItemText primary="Dashboard" />
             </ListItem>
+            <ListItem button component={Link} to="/users">
+              <ListItemIcon>
+                <PeopleIcon />
+              </ListItemIcon>
+              <ListItemText primary="Users" />
+            </ListItem>
+            <ListItem button component={Link} to="/content">
+              <ListItemIcon>
+                <DescriptionIcon />
+              </ListItemIcon>
+              <ListItemText primary="Content" />
+            </ListItem>
+            <ListItem button component={Link} to="/analytics">
+              <ListItemIcon>
+                <BarChartIcon />
+              </ListItemIcon>
+              <ListItemText primary="Analytics" />
+            </ListItem>
+            <ListItem button component={Link} to="/settings">
+              <ListItemIcon>
+                <SettingsIcon />
+              </ListItemIcon>
+              <ListItemText primary="Settings" />
+            </ListItem>
             <Divider />
-            {/* Add more menu items here specific to the service */}
+            <ListItem button component={Link} to="/audit-logs">
+              <ListItemIcon>
+                <HistoryIcon />
+              </ListItemIcon>
+              <ListItemText primary="Audit Logs" />
+            </ListItem>
+            <ListItem button component={Link} to="/notifications">
+              <ListItemIcon>
+                <NotificationsIcon />
+              </ListItemIcon>
+              <ListItemText primary="Notifications" />
+            </ListItem>
           </List>
-        </div>
-      </Drawer>
-      <main className={classes.content}>
-        <div className={classes.toolbar} />
+        </DrawerContainer>
+      </StyledDrawer>
+      <Content>
+        <ToolbarSpacer />
         <Container>
           <Outlet />
         </Container>
-      </main>
-    </div>
+      </Content>
+    </Root>
   );
 };
 

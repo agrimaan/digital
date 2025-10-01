@@ -11,6 +11,12 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
+import UserManagement from './components/admin/UserManagement';
+import ContentManagement from './components/admin/ContentManagement';
+import AnalyticsDashboard from './components/admin/AnalyticsDashboard';
+import SettingsPage from './components/admin/SettingsPage';
+import AuditLogsPage from './components/admin/AuditLogsPage';
+import NotificationsPage from './components/admin/NotificationsPage';
 
 // Auth actions
 import { checkAuth } from './store/actions/authActions';
@@ -57,9 +63,6 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      {/* The <BrowserRouter> is removed from this file. 
-        The routing context is provided by the BrowserRouter in your index.js.
-      */}
       <Routes>
         {/* Public Route: Anyone can access the login page */}
         <Route path="/login" element={<LoginPage />} />
@@ -75,6 +78,12 @@ function App() {
                 <Routes>
                   {/* Your main application routes go here */}
                   <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/users" element={<UserManagement />} />
+                  <Route path="/content" element={<ContentManagement />} />
+                  <Route path="/analytics" element={<AnalyticsDashboard />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/audit-logs" element={<AuditLogsPage />} />
+                  <Route path="/notifications" element={<NotificationsPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   
                   {/* Default route after login redirects to the dashboard */}
