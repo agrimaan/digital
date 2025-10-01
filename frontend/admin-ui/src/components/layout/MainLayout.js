@@ -22,7 +22,13 @@ import {
   Menu as MenuIcon, 
   Dashboard as DashboardIcon, 
   Person as PersonIcon, 
-  ExitToApp as LogoutIcon 
+  ExitToApp as LogoutIcon,
+  People as PeopleIcon,
+  Description as DescriptionIcon,
+  BarChart as BarChartIcon,
+  Settings as SettingsIcon,
+  History as HistoryIcon,
+  Notifications as NotificationsIcon
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { toggleSidebar } from '../../store/reducers/uiReducer';
@@ -148,14 +154,49 @@ const MainLayout = () => {
         <div className={classes.toolbar} />
         <div className={classes.drawerContainer}>
           <List>
-            <ListItem button component={Link} to="/">
+            <ListItem button component={Link} to="/dashboard">
               <ListItemIcon>
                 <DashboardIcon />
               </ListItemIcon>
               <ListItemText primary="Dashboard" />
             </ListItem>
+            <ListItem button component={Link} to="/users">
+              <ListItemIcon>
+                <PeopleIcon />
+              </ListItemIcon>
+              <ListItemText primary="Users" />
+            </ListItem>
+            <ListItem button component={Link} to="/content">
+              <ListItemIcon>
+                <DescriptionIcon />
+              </ListItemIcon>
+              <ListItemText primary="Content" />
+            </ListItem>
+            <ListItem button component={Link} to="/analytics">
+              <ListItemIcon>
+                <BarChartIcon />
+              </ListItemIcon>
+              <ListItemText primary="Analytics" />
+            </ListItem>
+            <ListItem button component={Link} to="/settings">
+              <ListItemIcon>
+                <SettingsIcon />
+              </ListItemIcon>
+              <ListItemText primary="Settings" />
+            </ListItem>
             <Divider />
-            {/* Add more menu items here specific to the service */}
+            <ListItem button component={Link} to="/audit-logs">
+              <ListItemIcon>
+                <HistoryIcon />
+              </ListItemIcon>
+              <ListItemText primary="Audit Logs" />
+            </ListItem>
+            <ListItem button component={Link} to="/notifications">
+              <ListItemIcon>
+                <NotificationsIcon />
+              </ListItemIcon>
+              <ListItemText primary="Notifications" />
+            </ListItem>
           </List>
         </div>
       </Drawer>

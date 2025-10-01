@@ -1,11 +1,10 @@
-
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
 require('dotenv').config();
-//Import service discovery components
-const { ServiceRegistry, healthCheck } = require('@agrimaan/shared').serviceDiscovery;
+
+// Import routes
 const adminRoutes = require('./routes/adminRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
@@ -35,7 +34,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 .catch(err => logger.error('MongoDB connection error:', err));
 
 // Routes
-app.use('/api/admin', adminRoutes);
+app.use('/api/admins', adminRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/dashboards', dashboardRoutes);
 app.use('/api/reports', reportRoutes);
@@ -54,7 +53,7 @@ app.get('/', (req, res) => {
     service: 'Admin Service',
     version: '1.0.0',
     endpoints: [
-      '/api/admin',
+      '/api/admins',
       '/api/settings',
       '/api/dashboards',
       '/api/reports',
@@ -75,31 +74,8 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-const server = app.listen(PORT, () => {
+app.listen(PORT, () => {
   logger.info(`Admin service running on port ${PORT}`);
-
- 
-  // Register service with Consul
-  const serviceRegistry = new ServiceRegistry({
-    serviceName:  process.env.SERVICE_NAME || 'admin-service',
-    servicePort: PORT,
-    tags: ['api'],
-    healthCheckUrl: '/health',
-    healthCheckInterval: '15s'
-  });
-  
-  serviceRegistry.register()
-    .then(() => {
-      console.info('Service registered with Consul');
-      // Setup graceful shutdown to deregister service
-      serviceRegistry.setupGracefulShutdown(server);
-    })
-    .catch(err => {
-      console.error('Failed to register service with Consul:', err);
-    });
 });
 
 module.exports = app; // For testing purposes
-
-//go to shared folder and run npm link
-//then go to each service folder and run npm link @agrimaan/shared
