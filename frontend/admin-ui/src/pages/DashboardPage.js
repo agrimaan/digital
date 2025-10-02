@@ -86,7 +86,7 @@ const DashboardPage = () => {
     }, 1000);
     
     // Uncomment to use real API
-     fetchDashboardData();
+     //fetchDashboardData();
   }, []);
   
   if (dashboardData.loading) {
