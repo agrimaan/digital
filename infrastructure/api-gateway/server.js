@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 3000;
 const serviceUrls = {
   'user-service': process.env.USER_SERVICE_URL || 'http://user-service:3002',
   'field-service': process.env.FIELD_SERVICE_URL || 'http://field-service:3003',
+  'iot-service': process.env.IOT_SERVICE_URL || 'http://iot-service:3004',
   'crop-service': process.env.CROP_SERVICE_URL || 'http://crop-service:3005',
   'marketplace-service': process.env.MARKETPLACE_SERVICE_URL || 'http://marketplace-service:3006',
   'logistics-service': process.env.LOGISTICS_SERVICE_URL || 'http://logistics-service:3007',
@@ -83,6 +84,11 @@ app.use('/api/fields', createServiceProxy('field-service', '/api/fields'));
 app.use('/api/crops', createServiceProxy('crop-service', '/api/crops'));
 app.use('/api/marketplace', createServiceProxy('marketplace-service', '/api/marketplace'));
 app.use('/api/logistics', createServiceProxy('logistics-service', '/api/logistics'));
+app.use('/api/iot', createServiceProxy('iot-service', '/api/iot'));
+app.use('/api/weather', createServiceProxy('weather-service', '/api/weather'));
+app.use('/api/analytics', createServiceProxy('analytics-service', '/api/analytics'));
+app.use('/api/notifications', createServiceProxy('notification-service', '/api/notifications'));
+app.use('/api/blockchain', createServiceProxy('blockchain-service', '/api/blockchain'));
 
 // Error handling
 app.use((err, req, res, next) => {

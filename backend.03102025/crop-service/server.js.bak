@@ -1,0 +1,53 @@
+const express = require('express');
+const cors = require('cors');
+const morgan = require('morgan');
+const mongoose = require('mongoose');
+require('dotenv').config();
+
+// Import routes
+const cropRoutes = require('./routes/cropRoutes');
+const plantingRoutes = require('./routes/plantingRoutes');
+const harvestRoutes = require('./routes/harvestRoutes');
+
+// Initialize express app
+const app = express();
+const PORT = process.env.PORT || 3005;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(morgan('dev'));
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.error('MongoDB connection error:', err));
+
+// Routes
+app.use('/api/crops', cropRoutes);
+app.use('/api/plantings', plantingRoutes);
+app.use('/api/harvests', harvestRoutes);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'UP', service: 'crop-service' });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : {}
+  });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Crop service running on port ${PORT}`);
+});
+
+module.exports = app; // For testing purposes

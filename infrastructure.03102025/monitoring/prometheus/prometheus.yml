@@ -1,0 +1,33 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  - job_name: 'microservices'
+    dns_sd_configs:
+      - names:
+          - 'tasks.user-service'
+          - 'tasks.field-service'
+          - 'tasks.iot-service'
+          - 'tasks.crop-service'
+          - 'tasks.marketplace-service'
+          - 'tasks.logistics-service'
+          - 'tasks.weather-service'
+          - 'tasks.analytics-service'
+          - 'tasks.notification-service'
+          - 'tasks.blockchain-service'
+          - 'tasks.admin-service'
+        type: 'A'
+        port: 3000

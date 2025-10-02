@@ -25,9 +25,21 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch(err => logger.error('MongoDB connection error:', { error: err.message }));
 
 // Routes
-app.use('/api/devices', require('./routes/deviceRoutes'));
-app.use('/api/telemetry', require('./routes/telemetryRoutes'));
-app.use('/api/alerts', require('./routes/alertRoutes'));
+app.use('/api/iot/devices', require('./routes/deviceRoutes'));
+app.use('/api/iot/telemetry', require('./routes/telemetryRoutes'));
+app.use('/api/iot/alerts', require('./routes/alertRoutes'));
+app.use('/api/iot/maintenance', require('./routes/maintenanceRoutes'));
+app.use('/api/iot/readings', require('./routes/readingRoutes'));
+app.use('/api/iot/analytics', require('./routes/analyticsRoutes'));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    service: SERVICE_NAME,
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
