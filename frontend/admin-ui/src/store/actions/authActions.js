@@ -36,7 +36,7 @@ export const login = (email, password) => async (dispatch) => {
 // Check if user is authenticated
 export const checkAuth = () => async (dispatch) => {
   const token = localStorage.getItem('token');
-  
+  console.log('Checking auth with token:', token);
   if (!token) {
     dispatch(authError());
     return;

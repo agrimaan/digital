@@ -11,7 +11,7 @@ const initialState = {
   loading: false,
   error: null,
   dateRange: {
-    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days ago
     end: new Date().toISOString()
   },
   filters: {
@@ -38,7 +38,7 @@ const analyticsSlice = createSlice({
       state.error = action.payload;
     },
     setDateRange: (state, action) => {
-      state.dateRange = action.payload;
+      state.dateRange = action.payload.toISOString();
     },
     setFilters: (state, action) => {
       state.filters = { ...state.filters, ...action.payload };
