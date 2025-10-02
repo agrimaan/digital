@@ -1,6 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+
 import { 
+  Box,
   Container, 
   Typography, 
   Button, 
@@ -31,31 +33,17 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const NotFoundPage = () => {
+  const navigate = useNavigate()
   const classes = useStyles();
   
   return (
-    <Container maxWidth="md">
-      <Paper className={classes.root}>
-        <Typography variant="h1" className={classes.title}>
-          404
-        </Typography>
-        <Typography variant="h4" gutterBottom>
-          Page Not Found
-        </Typography>
-        <Typography variant="body1" className={classes.subtitle}>
-          The page you are looking for doesn't exist or has been moved.
-        </Typography>
-        <Button
-          component={Link}
-          to="/"
-          variant="contained"
-          color="primary"
-          className={classes.button}
-        >
-          Go to Dashboard
-        </Button>
-      </Paper>
-    </Container>
+    <Box sx={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, p: 2 }}>
+    <Typography variant="h3">404</Typography>
+    <Typography variant="h6">Page not found</Typography>
+    <Button variant="contained" onClick={() => navigate('/admin/users', { replace: true })}>
+    Go to Users
+    </Button>
+    </Box>
   );
 };
 

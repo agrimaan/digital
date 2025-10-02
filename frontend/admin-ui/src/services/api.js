@@ -1,6 +1,6 @@
 import axios from 'axios';
 import store from '../store'
-const API_URL = 'process.env.REACT_APP_API_URL';
+const API_URL = process.env.REACT_APP_API_URL || '/api'
 
 // Create axios instance
 const api = axios.create({

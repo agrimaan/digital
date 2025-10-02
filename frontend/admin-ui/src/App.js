@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import ProfilePage from './pages/ProfilePage'
 import NotFoundPage from './pages/NotFoundPage'
+import UserManagement from './components/admin/UserManagement'
 
 import { checkAuth } from './store/actions/authActions'
 
@@ -48,6 +49,7 @@ return (
 <Route element={<MainLayout />}>
 <Route path="/dashboard" element={<DashboardPage />} />
 <Route path="/profile" element={<ProfilePage />} />
+<Route path="/users" element={<UserManagement />} />
 <Route index element={<Navigate to="/dashboard" replace />} />
 <Route path="*" element={<NotFoundPage />} />
 </Route>
