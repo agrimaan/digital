@@ -34,7 +34,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 .catch(err => logger.error('MongoDB connection error:', err));
 
 // Routes
-app.use('/api/admins', adminRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/dashboards', dashboardRoutes);
 app.use('/api/reports', reportRoutes);

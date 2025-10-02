@@ -18,6 +18,9 @@ export const login = (email, password) => async (dispatch) => {
       password 
     });
 
+    console.log('Login response:', res);
+    // Save token to localStorage
+    localStorage.setItem('token', res.data.token);
     dispatch(loginSuccess(res.data));
     
     // Set token in axios headers

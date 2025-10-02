@@ -6,6 +6,7 @@ const authenticate = (req, res, next) => {
 
   // Skip authentication for login, register, health, and public routes
   if (
+    console.log('Incoming request:', req.method, req.path),
     req.path === '/api/admin/login' ||
     req.path === '/api/auth/register' ||
     req.path === '/health' ||

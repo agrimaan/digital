@@ -76,6 +76,7 @@ const createServiceProxy = (serviceName, path) => createProxyMiddleware({
 });
 
 // Routes
+app.use('/api/admin', createServiceProxy('admin-service', '/api/admin'));
 app.use('/api/auth', createServiceProxy('user-service', '/api/auth'));
 app.use('/api/users', createServiceProxy('user-service', '/api/users'));
 app.use('/api/fields', createServiceProxy('field-service', '/api/fields'));

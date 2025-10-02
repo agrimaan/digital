@@ -122,7 +122,7 @@ describe('User API', () => {
     token = jwt.sign(
       { id: testUser._id, role: testUser.role },
       process.env.JWT_SECRET || 'test-secret',
-      { expiresIn: '1h' }
+    { expiresIn: process.env.JWT_EXPIRE || '1h' }
     );
   });
   
