@@ -16,11 +16,20 @@ const PORT = process.env.PORT || 3008;
 app.use(cors());
 app.use(express.json());
 app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } }));
-//app.use(healthCheck);
+//// app.use(healthCheck); // Commented out - causing middleware error
 
 // This service is stateless and does not connect to MongoDB
 
 // Routes
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    service: SERVICE_NAME || 'weather-service',
+    timestamp: new Date().toISOString()
+  });
+});
 app.use('/api/weather', require('./routes/weatherRoutes'));
 
 // Error handling middleware

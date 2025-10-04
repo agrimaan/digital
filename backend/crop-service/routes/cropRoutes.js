@@ -1,13 +1,13 @@
 
 const express = require('express');
 const Crop = require('../models/Crop');
-const auth = require('../middleware/auth');
+const {protect} = require('../middleware/auth');
 const router = express.Router();
 
 // @route   GET /api/crops
 // @desc    Get all crops for logged in user
 // @access  Private
-router.get('/', auth, async (req, res) => {
+router.get('/', protect, async (req, res) => {
   try {
     const crops = await Crop.find({ farmerId: req.user.id })
       .populate('farmId', 'name location')
@@ -30,7 +30,7 @@ router.get('/', auth, async (req, res) => {
 // @route   GET /api/crops/:id
 // @desc    Get single crop
 // @access  Private
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', protect, async (req, res) => {
   try {
     const crop = await Crop.findOne({ 
       _id: req.params.id, 
@@ -60,7 +60,7 @@ router.get('/:id', auth, async (req, res) => {
 // @route   POST /api/crops
 // @desc    Create new crop
 // @access  Private
-router.post('/', auth, async (req, res) => {
+router.post('/', protect, async (req, res) => {
   try {
     const cropData = {
       ...req.body,
@@ -94,7 +94,7 @@ router.post('/', auth, async (req, res) => {
 // @route   PUT /api/crops/:id
 // @desc    Update crop
 // @access  Private
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', protect, async (req, res) => {
   try {
     let crop = await Crop.findOne({ 
       _id: req.params.id, 
@@ -139,7 +139,7 @@ router.put('/:id', auth, async (req, res) => {
 // @route   DELETE /api/crops/:id
 // @desc    Delete crop
 // @access  Private
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', protect, async (req, res) => {
   try {
     const crop = await Crop.findOne({ 
       _id: req.params.id, 
@@ -171,7 +171,7 @@ router.delete('/:id', auth, async (req, res) => {
 // @route   GET /api/crops/farm/:farmId
 // @desc    Get crops by farm
 // @access  Private
-router.get('/farm/:farmId', auth, async (req, res) => {
+router.get('/farm/:farmId', protect, async (req, res) => {
   try {
     const crops = await Crop.find({ 
       farmId: req.params.farmId, 
@@ -195,7 +195,7 @@ router.get('/farm/:farmId', auth, async (req, res) => {
 // @route   GET /api/crops/health-status
 // @desc    Get crops by health status
 // @access  Private
-router.get('/health-status/:status', auth, async (req, res) => {
+router.get('/health-status/:status', protect, async (req, res) => {
   try {
     const crops = await Crop.find({
       farmerId: req.user.id,
@@ -219,7 +219,7 @@ router.get('/health-status/:status', auth, async (req, res) => {
 // @route   GET /api/crops/stats
 // @desc    Get crop statistics for logged in user
 // @access  Private
-router.get('/stats/overview', auth, async (req, res) => {
+router.get('/stats/overview', protect, async (req, res) => {
   try {
     const stats = await Crop.aggregate([
       { $match: { farmerId: req.user.id } },

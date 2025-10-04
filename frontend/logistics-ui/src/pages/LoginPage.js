@@ -8,94 +8,94 @@ import {
   TextField, 
   Button, 
   Grid, 
-  makeStyles, 
   CircularProgress, 
-  Snackbar 
+  Snackbar,
+  Box,
+  Alert
 } from '@mui/material';
-import { Alert } from '@mui/lab';
+import { useTranslation } from 'react-i18next';
 import { login } from '../store/actions/authActions';
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    height: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.palette.background.default,
-  },
-  paper: {
-    padding: theme.spacing(4),
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    maxWidth: 400,
-  },
-  form: {
-    width: '100%',
-    marginTop: theme.spacing(1),
-  },
-  submit: {
-    margin: theme.spacing(3, 0, 2),
-  },
-  logo: {
-    marginBottom: theme.spacing(3),
-  },
-}));
-
 const LoginPage = () => {
-  const classes = useStyles();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { loading, error } = useSelector(state => state.auth);
-  
+
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
+    password: ''
   });
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  
-  const { email, password } = formData;
-  
+
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     try {
-      await dispatch(login(email, password));
-      navigate('/');
-    } catch (err) {
-      setSnackbarOpen(true);
+      await dispatch(login(formData));
+      navigate('/dashboard');
+    } catch (error) {
+      setSnackbarMessage(error.message || 'Login failed');
+      setOpenSnackbar(true);
     }
   };
-  
+
   const handleCloseSnackbar = () => {
-    setSnackbarOpen(false);
+    setOpenSnackbar(false);
   };
-  
+
   return (
-    <div className={classes.root}>
+    <Box sx={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      background: 'linear-gradient(135deg, #2196f3 0%, #1565c0 100%)'
+    }}>
       <Container component="main" maxWidth="xs">
-        <Paper className={classes.paper} elevation={3}>
-          <Typography variant="h4" className={classes.logo}>
-            Agrimaan Logistics Service
+        <Paper sx={{
+          padding: 4,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          borderRadius: 2,
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+        }} elevation={6}>
+          <img
+            src="/logo192.png"
+            alt="Logo"
+            style={{ width: 80, height: 80, marginBottom: 16 }}
+          />
+          <Typography component="h1" variant="h4" gutterBottom>
+            {t('logistics.login.title')}
           </Typography>
-          <Typography component="h1" variant="h5">
-            Sign in
+          <Typography variant="body1" color="textSecondary" gutterBottom>
+            {t('logistics.login.subtitle')}
           </Typography>
-          <form className={classes.form} onSubmit={handleSubmit}>
+          
+          <Box component="form" onSubmit={handleSubmit} sx={{
+            width: '100%',
+            marginTop: 2
+          }}>
             <TextField
               variant="outlined"
               margin="normal"
               required
               fullWidth
               id="email"
-              label="Email Address"
+              label={t('common.email')}
               name="email"
               autoComplete="email"
               autoFocus
-              value={email}
+              value={formData.email}
               onChange={handleChange}
             />
             <TextField
@@ -104,11 +104,11 @@ const LoginPage = () => {
               required
               fullWidth
               name="password"
-              label="Password"
+              label={t('common.password')}
               type="password"
               id="password"
               autoComplete="current-password"
-              value={password}
+              value={formData.password}
               onChange={handleChange}
             />
             <Button
@@ -116,31 +116,33 @@ const LoginPage = () => {
               fullWidth
               variant="contained"
               color="primary"
-              className={classes.submit}
+              sx={{
+                margin: '24px 0 16px',
+                padding: '12px',
+                fontSize: '1.1rem'
+              }}
               disabled={loading}
             >
-              {loading ? <CircularProgress size={24} /> : 'Sign In'}
+              {loading ? (
+                <CircularProgress size={24} />
+              ) : (
+                t('logistics.login.signIn')
+              )}
             </Button>
-            <Grid container>
-              <Grid item xs>
-                <Button color="primary" size="small">
-                  Forgot password?
-                </Button>
-              </Grid>
-            </Grid>
-          </form>
+          </Box>
         </Paper>
-        <Snackbar 
-          open={snackbarOpen} 
-          autoHideDuration={6000} 
-          onClose={handleCloseSnackbar}
-        >
-          <Alert onClose={handleCloseSnackbar} severity="error">
-            {error || 'Login failed. Please check your credentials.'}
-          </Alert>
-        </Snackbar>
       </Container>
-    </div>
+
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+      >
+        <Alert onClose={handleCloseSnackbar} severity="error">
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+    </Box>
   );
 };
 

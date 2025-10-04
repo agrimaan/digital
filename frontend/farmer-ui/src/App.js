@@ -1,24 +1,21 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { useDispatch } from 'react-redux';
 
-// Pages
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { useDispatch, useSelector } from 'react-redux';
+import CssBaseline from '@mui/material/CssBaseline';
+
+// Layout and Pages
+import MainLayout from './components/layout/MainLayout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
-//import store from './store';
 
-
-// Components
-import ProtectedRoute from './utils/ProtectedRoute';
-import Layout from './components/layout/Layout';
-
-// Actions
+// Auth actions
 import { checkAuth } from './store/actions/authActions';
 
+// Create theme with proper configuration
 const theme = createTheme({
   palette: {
     primary: {
@@ -32,11 +29,11 @@ const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: [
-      'Roboto',
-      'Arial',
-      'sans-serif',
-    ].join(','),
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+  },
+  spacing: 8, // Add spacing function
+  shape: {
+    borderRadius: 4,
   },
   components: {
     MuiButton: {
@@ -57,24 +54,20 @@ const theme = createTheme({
   },
 });
 
-// Wrapper component for protected routes with layout
-const ProtectedRouteWithLayout = ({ component: Component, allowedRoles }) => {
-  return (
-    <ProtectedRoute 
-      component={() => (
-        <Layout>
-          <Component />
-        </Layout>
-      )} 
-      allowedRoles={allowedRoles} 
-    />
-  );
+// Private route component to protect authenticated pages
+const PrivateRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useSelector(state => state.auth);
+
+  if (loading) {
+    return <div>Loading...</div>; // Or a spinner component
+  }
+
+  return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
 function App() {
   const dispatch = useDispatch();
 
-  // Check authentication status on app load
   useEffect(() => {
     dispatch(checkAuth());
   }, [dispatch]);
@@ -82,45 +75,28 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
         <Routes>
-          {/* Public Routes */}
+          {/* Public Route */}
           <Route path="/login" element={<LoginPage />} />
-          
-          {/* Protected Routes with Layout */}
-          <Route 
-            path="/" 
-            element={<ProtectedRouteWithLayout component={DashboardPage} allowedRoles={['farmer']} />} 
+
+          {/* Protected Routes */}
+          <Route
+            path="/*"
+            element={
+              <PrivateRoute>
+                <MainLayout>
+                  <Routes>
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    {/* Default route after login */}
+                    <Route path="/" element={<Navigate to="/dashboard" />} />
+                    <Route path="*" element={<NotFoundPage />} />
+                  </Routes>
+                </MainLayout>
+              </PrivateRoute>
+            }
           />
-          <Route 
-            path="/profile" 
-            element={<ProtectedRouteWithLayout component={ProfilePage} allowedRoles={['farmer']} />} 
-          />
-          <Route 
-            path="/farms" 
-            element={<ProtectedRouteWithLayout component={() => <h1>Farms Page</h1>} allowedRoles={['farmer']} />} 
-          />
-          <Route 
-            path="/crops" 
-            element={<ProtectedRouteWithLayout component={() => <h1>Crops Page</h1>} allowedRoles={['farmer']} />} 
-          />
-          <Route 
-            path="/marketplace" 
-            element={<ProtectedRouteWithLayout component={() => <h1>Marketplace Page</h1>} allowedRoles={['farmer']} />} 
-          />
-          <Route 
-            path="/weather" 
-            element={<ProtectedRouteWithLayout component={() => <h1>Weather Page</h1>} allowedRoles={['farmer']} />} 
-          />
-          <Route 
-            path="/settings" 
-            element={<ProtectedRouteWithLayout component={() => <h1>Settings Page</h1>} allowedRoles={['farmer']} />} 
-          />
-          
-          {/* 404 Route */}
-          <Route path="*" element={<NotFoundPage />} />
         </Routes>
-      </Router>
     </ThemeProvider>
   );
 }

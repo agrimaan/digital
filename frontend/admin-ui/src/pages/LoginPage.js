@@ -1,6 +1,8 @@
+
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   Container, 
   Paper, 
@@ -10,14 +12,15 @@ import {
   Grid, 
   CircularProgress, 
   Snackbar,
-  Box
+  Box,
+  Alert
 } from '@mui/material';
-import { Alert } from '@mui/lab';
 import { login } from '../store/actions/authActions';
 
 const LoginPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { loading, error } = useSelector(state => state.auth);
   
   const [formData, setFormData] = useState({
@@ -25,9 +28,10 @@ const LoginPage = () => {
     password: '',
   });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   
   const { email, password } = formData;
-
+  
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -35,9 +39,10 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await dispatch(login(email, password));
-      navigate('/');
+      await dispatch(login(formData));
+      navigate('/dashboard');
     } catch (err) {
+      setSnackbarMessage(err.message || 'Login failed');
       setSnackbarOpen(true);
     }
   };
@@ -47,47 +52,44 @@ const LoginPage = () => {
   };
   
   return (
-    <Box
-      sx={{
-        height: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
-      }}
-    >
+    <Box sx={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      background: 'linear-gradient(135deg, #9c27b0 0%, #6a1b9a 100%)'
+    }}>
       <Container component="main" maxWidth="xs">
-        <Paper 
-          elevation={3} 
-          sx={{
-            padding: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            maxWidth: 400,
-          }}
-        >
-          <Typography variant="h4" sx={{ marginBottom: 3, color: 'primary.main' }}>
-            Agrimaan Admin Service
+        <Paper sx={{
+          padding: 4,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          borderRadius: 2,
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+        }} elevation={6}>
+          <img
+            src="/logo192.png"
+            alt="Logo"
+            style={{ width: 80, height: 80, marginBottom: 16 }}
+          />
+          <Typography component="h1" variant="h4" gutterBottom>
+            {t('admin.login.title')}
           </Typography>
-          <Typography component="h1" variant="h5">
-            Sign in
+          <Typography variant="body1" color="textSecondary" gutterBottom>
+            {t('admin.login.subtitle')}
           </Typography>
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            sx={{
-              width: '100%',
-              marginTop: 1,
-            }}
-          >
+          
+          <Box component="form" onSubmit={handleSubmit} sx={{
+            width: '100%',
+            marginTop: 2
+          }}>
             <TextField
               variant="outlined"
               margin="normal"
               required
               fullWidth
               id="email"
-              label="Email Address"
+              label={t('common.email')}
               name="email"
               autoComplete="email"
               autoFocus
@@ -100,7 +102,7 @@ const LoginPage = () => {
               required
               fullWidth
               name="password"
-              label="Password"
+              label={t('common.password')}
               type="password"
               id="password"
               autoComplete="current-password"
@@ -113,16 +115,22 @@ const LoginPage = () => {
               variant="contained"
               color="primary"
               sx={{
-                margin: (theme) => theme.spacing(3, 0, 2),
+                margin: '24px 0 16px',
+                padding: '12px',
+                fontSize: '1.1rem'
               }}
               disabled={loading}
             >
-              {loading ? <CircularProgress size={24} /> : 'Sign In'}
+              {loading ? (
+                <CircularProgress size={24} />
+              ) : (
+                t('admin.login.signIn')
+              )}
             </Button>
             <Grid container>
               <Grid item xs>
                 <Button color="primary" size="small">
-                  Forgot password?
+                  {t('auth.forgotPassword')}
                 </Button>
               </Grid>
             </Grid>
@@ -134,7 +142,7 @@ const LoginPage = () => {
           onClose={handleCloseSnackbar}
         >
           <Alert onClose={handleCloseSnackbar} severity="error">
-            {error || 'Login failed. Please check your credentials.'}
+            {snackbarMessage || error || t('auth.loginError')}
           </Alert>
         </Snackbar>
       </Container>

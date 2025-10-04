@@ -1,5 +1,8 @@
 {
     "name": "agrimaan-monorepo",
     "version": "1.0.0",
-    "private": true
-  }
+    "private": true,
+    "dependencies": {
+        "react-i18next": "^16.0.0"
+    }
+}

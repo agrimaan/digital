@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3007;
 app.use(cors());
 app.use(express.json());
 app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } }));
-//app.use(healthCheck);
+//// app.use(healthCheck); // Commented out - causing middleware error
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)
@@ -25,6 +25,15 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch(err => logger.error('MongoDB connection error:', { error: err.message }));
 
 // Routes
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    service: SERVICE_NAME || 'logistics-service',
+    timestamp: new Date().toISOString()
+  });
+});
 app.use('/api/shipments', require('./routes/shipmentRoutes'));
 app.use('/api/vehicles', require('./routes/vehicleRoutes'));
 

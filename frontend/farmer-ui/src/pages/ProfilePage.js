@@ -1,310 +1,156 @@
+
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
+  Container, 
   Paper, 
   Typography, 
-  Grid, 
   TextField, 
   Button, 
-  Avatar, 
-  Divider 
+  Grid, 
+  CircularProgress, 
+  Snackbar,
+  Box,
+  Alert
 } from '@mui/material';
-import { makeStyles } from '@mui/styles'; // For the legacy makeStyles hook
+import { login } from '../store/actions/authActions';
 
-import api from '../services/api';
+const LoginPage = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { loading, error } = useSelector(state => state.auth);
 
-const useStyles = makeStyles((theme) => ({
-  paper: {
-    padding: theme.spacing(3),
-  },
-  title: {
-    marginBottom: theme.spacing(3),
-  },
-  avatar: {
-    width: theme.spacing(12),
-    height: theme.spacing(12),
-    marginBottom: theme.spacing(2),
-  },
-  form: {
-    marginTop: theme.spacing(3),
-  },
-  submitButton: {
-    marginTop: theme.spacing(2),
-  },
-  divider: {
-    margin: theme.spacing(3, 0),
-  },
-}));
-
-const ProfilePage = () => {
-  const classes = useStyles();
-  const { user } = useSelector(state => state.auth);
-  
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    address: user?.address || '',
+    email: '',
+    password: ''
   });
-  
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-  
-  const [status, setStatus] = useState({
-    loading: false,
-    success: false,
-    error: null,
-  });
-  
+
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]: e.target.value
     });
   };
-  
-  const handlePasswordChange = (e) => {
-    setPasswordData({
-      ...passwordData,
-      [e.target.name]: e.target.value,
-    });
-  };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setStatus({ loading: true, success: false, error: null });
     
     try {
-      // Replace with actual API endpoint
-      // await api.put('/users/profile', formData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setStatus({
-        loading: false,
-        success: true,
-        error: null,
-      });
-    } catch (error) {
-      setStatus({
-        loading: false,
-        success: false,
-        error: error.response?.data?.message || 'Failed to update profile',
-      });
+      await dispatch(login(formData));
+      navigate('/dashboard');
+    } catch (err) {
+      setSnackbarMessage(err.message || 'Login failed');
+      setOpenSnackbar(true);
     }
   };
-  
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setStatus({
-        loading: false,
-        success: false,
-        error: 'New passwords do not match',
-      });
-      return;
-    }
-    
-    setStatus({ loading: true, success: false, error: null });
-    
-    try {
-      // Replace with actual API endpoint
-      // await api.put('/users/password', {
-      //   currentPassword: passwordData.currentPassword,
-      //   newPassword: passwordData.newPassword,
-      // });
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setStatus({
-        loading: false,
-        success: true,
-        error: null,
-      });
-      
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
-    } catch (error) {
-      setStatus({
-        loading: false,
-        success: false,
-        error: error.response?.data?.message || 'Failed to update password',
-      });
-    }
+
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
   };
-  
+
   return (
-    <div>
-      <Typography variant="h4" className={classes.title}>
-        Profile
-      </Typography>
-      
-      <Paper className={classes.paper}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={4} container direction="column" alignItems="center">
-            <Avatar className={classes.avatar}>
-              {user?.name?.charAt(0) || 'U'}
-            </Avatar>
-            <Typography variant="h6">{user?.name}</Typography>
-            <Typography variant="body2" color="textSecondary">
-              {user?.role || 'User'}
-            </Typography>
-          </Grid>
+    <Box sx={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)'
+    }}>
+      <Container component="main" maxWidth="xs">
+        <Paper sx={{
+          padding: 4,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          borderRadius: 2,
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+        }} elevation={6}>
+          <img
+            src="/logo192.png"
+            alt="Logo"
+            style={{ width: 80, height: 80, marginBottom: 16 }}
+          />
+          <Typography component="h1" variant="h4" gutterBottom>
+            {t('farmer.login.title')}
+          </Typography>
+          <Typography variant="body1" color="textSecondary" gutterBottom>
+            {t('farmer.login.subtitle')}
+          </Typography>
           
-          <Grid item xs={12} md={8}>
-            <form className={classes.form} onSubmit={handleSubmit}>
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <Typography variant="h6">Personal Information</Typography>
-                </Grid>
-                
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Name"
-                    name="name"
-                    variant="outlined"
-                    value={formData.name}
-                    onChange={handleChange}
-                  />
-                </Grid>
-                
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    name="email"
-                    variant="outlined"
-                    value={formData.email}
-                    onChange={handleChange}
-                    disabled
-                  />
-                </Grid>
-                
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Phone"
-                    name="phone"
-                    variant="outlined"
-                    value={formData.phone}
-                    onChange={handleChange}
-                  />
-                </Grid>
-                
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Address"
-                    name="address"
-                    variant="outlined"
-                    value={formData.address}
-                    onChange={handleChange}
-                    multiline
-                    rows={3}
-                  />
-                </Grid>
-                
-                <Grid item xs={12}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    color="primary"
-                    className={classes.submitButton}
-                    disabled={status.loading}
-                  >
-                    {status.loading ? 'Updating...' : 'Update Profile'}
-                  </Button>
-                  
-                  {status.success && (
-                    <Typography color="primary" style={{ marginTop: 8 }}>
-                      Profile updated successfully!
-                    </Typography>
-                  )}
-                  
-                  {status.error && (
-                    <Typography color="error" style={{ marginTop: 8 }}>
-                      {status.error}
-                    </Typography>
-                  )}
-                </Grid>
+          <Box component="form" onSubmit={handleSubmit} sx={{
+            width: '100%',
+            marginTop: 2
+          }}>
+            <TextField
+              variant="outlined"
+              margin="normal"
+              required
+              fullWidth
+              id="email"
+              label={t('common.email')}
+              name="email"
+              autoComplete="email"
+              autoFocus
+              value={formData.email}
+              onChange={handleChange}
+            />
+            <TextField
+              variant="outlined"
+              margin="normal"
+              required
+              fullWidth
+              name="password"
+              label={t('common.password')}
+              type="password"
+              id="password"
+              autoComplete="current-password"
+              value={formData.password}
+              onChange={handleChange}
+            />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              color="primary"
+              sx={{
+                margin: '24px 0 16px',
+                padding: '12px',
+                fontSize: '1.1rem'
+              }}
+              disabled={loading}
+            >
+              {loading ? (
+                <CircularProgress size={24} />
+              ) : (
+                t('farmer.login.signIn')
+              )}
+            </Button>
+            <Grid container>
+              <Grid item xs>
+                <Button color="primary" size="small">
+                  {t('auth.forgotPassword')}
+                </Button>
               </Grid>
-            </form>
-            
-            <Divider className={classes.divider} />
-            
-            <form onSubmit={handlePasswordSubmit}>
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <Typography variant="h6">Change Password</Typography>
-                </Grid>
-                
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Current Password"
-                    name="currentPassword"
-                    type="password"
-                    variant="outlined"
-                    value={passwordData.currentPassword}
-                    onChange={handlePasswordChange}
-                    required
-                  />
-                </Grid>
-                
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="New Password"
-                    name="newPassword"
-                    type="password"
-                    variant="outlined"
-                    value={passwordData.newPassword}
-                    onChange={handlePasswordChange}
-                    required
-                  />
-                </Grid>
-                
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Confirm New Password"
-                    name="confirmPassword"
-                    type="password"
-                    variant="outlined"
-                    value={passwordData.confirmPassword}
-                    onChange={handlePasswordChange}
-                    required
-                  />
-                </Grid>
-                
-                <Grid item xs={12}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    color="primary"
-                    className={classes.submitButton}
-                    disabled={status.loading}
-                  >
-                    {status.loading ? 'Updating...' : 'Change Password'}
-                  </Button>
-                </Grid>
-              </Grid>
-            </form>
-          </Grid>
-        </Grid>
-      </Paper>
-    </div>
+            </Grid>
+          </Box>
+        </Paper>
+        <Snackbar 
+          open={openSnackbar} 
+          autoHideDuration={6000} 
+          onClose={handleCloseSnackbar}
+        >
+          <Alert onClose={handleCloseSnackbar} severity="error">
+            {snackbarMessage || error || t('auth.loginError')}
+          </Alert>
+        </Snackbar>
+      </Container>
+    </Box>
   );
 };
 
-export default ProfilePage;
+export default LoginPage;

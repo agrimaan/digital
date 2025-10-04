@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3003;
 app.use(cors());
 app.use(express.json());
 app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } }));
-app.use(healthCheck);
+//app.use(healthCheck);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)
