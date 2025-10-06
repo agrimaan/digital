@@ -24,6 +24,7 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => logger.info('MongoDB connected'))
   .catch(err => logger.error('MongoDB connection error:', { error: err.message }));
 
+console.log("within api gateway server.js");
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));

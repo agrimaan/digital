@@ -3,19 +3,24 @@ const jwt = require('jsonwebtoken');
 
 // Authentication middleware
 const authenticate = (req, res, next) => {
-
+  console.log('Incoming request within routes.js123:', req.method, req.path);
   // Skip authentication for login, register, health, and public routes
   if (
-    console.log('Incoming request:', req.method, req.path),
-    req.path === '/api/admin/login' ||
+    req.path === '/api/auth/login' ||
     req.path === '/api/auth/register' ||
+    req.path === '/api/auth/me' ||  // Add this if it should be public
     req.path === '/health' ||
-    req.path.startsWith('/api/public')
+    req.path === '/favicon.ico' ||  // Add this
+    req.path === '/logo192.png' ||  // Add this
+    req.path.startsWith('/api/public') ||
+    req.path.startsWith('/static/')  // Add this for static files
   ) {
     return next();
   }
 
   const token = req.headers.authorization?.split(' ')[1];
+  console.log ('token is:', token);
+
 
   if (!token) {
     return res.status(401).json({ message: 'Authentication required' });
@@ -50,15 +55,17 @@ const handleProxyError = (err, req, res, next) => {
 module.exports = (app) => {
   app.use(authenticate);
 
-  // ---------------------------
-  // ADMIN SERVICE
+    // ---------------------------
+  // USER SERVICE
   // ---------------------------
 
-  app.use('/api/admin', createProxyMiddleware({
-    target: process.env.ADMIN_SERVICE_URL || 'http://localhost:3012',
+  
+
+  app.use('/api/auth', createProxyMiddleware({
+    target: process.env.USER_SERVICE_URL || 'http://localhost:3002',
     changeOrigin: true,
-    logLevel: 'debug', 
-    pathRewrite: { '^/api/admin': '/api/admin' },
+    logLevel: 'debug',
+    pathRewrite: { '^/api/auth': '/api/auth' },
     onError: handleProxyError,
 
     // Forward JSON body to the backend
@@ -69,14 +76,10 @@ module.exports = (app) => {
         proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
         proxyReq.write(bodyData);
       }
-
       console.log(`➡️ Proxying request: ${req.method} ${req.originalUrl}`);
     }
   }));
 
-  // ---------------------------
-  // USER SERVICE
-  // ---------------------------
 
   app.use('/api/users', createProxyMiddleware({
     target: process.env.USER_SERVICE_URL || 'http://localhost:3002',
@@ -268,11 +271,24 @@ module.exports = (app) => {
   // ---------------------------
   // ADMIN SERVICE
   // ---------------------------
+
   app.use('/api/admin', createProxyMiddleware({
     target: process.env.ADMIN_SERVICE_URL || 'http://localhost:3012',
     changeOrigin: true,
-    logLevel: 'debug',
-    pathRewrite: { '^/api/admin': '/admin' },
-    onError: handleProxyError
+    logLevel: 'debug', 
+    pathRewrite: { '^/api/admin': '/api/admin' },
+    onError: handleProxyError,
+
+    // Forward JSON body to the backend
+    onProxyReq: (proxyReq, req, res) => {
+      if (req.body && Object.keys(req.body).length) {
+        const bodyData = JSON.stringify(req.body);
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
+
+      console.log(`➡️ Proxying request: ${req.method} ${req.originalUrl}`);
+    }
   }));
-};
+}

@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3004;
 app.use(cors());
 app.use(express.json());
 app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } }));
-//// app.use(healthCheck); // Commented out - causing middleware error
+// app.use(healthCheck); // Commented out - causing middleware error
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)

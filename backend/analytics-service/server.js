@@ -29,7 +29,7 @@ app.use(morgan('combined', {
 }));
 
 // 3. Use healthCheck middleware directly
-//// app.use(healthCheck); // Commented out - causing middleware error
+// app.use(healthCheck); // Commented out - causing middleware error
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)

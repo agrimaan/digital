@@ -72,6 +72,8 @@ router.post('/register', [
     });
   }
 });
+console.log("within user-service just before login post");
+
 
 // @route   POST /api/auth/login
 // @desc    Login user and return JWT token
