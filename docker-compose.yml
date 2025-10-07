@@ -420,90 +420,15 @@ services:
     networks:
       - agrimaan-network
 
-  # Frontend Services
-  farmer-frontend:
-    build: ./frontend/farmer-ui
-    container_name: agrimaan-farmer-frontend
+  # Agrimaan Services
+  agrimaan-frontend:
+    build: ./frontend
+    container_name: agrimaan-frontend
     restart: always
     ports:
       - "5001:5001"
     environment:
       - PORT=5001
-      - API_GATEWAY_URL=http://api-gateway:3000
-      - NODE_ENV=development
-    depends_on:
-      - api-gateway
-    networks:
-      - agrimaan-network
-
-  buyer-frontend:
-    build: ./frontend/buyer-ui
-    container_name: agrimaan-buyer-frontend
-    restart: always
-    ports:
-      - "5002:5002"
-    environment:
-      - PORT=5002
-      - API_GATEWAY_URL=http://api-gateway:3000
-      - NODE_ENV=development
-    depends_on:
-      - api-gateway
-    networks:
-      - agrimaan-network
-
-  logistics-frontend:
-    build: ./frontend/logistics-ui
-    container_name: agrimaan-logistics-frontend
-    restart: always
-    ports:
-      - "5003:5003"
-    environment:
-      - PORT=5003
-      - API_GATEWAY_URL=http://api-gateway:3000
-      - NODE_ENV=development
-    depends_on:
-      - api-gateway
-    networks:
-      - agrimaan-network
-
-  investor-frontend:
-    build: ./frontend/investor-ui
-    container_name: agrimaan-investor-frontend
-    restart: always
-    ports:
-      - "5004:5004"
-    environment:
-      - PORT=5004
-      - API_GATEWAY_URL=http://api-gateway:3000
-      - NODE_ENV=development
-    depends_on:
-      - api-gateway
-    networks:
-      - agrimaan-network
-
-  agronomist-frontend:
-    build: ./frontend/agronomist-ui
-    container_name: agrimaan-agronomist-frontend
-    restart: always
-    ports:
-      - "5005:5005"
-    environment:
-      - PORT=5005
-      - API_GATEWAY_URL=http://api-gateway:3000
-      - NODE_ENV=development
-    depends_on:
-      - api-gateway
-    networks:
-      - agrimaan-network
-
-  admin-frontend:
-    build: ./frontend/admin-ui
-    container_name: agrimaan-admin-frontend
-    restart: always
-    ports:
-      - "5006:5006"
-    environment:
-      - PORT=5006
       - API_GATEWAY_URL=http://api-gateway:3000
       - NODE_ENV=development
     depends_on:
