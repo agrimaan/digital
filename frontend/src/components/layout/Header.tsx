@@ -1,58 +1,42 @@
 import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Link as RouterLink } from 'react-router-dom';
-import {
-  AppBar,
-  Avatar,
-  Badge,
-  Box,
-  IconButton,
-  Menu,
-  MenuItem,
-  Toolbar,
-  Tooltip,
-  Typography
-} from '@mui/material';
-import {
-  Menu as MenuIcon,
-  Notifications as NotificationsIcon,
-  AccountCircle,
-  Settings as SettingsIcon,
-  Logout as LogoutIcon
-} from '@mui/icons-material';
-import LanguageSelector from '../common/LanguageSelector';
-
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, AppDispatch } from '../../store';
 import { logout } from '../../features/auth/authSlice';
-import { RootState } from '../../store';
+import { AppBar, Toolbar, IconButton, Typography, Button, Avatar, Menu, MenuItem } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '../common/LanguageSwitcher';
 
+// FIX: Define the props the Header component will accept
 interface HeaderProps {
-  open: boolean;
-  toggleDrawer: () => void;
+  handleDrawerToggle: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ open, toggleDrawer }) => {
-  const dispatch = useDispatch();
+const Header: React.FC<HeaderProps> = ({ handleDrawerToggle }) => {
+  const { t } = useTranslation();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
-  
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [notificationsAnchorEl, setNotificationsAnchorEl] = React.useState<null | HTMLElement>(null);
-  
-  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+
+  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
-  
-  const handleNotificationsMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setNotificationsAnchorEl(event.currentTarget);
-  };
-  
-  const handleMenuClose = () => {
+
+  const handleClose = () => {
     setAnchorEl(null);
-    setNotificationsAnchorEl(null);
   };
-  
+
   const handleLogout = () => {
-    handleMenuClose();
     dispatch(logout());
+    navigate('/login');
+    handleClose();
+  };
+
+  const handleProfile = () => {
+    navigate(`/${user?.role}/profile`);
+    handleClose();
   };
 
   return (
@@ -60,185 +44,59 @@ const Header: React.FC<HeaderProps> = ({ open, toggleDrawer }) => {
       position="fixed"
       sx={{
         zIndex: (theme) => theme.zIndex.drawer + 1,
-        transition: (theme) =>
-          theme.transitions.create(['width', 'margin'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-          }),
-        ...(open && {
-          transition: (theme) =>
-            theme.transitions.create(['width', 'margin'], {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.enteringScreen,
-            }),
-        }),
       }}
     >
       <Toolbar>
         <IconButton
-          edge="start"
           color="inherit"
           aria-label="open drawer"
-          onClick={toggleDrawer}
-          sx={{ mr: 2 }}
+          edge="start"
+          onClick={handleDrawerToggle}
+          sx={{ mr: 2, display: { sm: 'none' } }}
         >
           <MenuIcon />
         </IconButton>
-        
-        <Typography
-          component={RouterLink}
-          to="/"
-          variant="h6"
-          color="inherit"
-          noWrap
-          sx={{
-            flexGrow: 1,
-            textDecoration: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1
-          }}
-        >
-          <Box
-            component="img"
-            src="/images/Logo.png"
-            alt="Agrimaan Logo"
-            sx={{ height: 38, width: 44, display: { xs: 'none', sm: 'block' } }}
-          />
+        <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
           Agrimaan
         </Typography>
-
-        {/* Language Selector */}
-        <Box sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }}>
-          <LanguageSelector variant="chip" size="medium" />
-        </Box>
-        
-        {/* Notifications */}
-        <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
-          <IconButton
-            size="large"
-            aria-label="show new notifications"
-            color="inherit"
-            onClick={handleNotificationsMenuOpen}
-          >
-            <Badge badgeContent={3} color="error">
-              <NotificationsIcon />
-            </Badge>
-          </IconButton>
-        </Box>
-        
-        {/* User Profile */}
-        <Tooltip title="Account settings">
-          <IconButton
-            size="large"
-            edge="end"
-            aria-label="account of current user"
-            aria-haspopup="true"
-            onClick={handleProfileMenuOpen}
-            color="inherit"
-          >
-            {user?.profileImage ? (
-              <Avatar
-                alt={user.name}
-                src={user.profileImage}
-                sx={{ width: 32, height: 32 }}
-              />
-            ) : (
-              <AccountCircle />
-            )}
-          </IconButton>
-        </Tooltip>
+        <LanguageSwitcher />
+        {user ? (
+          <div>
+            <IconButton
+              size="large"
+              aria-label="account of current user"
+              aria-controls="menu-appbar"
+              aria-haspopup="true"
+              onClick={handleMenu}
+              color="inherit"
+            >
+              <Avatar src={user.profileImage || undefined} alt={user.name} />
+            </IconButton>
+            <Menu
+              id="menu-appbar"
+              anchorEl={anchorEl}
+              anchorOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              keepMounted
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              open={Boolean(anchorEl)}
+              onClose={handleClose}
+            >
+              <MenuItem onClick={handleProfile}>{t('common.profile')}</MenuItem>
+              <MenuItem onClick={handleLogout}>{t('auth.logout')}</MenuItem>
+            </Menu>
+          </div>
+        ) : (
+          <Button color="inherit" component={RouterLink} to="/login">
+            {t('auth.login')}
+          </Button>
+        )}
       </Toolbar>
-      
-      {/* Profile Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        id="account-menu"
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-      >
-        <Box sx={{ px: 2, py: 1 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-            {user?.name}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {user?.email}
-          </Typography>
-          <Typography variant="caption" color="primary" sx={{ textTransform: 'capitalize' }}>
-            {user?.role}
-          </Typography>
-        </Box>
-        
-        <MenuItem component={RouterLink} to="/profile" onClick={handleMenuClose}>
-          <AccountCircle sx={{ mr: 2 }} /> Profile
-        </MenuItem>
-        
-        <MenuItem component={RouterLink} to="/settings" onClick={handleMenuClose}>
-          <SettingsIcon sx={{ mr: 2 }} /> Settings
-        </MenuItem>
-        
-        <MenuItem onClick={handleLogout}>
-          <LogoutIcon sx={{ mr: 2 }} /> Logout
-        </MenuItem>
-      </Menu>
-      
-      {/* Notifications Menu */}
-      <Menu
-        anchorEl={notificationsAnchorEl}
-        id="notifications-menu"
-        open={Boolean(notificationsAnchorEl)}
-        onClose={handleMenuClose}
-        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-      >
-        <Box sx={{ px: 2, py: 1 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-            Notifications
-          </Typography>
-        </Box>
-        
-        <MenuItem onClick={handleMenuClose}>
-          <Box>
-            <Typography variant="body2">Soil moisture low in Fields 1</Typography>
-            <Typography variant="caption" color="text.secondary">
-              10 minutes ago
-            </Typography>
-          </Box>
-        </MenuItem>
-        
-        <MenuItem onClick={handleMenuClose}>
-          <Box>
-            <Typography variant="body2">Weather alert: Heavy rain expected</Typography>
-            <Typography variant="caption" color="text.secondary">
-              1 hour ago
-            </Typography>
-          </Box>
-        </MenuItem>
-        
-        <MenuItem onClick={handleMenuClose}>
-          <Box>
-            <Typography variant="body2">Pest risk detected in Wheat crop</Typography>
-            <Typography variant="caption" color="text.secondary">
-              Yesterday
-            </Typography>
-          </Box>
-        </MenuItem>
-        
-        <Box sx={{ textAlign: 'center', p: 1 }}>
-          <Typography
-            component={RouterLink}
-            to="/notifications"
-            variant="body2"
-            color="primary"
-            sx={{ textDecoration: 'none' }}
-            onClick={handleMenuClose}
-          >
-            View all notifications
-          </Typography>
-        </Box>
-      </Menu>
     </AppBar>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch } from '../../store';
@@ -23,15 +23,12 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import { setAlert } from '../../features/alert/alertSlice'; // Import setAlert
+import { setAlert } from '../../features/alert/alertSlice';
 
 import { login } from '../../features/auth/authSlice';
 import { languages } from '../../i18n';
 
 // helpers
-const normRole = (u?: any) =>
-  (u?.role ?? u?.userType ?? '').toString().trim().toLowerCase();
-
 const homeForRole = (role?: string) => {
   switch ((role ?? '').toLowerCase()) {
     case 'farmer':
@@ -56,7 +53,7 @@ const Login: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
-  const { loading, error, isAuthenticated, user } = useSelector(
+  const { loading, error, user } = useSelector(
     (state: RootState) => state.auth
   );
 
@@ -69,13 +66,8 @@ const Login: React.FC = () => {
     localStorage.setItem('preferredLanguage', languageCode);
   };
 
-  // Redirect after login success
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      const role = normRole(user);
-      navigate(homeForRole(role));
-    }
-  }, [isAuthenticated, user, navigate]);
+  // FIX: THE REDIRECT LOGIC HAS BEEN REMOVED FROM THIS COMPONENT
+  // The routing is now handled centrally in App.tsx
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -84,11 +76,14 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      await dispatch(login({ email, password })).unwrap();
-      // no navigate here — handled by useEffect
+      const result = await dispatch(login({ email, password })).unwrap();
+      // On successful login, navigate to the correct dashboard
+      if (result.user) {
+        navigate(homeForRole(result.user.role));
+      }
       dispatch(
         setAlert({
-          message: 'Login Successfull.',
+          message: 'Login Successful.',
           type: 'success',
         }) as any
       );
