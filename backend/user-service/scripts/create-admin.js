@@ -7,7 +7,7 @@
 
 require('dotenv').config();
 const mongoose = require('mongoose');
-const Admin = require('../models/Admin');
+const User = require('../models/User');
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
@@ -19,24 +19,25 @@ mongoose.connect(process.env.MONGODB_URI, {
   
   try {
     // Check if admin user already exists
-    const existingAdmin = await Admin.findOne({ email: 'admin@agrimaan.io' });
+    const existingAdmin = await User.findOne({ email: 'admin@agrimaan.io' });
     
     if (existingAdmin) {
-      console.log('Admin user already exists');
+      console.log('User user already exists');
       mongoose.disconnect();
       return;
     }
     
     // Create admin user
-    const adminUser = new Admin({
-      name: 'Agrimaan Admin',
+    const adminUser = new User({
+      firstName: 'Agrimaan',
+      lastName: 'Admin',
       email: 'admin@agrimaan.io',
       password: 'uu4491nj', // Will be hashed by the pre-save hook
       phone: '+911234567890',
       role: 'admin',
       isSystemAdmin: true,
       address: {
-        street: 'Admin Office',
+        street: 'User Office',
         city: 'Agrimaan HQ',
         state: 'Lucknow',
         country: 'India',
@@ -45,7 +46,7 @@ mongoose.connect(process.env.MONGODB_URI, {
     });
     
     await adminUser.save();
-    console.log('Admin user created successfully');
+    console.log('User user created successfully');
     
     mongoose.disconnect();
   } catch (err) {
