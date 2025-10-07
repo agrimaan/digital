@@ -21,6 +21,24 @@ import { AppDispatch, RootState } from '../../store';
 import { createFields } from '../../features/fields/fieldSlice';
 import { useTranslation } from 'react-i18next';
 
+// Helper function to map irrigation system types
+function mapIrrigationSystem(system: string): 'flood' | 'drip' | 'sprinkler' | 'none' | 'other' {
+  switch (system?.toLowerCase()) {
+    case 'drip':
+      return 'drip';
+    case 'sprinkler':
+      return 'sprinkler';
+    case 'surface irrigation':
+      return 'flood';
+    case 'subsurface irrigation':
+      return 'other';
+    case 'none':
+      return 'none';
+    default:
+      return 'other';
+  }
+}
+
 interface FieldFormData {
   name: string;
   size: string;
@@ -126,24 +144,19 @@ const AddField: React.FC = () => {
     try {
       const newField = {
         name: formData.name,
-        area: {
-          value: parseFloat(formData.size),
-          unit: formData.unit
-        },
+        area: parseFloat(formData.size),
         location: {
-          name: formData.location,
-          type: 'Point',
+          type: 'Point' as const,
           coordinates: [
             Number(formData.coordinates.longitude) || 0,
             Number(formData.coordinates.latitude) || 0
           ]
         },
-        soilType: formData.soilType.toLowerCase() as any,
-        irrigationSystem: {
-          type: formData.irrigationType.toLowerCase() as any,
-          isAutomated: false
-        },
-        notes: formData.description
+        soilType: formData.soilType,
+        crops: [],
+        status: 'active' as const,
+        irrigationSource: 'rainfed' as const,
+        irrigationSystem: mapIrrigationSystem(formData.irrigationType)
       };
 
       await dispatch(createFields(newField)).unwrap();

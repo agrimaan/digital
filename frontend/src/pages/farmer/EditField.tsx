@@ -3,7 +3,25 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../store';
 import FieldsForm from '../../components/FieldsForm';
-import { getFieldsById, updateFields, Fields, IrrigationSystem } from '../../features/fields/fieldSlice';
+import { getFieldsById, updateFields, Fields } from '../../features/fields/fieldSlice';
+
+// Helper function to map irrigation system types
+function mapIrrigationSystem(system: string): 'flood' | 'drip' | 'sprinkler' | 'none' | 'other' {
+  switch (system?.toLowerCase()) {
+    case 'drip':
+      return 'drip';
+    case 'sprinkler':
+      return 'sprinkler';
+    case 'surface irrigation':
+      return 'flood';
+    case 'subsurface irrigation':
+      return 'other';
+    case 'none':
+      return 'none';
+    default:
+      return 'other';
+  }
+}
 import { Container, Paper, Grid, Button, Typography, Box, CircularProgress, Alert } from '@mui/material';
 
 // Helpers to normalize backend <-> frontend
@@ -47,9 +65,9 @@ const normalizeIrrigationType = (type: string) => {
   return mapping[type.toLowerCase()] || type;
 };
 
-export const denormalizeIrrigationType = (type: string): IrrigationSystem['type'] => {
+export const denormalizeIrrigationType = (type: string): 'drip' | 'sprinkler' | 'surface irrigation' | 'subsurface irrigation' | 'none' => {
   if (!type) return 'none';
-  const mapping: Record<string, IrrigationSystem['type']> = {
+  const mapping: Record<string, 'drip' | 'sprinkler' | 'surface irrigation' | 'subsurface irrigation' | 'none'> = {
     'Drip Irrigation': 'drip',
     Sprinkler: 'sprinkler',
     'Surface Irrigation': 'surface irrigation',
@@ -100,24 +118,19 @@ const EditField: React.FC = () => {
     try {
       const updatedField = {
         name: formData.name,
-        area: {
-          value: parseFloat(formData.area),
-          unit: 'acre' as const, // 👈 explicit literal type
-        },
+        area: parseFloat(formData.area),
         location: {
-          type: 'Point',
+          type: 'Point' as const,
           coordinates: [
             Number(formData.coordinates.longitude) || 0,
             Number(formData.coordinates.latitude) || 0,
-          ],
-          name: formData.location,
+          ]
         },
         soilType: denormalizeSoilType(formData.soilType),
-        irrigationSystem: {
-          type: denormalizeIrrigationType(formData.irrigationType),
-          isAutomated: false,
-        },
-        notes: formData.description,
+        crops: [],
+        status: 'active' as const,
+        irrigationSource: 'rainfed' as const,
+        irrigationSystem: mapIrrigationSystem(formData.irrigationType)
       };
 
       await dispatch(updateFields({ id, data: updatedField })).unwrap();

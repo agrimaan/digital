@@ -1,0 +1,29 @@
+--- a/frontend/src/pages/farmer/EditField.tsx
++++ b/frontend/src/pages/farmer/EditField.tsx
+@@ -119,20 +119,15 @@ const EditField: React.FC = () => {
+       const updatedField = {
+         name: formData.name,
+-        area: {
+-          value: parseFloat(formData.area),
+-          unit: 'acre' as const, // 👈 explicit literal type
+-        },
++        area: parseFloat(formData.area),
+         location: {
+           type: 'Point' as const,
+           coordinates: [
+             Number(formData.coordinates.longitude) || 0,
+             Number(formData.coordinates.latitude) || 0,
+           ],
+-          name: formData.location,
+         },
+         soilType: denormalizeSoilType(formData.soilType),
+-        irrigationSystem: {
+-          type: denormalizeIrrigationType(formData.irrigationType),
+-          isAutomated: false,
+-        },
+-        notes: formData.description,
++        crops: [],
++        status: 'active' as const,
++        irrigationSource: 'rainfed' as const,
++        irrigationSystem: mapIrrigationSystem(formData.irrigationType),
+       };
