@@ -196,7 +196,9 @@ const fieldSlice = createSlice({
         state.loading = true;
       })
       .addCase(createFields.fulfilled, (state, action) => {
-        state.fields.push(action.payload);
+        if (Array.isArray(state.fields)) {
+          state.fields.push(action.payload);
+        }
         state.Fields = action.payload;
         state.loading = false;
       })

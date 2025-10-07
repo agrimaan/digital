@@ -5,10 +5,14 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 class ApiService {
   private getAuthHeaders(): HeadersInit {
     const token = localStorage.getItem('token');
-    return {
+    const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
     };
+    if (token) {
+      // This is the fix: Use the 'Authorization' header
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {

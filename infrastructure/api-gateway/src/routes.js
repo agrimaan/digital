@@ -55,11 +55,9 @@ const handleProxyError = (err, req, res, next) => {
 module.exports = (app) => {
   app.use(authenticate);
 
-    // ---------------------------
+  // ---------------------------
   // USER SERVICE
   // ---------------------------
-
-  
 
   app.use('/api/auth', createProxyMiddleware({
     target: process.env.USER_SERVICE_URL || 'http://localhost:3002',
@@ -96,7 +94,7 @@ module.exports = (app) => {
     target: process.env.FIELD_SERVICE_URL || 'http://localhost:3003',
     changeOrigin: true,
     logLevel: 'debug',
-    pathRewrite: { '^/api/fields': '/fields' },
+    pathRewrite: { '^/api/fields': '/api/fields' },
     onError: handleProxyError,
 
     // Forward JSON body to the backend

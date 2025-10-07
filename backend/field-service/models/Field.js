@@ -30,8 +30,9 @@ const FieldSchema = new mongoose.Schema({
     ref: 'Boundary'
   },
   soilType: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Soil'
+    type: String,
+    enum: ['clay', 'sandy', 'loamy', 'silty', 'peaty', 'chalky'],
+    default: 'none'
   },
   crops: [{
     type: String, // Crop IDs from crop-service
@@ -41,11 +42,6 @@ const FieldSchema = new mongoose.Schema({
     type: String,
     enum: ['active', 'fallow', 'preparation', 'harvested'],
     default: 'active'
-  },
-  irrigationSource: {
-    type: String,
-    enum: ['rainfed', 'canal', 'well', 'borewell', 'pond', 'river', 'other'],
-    default: 'rainfed'
   },
   irrigationSystem: {
     type: String,

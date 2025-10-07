@@ -368,7 +368,7 @@ const Trends: React.FC = () => {
                     <ResponsiveContainer width="100%" height={300}>
                       <RechartsPieChart>
                         <Pie
-                          data={marketTrends}
+                          data={marketTrends as any}
                           cx="50%"
                           cy="50%"
                           labelLine={false}

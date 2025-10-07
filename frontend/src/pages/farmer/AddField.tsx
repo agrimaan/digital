@@ -155,7 +155,6 @@ const AddField: React.FC = () => {
         soilType: formData.soilType,
         crops: [],
         status: 'active' as const,
-        irrigationSource: 'rainfed' as const,
         irrigationSystem: mapIrrigationSystem(formData.irrigationType)
       };
 
