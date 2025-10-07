@@ -6,26 +6,33 @@
 export interface ApiFieldData {
   name: string;
   location: {
-    type: string;
+    type: 'Point';
     coordinates: [number, number];
-    name: string;
   };
-  boundaries: {
-    type: string;
-    coordinates: number[][][];
-  };
-  area: {
-    value: number;
-    unit: 'hectare' | 'acre';
-  };
-  soilType: 'clay' | 'sandy' | 'loamy' | 'silty' | 'peaty' | 'chalky' | 'other';
-  crops?: string[];
-  sensors?: string[];
-  notes?: string;
-  irrigationSystem?: {
-    type: 'drip' | 'sprinkler' | 'surface irrigation' | 'subsurface irrigation' | 'none';
-    isAutomated: boolean;
-  };
+  area: number; // in hectares
+  soilType?: string;
+  crops: string[];
+  status: 'active' | 'fallow' | 'preparation' | 'harvested';
+  irrigationSource: 'rainfed' | 'canal' | 'well' | 'borewell' | 'pond' | 'river' | 'other';
+  irrigationSystem: 'flood' | 'drip' | 'sprinkler' | 'none' | 'other';
+}
+
+// Helper function to map irrigation system types
+function mapIrrigationSystem(system: string): 'flood' | 'drip' | 'sprinkler' | 'none' | 'other' {
+  switch (system?.toLowerCase()) {
+    case 'drip':
+      return 'drip';
+    case 'sprinkler':
+      return 'sprinkler';
+    case 'surface irrigation':
+      return 'flood';
+    case 'subsurface irrigation':
+      return 'other';
+    case 'none':
+      return 'none';
+    default:
+      return 'other';
+  }
 }
 
 export const adaptFieldData = (formData: any): ApiFieldData => {
@@ -37,25 +44,14 @@ export const adaptFieldData = (formData: any): ApiFieldData => {
     name: formData.name || '',
     location: {
       type: 'Point',
-      coordinates: [lon, lat], // [longitude, latitude]
-      name: formData.location.name
+      coordinates: [lon, lat] // [longitude, latitude]
     },
-    boundaries: {
-      type: 'Polygon',
-      coordinates: [[[lon, lat]]] // Simple point as polygon
-    },
-    area: {
-      value: parseFloat(formData.area) || 0,
-      unit: 'acre' // or 'hectare' based on your preference
-    },
-    soilType: (formData.soilType || 'other').toLowerCase() as any,
-    notes: formData.description || '',
-    irrigationSystem: {
-      type: (formData.irrigationType || 'none') as 'drip' | 'sprinkler' | 'surface irrigation' | 'subsurface irrigation' | 'none',
-      isAutomated: false
-    },
+    area: parseFloat(formData.area) || 0,
+    soilType: formData.soilType || undefined,
     crops: [],
-    sensors: []
+    status: 'active',
+    irrigationSource: 'rainfed',
+    irrigationSystem: mapIrrigationSystem(formData.irrigationType)
   };
 };
 

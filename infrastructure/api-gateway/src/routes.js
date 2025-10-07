@@ -97,7 +97,18 @@ module.exports = (app) => {
     changeOrigin: true,
     logLevel: 'debug',
     pathRewrite: { '^/api/fields': '/fields' },
-    onError: handleProxyError
+    onError: handleProxyError,
+
+    // Forward JSON body to the backend
+    onProxyReq: (proxyReq, req, res) => {
+      if (req.body && Object.keys(req.body).length) {
+        const bodyData = JSON.stringify(req.body);
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
+      console.log(`➡️ Proxying request: ${req.method} ${req.originalUrl}`);
+    }
   }));
 
   app.use('/api/soil', createProxyMiddleware({
