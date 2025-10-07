@@ -180,76 +180,84 @@ export const deleteCrop = createAsyncThunk(
   }
 );
 
+// TODO: Add pest issue endpoint to backend crop service
 // Add pest issue
 export const addPestIssue = createAsyncThunk(
   'crop/addPestIssue',
   async ({ cropId, pestIssue }: { cropId: string; pestIssue: Partial<PestIssue> }, { dispatch, rejectWithValue }) => {
     try {
-  const res = await axios.post(`${API_BASE_URL}/api/crops/${cropId}/pest-issue`, pestIssue);
+      // TODO: Implement /api/crops/:id/pest-issue endpoint in backend
+      // const res = await axios.post(`${API_BASE_URL}/api/crops/${cropId}/pest-issue`, pestIssue);
       
       dispatch(setAlert({
-        message: 'Pest issue added successfully',
-        type: 'success'
+        message: 'Pest issue functionality not yet implemented',
+        type: 'warning'
       }) as any);
       
-      return { cropId, pestIssues: res.data };
+      return { cropId, pestIssues: [] };
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || 'Failed to add pest issue');
     }
   }
 );
 
+// TODO: Add disease issue endpoint to backend crop service
 // Add disease issue
 export const addDiseaseIssue = createAsyncThunk(
   'crop/addDiseaseIssue',
   async ({ cropId, diseaseIssue }: { cropId: string; diseaseIssue: Partial<DiseaseIssue> }, { dispatch, rejectWithValue }) => {
     try {
-  const res = await axios.post(`${API_BASE_URL}/api/crops/${cropId}/disease-issue`, diseaseIssue);
+      // TODO: Implement /api/crops/:id/disease-issue endpoint in backend
+      // const res = await axios.post(`${API_BASE_URL}/api/crops/${cropId}/disease-issue`, diseaseIssue);
       
       dispatch(setAlert({
-        message: 'Disease issue added successfully',
-        type: 'success'
+        message: 'Disease issue functionality not yet implemented',
+        type: 'warning'
       }) as any);
       
-      return { cropId, diseaseIssues: res.data };
+      return { cropId, diseaseIssues: [] };
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || 'Failed to add disease issue');
     }
   }
 );
 
+// TODO: Add fertilizer endpoint to backend crop service
 // Add fertilizer application
 export const addFertilizer = createAsyncThunk(
   'crop/addFertilizer',
   async ({ cropId, fertilizer }: { cropId: string; fertilizer: Partial<Fertilizer> }, { dispatch, rejectWithValue }) => {
     try {
-  const res = await axios.post(`${API_BASE_URL}/api/crops/${cropId}/fertilizer`, fertilizer);
+      // TODO: Implement /api/crops/:id/fertilizer endpoint in backend
+      // const res = await axios.post(`${API_BASE_URL}/api/crops/${cropId}/fertilizer`, fertilizer);
       
       dispatch(setAlert({
-        message: 'Fertilizer application added successfully',
-        type: 'success'
+        message: 'Fertilizer functionality not yet implemented',
+        type: 'warning'
       }) as any);
       
-      return { cropId, fertilizers: res.data };
+      return { cropId, fertilizers: [] };
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || 'Failed to add fertilizer application');
     }
   }
 );
 
+// TODO: Add irrigation endpoint to backend crop service
 // Add irrigation event
 export const addIrrigationEvent = createAsyncThunk(
   'crop/addIrrigationEvent',
   async ({ cropId, irrigation }: { cropId: string; irrigation: Partial<IrrigationEvent> }, { dispatch, rejectWithValue }) => {
     try {
-  const res = await axios.post(`${API_BASE_URL}/api/crops/${cropId}/irrigation`, irrigation);
+      // TODO: Implement /api/crops/:id/irrigation endpoint in backend
+      // const res = await axios.post(`${API_BASE_URL}/api/crops/${cropId}/irrigation`, irrigation);
       
       dispatch(setAlert({
-        message: 'Irrigation event added successfully',
-        type: 'success'
+        message: 'Irrigation functionality not yet implemented',
+        type: 'warning'
       }) as any);
       
-      return { cropId, irrigationEvents: res.data };
+      return { cropId, irrigationEvents: [] };
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || 'Failed to add irrigation event');
     }
