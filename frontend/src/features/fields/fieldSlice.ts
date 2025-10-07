@@ -5,26 +5,19 @@ import { setAlert } from '../alert/alertSlice';
 
 // Types
 interface Location {
-  type: string;
-  coordinates: number[];
-  name: string;
+  type: 'Point';
+  coordinates: number[]; // [longitude, latitude]
 }
 
-interface Boundaries {
-  type: string;
-  coordinates: number[][][];
+interface SoilHealth {
+  ph?: number;
+  organicMatter?: number;
+  nitrogen?: number;
+  phosphorus?: number;
+  potassium?: number;
 }
 
-interface Area {
-  value: number;
-  unit: 'hectare' | 'acre';
-}
-
-interface Weather {
-  station: string;
-  lastUpdated: Date;
-}
-
+// Legacy interface for backward compatibility
 export interface IrrigationSystem {
   type: 'drip' | 'sprinkler' | 'surface irrigation' | 'subsurface irrigation' | 'none';
   isAutomated: boolean;
@@ -35,14 +28,14 @@ export interface Fields {
   name: string;
   owner: string;
   location: Location;
-  boundaries: Boundaries;
-  area: Area;
-  soilType: 'clay' | 'sandy' | 'loamy' | 'silty' | 'peaty' | 'chalky' | 'other';
-  crops: string[];
-  sensors: string[];
-  weather?: Weather;
-  irrigationSystem?: IrrigationSystem;
-  notes?: string;
+  area: number; // in hectares
+  boundary?: string; // Boundary ID reference
+  soilType?: string; // Soil ID reference
+  crops: string[]; // Crop IDs from crop-service
+  status: 'active' | 'fallow' | 'preparation' | 'harvested';
+  irrigationSource: 'rainfed' | 'canal' | 'well' | 'borewell' | 'pond' | 'river' | 'other';
+  irrigationSystem: 'flood' | 'drip' | 'sprinkler' | 'none' | 'other';
+  soilHealth?: SoilHealth;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -59,7 +52,7 @@ export const getFields = createAsyncThunk(
   'Fields/getFields',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/fields/getFields`);
+      const res = await axios.get(`${API_BASE_URL}/api/fields`);
       return res.data;
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || 'Failed to fetch fields');
@@ -123,7 +116,7 @@ export const deleteFields = createAsyncThunk(
   'Fields/deleteFields',
   async (id: string, { dispatch, rejectWithValue }) => {
     try {
-      await axios.delete(`${API_BASE_URL}/api/fields/delete/${id}`);
+      await axios.delete(`${API_BASE_URL}/api/fields/${id}`);
 
       dispatch(setAlert({
         message: 'Field deleted successfully',
@@ -142,7 +135,7 @@ export const getNearbyfields = createAsyncThunk(
   'Fields/getNearbyfields',
   async ({ lng, lat, distance }: { lng: number; lat: number; distance: number }, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/fields/nearby/${distance}?lng=${lng}&lat=${lat}`);
+      const res = await axios.get(`${API_BASE_URL}/api/fields/nearby?longitude=${lng}&latitude=${lat}&distance=${distance}`);
       return res.data;
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || 'Failed to fetch nearby fields');
