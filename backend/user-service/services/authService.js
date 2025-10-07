@@ -24,7 +24,8 @@ exports.registerUser = async (userData) => {
   const user = await User.create(userData);
   
   const token = this.generateToken(user);
-  
+  console.log("within AuthService.js, User data:", userData);
+
   return {
     token,
     user: {

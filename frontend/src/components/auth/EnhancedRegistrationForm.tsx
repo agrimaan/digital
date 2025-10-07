@@ -28,7 +28,8 @@ import * as Yup from 'yup';
 import GoogleOAuthButton from './GoogleOAuthButton';
 
 interface RegistrationFormData {
-  name: string;
+  firstname: string;
+  lastname: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -59,9 +60,12 @@ interface RegistrationFormData {
 }
 
 const validationSchema = Yup.object({
-  name: Yup.string()
-    .min(2, 'Name must be at least 2 characters')
-    .required('Name is required'),
+  firstname: Yup.string()
+    .min(2, 'First Name must be at least 2 characters')
+    .required('First Name is required'),
+    lastname: Yup.string()
+    .min(2, 'Last Name must be at least 2 characters')
+    .required('Last Name is required'),
   email: Yup.string()
     .email('Invalid email address')
     .required('Email is required'),
@@ -101,7 +105,8 @@ const EnhancedRegistrationForm: React.FC = () => {
 
   const formik = useFormik<RegistrationFormData>({
     initialValues: {
-      name: '',
+      firstname: '',
+      lastname:'',
       email: '',
       password: '',
       confirmPassword: '',
@@ -225,13 +230,25 @@ const EnhancedRegistrationForm: React.FC = () => {
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                name="name"
-                label="Full Name"
-                value={formik.values.name}
+                name="firstname"
+                label="First Name"
+                value={formik.values.firstname}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                error={formik.touched.name && Boolean(formik.errors.name)}
-                helperText={formik.touched.name && formik.errors.name}
+                error={formik.touched.firstname && Boolean(formik.errors.firstname)}
+                helperText={formik.touched.firstname && formik.errors.firstname}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                name="lastname"
+                label="Last Name"
+                value={formik.values.lastname}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.lastname && Boolean(formik.errors.lastname)}
+                helperText={formik.touched.lastname && formik.errors.lastname}
               />
             </Grid>
             <Grid item xs={12}>

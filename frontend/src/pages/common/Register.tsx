@@ -25,7 +25,8 @@ const Register: React.FC = () => {
   const { loading, error, isAuthenticated, user } = useSelector((state: RootState) => state.auth);
   
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -33,14 +34,15 @@ const Register: React.FC = () => {
   });
   
   const [formErrors, setFormErrors] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
     role: ''
   });
 
-  const { name, email, password, confirmPassword, role } = formData;
+  const { firstName, lastName, email, password, confirmPassword, role } = formData;
 
   useEffect(() => {
     // Redirect if already authenticated
@@ -103,7 +105,8 @@ const Register: React.FC = () => {
 
   const validateForm = () => {
     const errors = {
-      name: '',
+      firstName: '',
+      lastName: '',      
       email: '',
       password: '',
       confirmPassword: '',
@@ -112,8 +115,12 @@ const Register: React.FC = () => {
     
     let isValid = true;
     
-    if (!name.trim()) {
-      errors.name = 'Name is required';
+    if (!firstName.trim()) {
+      errors.firstName = 'First Name is required';
+      isValid = false;
+    }
+    if (!lastName.trim()) {
+      errors.lastName = 'Last Name is required';
       isValid = false;
     }
     
@@ -191,15 +198,29 @@ const Register: React.FC = () => {
               margin="normal"
               required
               fullWidth
-              id="name"
-              label="Full Name"
-              name="name"
-              autoComplete="name"
+              id="firstName"
+              label="First Name"
+              name="firstName"
+              autoComplete="first name"
               autoFocus
-              value={name}
+              value={firstName}
               onChange={handleChange}
-              error={!!formErrors.name}
-              helperText={formErrors.name}
+              error={!!formErrors.firstName}
+              helperText={formErrors.firstName}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="lastName"
+              label="Last Name"
+              name="lastName"
+              autoComplete="last name"
+              autoFocus
+              value={lastName}
+              onChange={handleChange}
+              error={!!formErrors.lastName}
+              helperText={formErrors.lastName}
             />
             
             <TextField

@@ -7,6 +7,7 @@ import { setAlert } from '../alert/alertSlice';
 interface User {
   id: string;
   name: string;
+  lastnmae: string;
   email: string;
   role: string;
   fields?: string[];
@@ -44,7 +45,8 @@ interface LoginCredentials {
 }
 
 interface RegisterData {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
   role: string;
