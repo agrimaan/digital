@@ -1,6 +1,7 @@
 const axios = require('axios');
 const CircuitBreaker = require('opossum');
-const { serviceDiscovery } = require('../service-discovery');
+const ResilientHttpClient = require('./resilient-http-client');
+const ServiceDiscovery = require('../service-discovery/service-discovery');
 
 /**
  * Creates a resilient HTTP client with a circuit breaker for a specific service.

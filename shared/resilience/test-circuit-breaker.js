@@ -5,6 +5,7 @@
  */
 
 const ResilientHttpClient = require('./resilient-http-client');
+const ServiceDiscovery = require('../service-discovery/service-discovery');
 const UserServiceClient = require('./user-service-client');
 const { retry } = require('./retry-util');
 

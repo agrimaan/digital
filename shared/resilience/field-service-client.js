@@ -4,6 +4,7 @@
  * This module provides a resilient client for the Field Service.
  */
 
+
 const ResilientHttpClient = require('./resilient-http-client');
 const ServiceDiscovery = require('../service-discovery/service-discovery');
 
