@@ -2,18 +2,26 @@ import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../store';
 import { logout } from '../../features/auth/authSlice';
-import { AppBar, Toolbar, IconButton, Typography, Button, Avatar, Menu, MenuItem } from '@mui/material';
+import {
+  AppBar,
+  Toolbar,
+  IconButton,
+  Typography,
+  Button,
+  Avatar,
+  Menu,
+  MenuItem,
+} from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '../common/LanguageSwitcher';
 
-// FIX: Define the props the Header component will accept
 interface HeaderProps {
-  handleDrawerToggle: () => void;
+  toggleDrawer: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ handleDrawerToggle }) => {
+const Header: React.FC<HeaderProps> = ({ toggleDrawer }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -42,24 +50,25 @@ const Header: React.FC<HeaderProps> = ({ handleDrawerToggle }) => {
   return (
     <AppBar
       position="fixed"
-      sx={{
-        zIndex: (theme) => theme.zIndex.drawer + 1,
-      }}
+      sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
     >
       <Toolbar>
         <IconButton
           color="inherit"
           aria-label="open drawer"
           edge="start"
-          onClick={handleDrawerToggle}
-          sx={{ mr: 2, display: { sm: 'none' } }}
+          onClick={toggleDrawer}
+          sx={{ mr: 2 }}
         >
           <MenuIcon />
         </IconButton>
+
         <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
           Agrimaan
         </Typography>
+
         <LanguageSwitcher />
+
         {user ? (
           <div>
             <IconButton
@@ -72,18 +81,13 @@ const Header: React.FC<HeaderProps> = ({ handleDrawerToggle }) => {
             >
               <Avatar src={user.profileImage || undefined} alt={user.name} />
             </IconButton>
+
             <Menu
               id="menu-appbar"
               anchorEl={anchorEl}
-              anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
+              anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
               keepMounted
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
               open={Boolean(anchorEl)}
               onClose={handleClose}
             >
