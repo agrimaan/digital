@@ -8,10 +8,12 @@ require('dotenv').config();
 const adminRoutes = require('./routes/adminRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const dashboardStatsRoutes = require('./routes/dashboardStatsRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const auditLogRoutes = require('./routes/auditLogRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+//const dashboardDataRoutes = require('./routes/dashboardDataRoutes');
 
 // Import logger
 const logger = require('./utils/logger');
@@ -35,6 +37,8 @@ mongoose.connect(process.env.MONGODB_URI, {
 
 // Routes
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/dashboard/stats', dashboardStatsRoutes);
+//app.use('/api/admin/dashboard-data', dashboardDataRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/dashboards', dashboardRoutes);
 app.use('/api/reports', reportRoutes);
@@ -54,6 +58,7 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: [
       '/api/admins',
+      '/api/admin/dashboard/stats',
       '/api/settings',
       '/api/dashboards',
       '/api/reports',

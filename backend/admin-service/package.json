@@ -10,11 +10,13 @@
   },
   "dependencies": {
     "axios": "^1.5.0",
+    "@agrimaan/shared": "file:../../shared",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "csv-parser": "^3.0.0",
     "dotenv": "^16.3.1",
     "express": "^4.21.2",
+    "express-async-handler": "^1.2.0",
     "express-validator": "^7.0.1",
     "joi": "^17.10.1",
     "jsonwebtoken": "^9.0.2",

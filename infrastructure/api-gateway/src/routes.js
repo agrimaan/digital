@@ -278,6 +278,29 @@ module.exports = (app) => {
   }));
 
   // ---------------------------
+     // REFERENCE DATA SERVICE
+     // ---------------------------
+     app.use('/api/reference', createProxyMiddleware({
+       target: process.env.REFERENCE_DATA_SERVICE_URL || 'http://localhost:3013',
+       changeOrigin: true,
+       logLevel: 'debug',
+       pathRewrite: { '^/api/reference': '/api/reference' },
+       onError: handleProxyError,
+   
+       // Forward JSON body to the backend
+       onProxyReq: (proxyReq, req, res) => {
+         if (req.body && Object.keys(req.body).length) {
+           const bodyData = JSON.stringify(req.body);
+           proxyReq.setHeader('Content-Type', 'application/json');
+           proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+           proxyReq.write(bodyData);
+         }
+   
+         console.log(`➡️ Proxying request: ${req.method} ${req.originalUrl}`);
+       }
+     }));
+
+  // ---------------------------
   // ADMIN SERVICE
   // ---------------------------
 

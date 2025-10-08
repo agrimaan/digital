@@ -21,7 +21,8 @@ const serviceUrls = {
   'analytics-service': process.env.ANALYTICS_SERVICE_URL || 'http://analytics-service:3009',
   'notification-service': process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3010',
   'blockchain-service': process.env.BLOCKCHAIN_SERVICE_URL || 'http://blockchain-service:3011',
-  'admin-service': process.env.ADMIN_SERVICE_URL || 'http://admin-service:3012'
+  'admin-service': process.env.ADMIN_SERVICE_URL || 'http://admin-service:3012',
+  'reference-data-service': process.env.REFERENCE_DATA_SERVICE_URL || 'http://localhost:3013'
 };
 
 // Middleware
@@ -89,6 +90,8 @@ app.use('/api/weather', createServiceProxy('weather-service', '/api/weather'));
 app.use('/api/analytics', createServiceProxy('analytics-service', '/api/analytics'));
 app.use('/api/notifications', createServiceProxy('notification-service', '/api/notifications'));
 app.use('/api/blockchain', createServiceProxy('blockchain-service', '/api/blockchain'));
+app.use('/api/reference', createServiceProxy('reference-data-service', '/api/reference'));
+
 
 // Error handling
 app.use((err, req, res, next) => {

@@ -73,6 +73,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { RootState } from '../../store';
 import axios from 'axios';
 import { API_BASE_URL } from '../../config/apiConfig';
+import adminDashboardAPI from '../../services/adminService';
 
 // Define types
 interface DashboardData {
@@ -207,70 +208,17 @@ const AdminDashboard: React.FC = () => {
     try {
       setLoading(true);
       
-      const mockData: DashboardData = {
-        counts: {
-          users: 45,
-          fields: 120,
-          crops: 350,
-          sensors: 78,
-          orders: 230,
-          landTokens: 25,
-          bulkUploads: 15,
-          resources: 10 // New: Mock resource count
-        },
-        usersByRole: {
-          farmers: 25,
-          buyers: 15,
-          agronomists: 3,
-          investors: 1,
-          admins: 1
-        },
-        recentOrders: [
-          {
-            _id: 'order1',
-            buyer: { _id: 'b1', name: 'Buyer Kumar' },
-            seller: { _id: 'f1', name: 'Farmer Singh' },
-            totalAmount: 1500,
-            status: 'pending',
-            createdAt: new Date().toISOString()
-          },
-          {
-            _id: 'order2',
-            buyer: { _id: 'b2', name: 'Buyer Sharma' },
-            seller: { _id: 'f2', name: 'Farmer Patel' },
-            totalAmount: 2300,
-            status: 'confirmed',
-            createdAt: new Date(Date.now() - 86400000).toISOString()
-          }
-        ],
-        recentUsers: [
-          {
-            _id: 'user1',
-            name: 'New Farmer',
-            email: 'farmer@example.com',
-            role: 'farmer',
-            createdAt: new Date().toISOString()
-          },
-          {
-            _id: 'user2',
-            name: 'New Buyer',
-            email: 'buyer@example.com',
-            role: 'buyer',
-            createdAt: new Date(Date.now() - 86400000).toISOString()
-          }
-        ],
-        verificationStats: {
-          pendingUsers: 5,
-          pendingLandTokens: 3,
-          pendingBulkUploads: 2
-        },
-        systemHealth: {
-          otpEnabled: true,
-          emailConfigured: true,
-          smsConfigured: true,
-          oauthConfigured: true
-        }
-      };
+      const [
+        dashboardStats,
+        recentUsers,
+        recentOrders,
+        systemHealth
+      ] = await Promise.all([
+        adminDashboardAPI.dashboard.getDashboardStats,
+        adminDashboardAPI.dashboard.getRecentUsers(5),
+        adminDashboardAPI.dashboard.getRecentOrders(5),
+        adminDashboardAPI.dashboard.getSystemHealth()
+      ]);
 
       const mockUsers: User[] = [
         {
@@ -341,7 +289,23 @@ const AdminDashboard: React.FC = () => {
         }
       ];
 
-      setDashboardData(mockData);
+      setDashboardData({ 
+        counts: {
+          users: dashboardStats.arguments.users,
+          fields: dashboardStats.arguments.fields,
+          crops: dashboardStats.arguments.crops,
+          sensors: dashboardStats.arguments.sensors,
+          orders: dashboardStats.arguments.orders,
+          landTokens: dashboardStats.arguments.landTokens,
+          bulkUploads: dashboardStats.arguments.bulkUploads,
+          resources: 42 // Mock count for resources
+        },
+        usersByRole: dashboardStats.arguments.usersByRole,
+        recentOrders: recentOrders,
+        recentUsers: recentUsers,
+        verificationStats: dashboardStats.arguments.verificationStats,
+        systemHealth: systemHealth
+      });
       setUsers(mockUsers);
       setLandTokens(mockLandTokens);
       setBulkUploads(mockBulkUploads);
