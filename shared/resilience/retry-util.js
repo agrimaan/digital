@@ -60,4 +60,3 @@ function retryable(fn, options = {}) {
   return (...args) => retry(() => fn(...args), options);
 }
 
-module.exports = { retry, retryable };

@@ -57,5 +57,3 @@ class BulkUploadServiceClient {
     }
   }
 }
-
-module.exports = new BulkUploadServiceClient();

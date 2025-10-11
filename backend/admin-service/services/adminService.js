@@ -58,7 +58,7 @@ exports.registerAdmin = async (adminData, creatorData = null) => {
 exports.loginAdmin = async (email, password, requestData = {}) => {
   try {
     // Find admin by email and include password field
-    const admin = await Admin.findOne({ email }).select('+password');
+    const admin = await Admin.findOne({ email }).select('password');
     
     if (!admin) {
       throw new Error('Invalid credentials');
@@ -70,10 +70,12 @@ exports.loginAdmin = async (email, password, requestData = {}) => {
     }
     
     // Check if password matches
+
     const isMatch = await admin.matchPassword(password);
     
     if (!isMatch) {
       // Log failed login attempt
+      console.log('Logging failed login attempt');
       await AuditLog.createLog({
         adminId: admin._id,
         adminName: admin.name,
@@ -108,7 +110,7 @@ exports.loginAdmin = async (email, password, requestData = {}) => {
     
     // Create token
     const token = admin.getSignedJwtToken();
-    
+    consile.log('Generated JWT token for admin login');
     // Remove password from response
     admin.password = undefined;
     

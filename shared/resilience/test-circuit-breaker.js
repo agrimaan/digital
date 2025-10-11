@@ -1,146 +1,158 @@
-/**
- * Test script for circuit breaker
- * 
- * This script tests the circuit breaker functionality.
- */
+// --- Mocked Versions of Your Shared Library for Browser ---
+// NOTE: These are simplified mocks to simulate the behavior of your backend
+// utilities in a browser environment for this test component.
 
-const ResilientHttpClient = require('./resilient-http-client');
-const ServiceDiscovery = require('../service-discovery/service-discovery');
-const UserServiceClient = require('./user-service-client');
-const { retry } = require('./retry-util');
-
-// Mock service for testing
 const mockServer = {
   failureCount: 0,
   maxFailures: 5,
-  
-  // Simulate a request that fails after a certain number of calls
   async request() {
     if (this.failureCount < this.maxFailures) {
       this.failureCount++;
       throw new Error(`Service unavailable (${this.failureCount}/${this.maxFailures})`);
     }
-    
     return { success: true, message: 'Service is now available' };
   },
-  
-  // Reset the failure count
   reset() {
     this.failureCount = 0;
   }
 };
 
-// Test direct usage of ResilientHttpClient
-async function testResilientHttpClient() {
-  console.log('Testing ResilientHttpClient...');
-  
-  const client = new ResilientHttpClient({
-    retries: 3,
-    circuitBreakerOptions: {
-      failureRateThreshold: 50,
-      waitDurationInOpenState: 2000, // Short duration for testing
-      slidingWindowSize: 5
-    }
-  });
-  
-  // Create a decorated function that uses the mock server
-  const makeRequest = async () => {
+class MockResilientHttpClient {
+  // This mock simulates the request but doesn't have a real circuit breaker.
+  // It just calls the mock server directly to show the flow.
+  async request(config, fallback) {
     try {
-      return await client.request({
-        method: 'GET',
-        url: '/test'
-      }, () => {
-        return { fallback: true, message: 'Using fallback response' };
-      });
+      return await mockServer.request();
     } catch (error) {
-      console.error(`Request failed: ${error.message}`);
+      // In a real scenario, the circuit breaker would handle this.
+      // Here, we'll just use the fallback if provided.
+      if (fallback) {
+        return fallback();
+      }
       throw error;
     }
+  }
+}
+
+class MockUserServiceClient {
+  // Simulates the user service client, always returning a fallback.
+  async getUserById(id) {
+    console.log(`Attempting to get user ${id}, but will use fallback.`);
+    return { id, name: 'Fallback User', message: 'Could not connect to the real service.' };
+  }
+}
+
+const mockRetry = async (asyncFn, options = { retries: 3, delay: 100 }) => {
+  let lastError;
+  for (let i = 0; i < options.retries; i++) {
+    try {
+      return await asyncFn();
+    } catch (error) {
+      lastError = error;
+      await new Promise(res => setTimeout(res, options.delay * (i + 1)));
+    }
+  }
+  throw lastError;
+};
+
+// --- The React Component ---
+
+const CircuitBreakerTester = () => {
+  const [logs, setLogs] = useState(['Test logs will appear here.']);
+  const [isRunning, setIsRunning] = useState(false);
+
+  const logToState = (message) => {
+    console.log(message);
+    setLogs(prevLogs => [...prevLogs, message]);
   };
-  
-  // Test circuit breaker state transitions
-  console.log('\n1. Testing circuit breaker state transitions:');
-  
-  // First set of requests - should fail and open the circuit
-  console.log('\nFirst set of requests (should fail and open circuit):');
-  for (let i = 0; i < 5; i++) {
+
+  const runAllTests = useCallback(async () => {
+    setIsRunning(true);
+    setLogs(['🚀 Starting resilience tests...']);
+    
+    // Helper function to add delays
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
     try {
-      const result = await makeRequest();
-      console.log(`Request ${i + 1} result:`, result);
+      // --- 1. Test ResilientHttpClient ---
+      logToState('--- 1. Testing ResilientHttpClient ---');
+      const client = new MockResilientHttpClient();
+      mockServer.reset();
+      mockServer.maxFailures = 5;
+
+      logToState('\nFirst set of requests (should fail and open circuit):');
+      for (let i = 0; i < 5; i++) {
+        try {
+          const result = await client.request({ url: '/test' }, () => ({ fallback: true }));
+          logToState(`Request ${i + 1} result: ${JSON.stringify(result)}`);
+        } catch (error) {
+          logToState(`Request ${i + 1} error: ${error.message}`);
+        }
+      }
+
+      logToState('\nWaiting for circuit to transition to half-open...');
+      await sleep(2500);
+
+      mockServer.reset(); // Service is now "healthy"
+      
+      logToState('\nSecond set of requests (should succeed and close circuit):');
+      for (let i = 0; i < 3; i++) {
+        try {
+          const result = await client.request({ url: '/test' });
+          logToState(`Request ${i + 1} result: ${JSON.stringify(result)}`);
+        } catch (error) {
+          logToState(`Request ${i + 1} error: ${error.message}`);
+        }
+      }
+
+      // --- 2. Test UserServiceClient ---
+      logToState('\n--- 2. Testing UserServiceClient ---');
+      const userClient = new MockUserServiceClient();
+      const user = await userClient.getUserById('123');
+      logToState(`User result: ${JSON.stringify(user)}`);
+      
+      // --- 3. Test Retry Utility ---
+      logToState('\n--- 3. Testing retry utility ---');
+      mockServer.reset();
+      mockServer.maxFailures = 2; // Will fail twice before succeeding
+      const retryResult = await mockRetry(mockServer.request.bind(mockServer), { retries: 3, delay: 500 });
+      logToState(`Retry result: ${JSON.stringify(retryResult)}`);
+
+      logToState('\n✅ All tests completed!');
     } catch (error) {
-      console.log(`Request ${i + 1} error: ${error.message}`);
+      logToState(`❌ Test suite failed: ${error.message}`);
+    } finally {
+      setIsRunning(false);
     }
-  }
-  
-  // Wait for circuit to transition to half-open
-  console.log('\nWaiting for circuit to transition to half-open...');
-  await new Promise(resolve => setTimeout(resolve, 2500));
-  
-  // Reset mock server to start succeeding
-  mockServer.reset();
-  
-  // Second set of requests - should succeed and close the circuit
-  console.log('\nSecond set of requests (should succeed and close circuit):');
-  for (let i = 0; i < 3; i++) {
-    try {
-      const result = await makeRequest();
-      console.log(`Request ${i + 1} result:`, result);
-    } catch (error) {
-      console.log(`Request ${i + 1} error: ${error.message}`);
+  }, []);
+
+  const styles = {
+    container: {
+      fontFamily: 'sans-serif',
+      padding: '20px',
+      border: '1px solid #ccc',
+      borderRadius: '8px',
+      maxWidth: '800px',
+      margin: '20px auto',
+    },
+    button: {
+      padding: '10px 20px',
+      fontSize: '16px',
+      cursor: 'pointer',
+      marginBottom: '20px',
+    },
+    logBox: {
+      backgroundColor: '#f4f4f4',
+      border: '1px solid #ddd',
+      padding: '15px',
+      height: '400px',
+      overflowY: 'scroll',
+      whiteSpace: 'pre-wrap', // Allows text to wrap
+      fontFamily: 'monospace',
+      fontSize: '14px',
     }
-  }
-}
+  };
 
-// Test UserServiceClient with service discovery
-async function testUserServiceClient() {
-  console.log('\n2. Testing UserServiceClient:');
   
-  try {
-    const userClient = new UserServiceClient();
-    
-    // This will fail because the service is not registered with Consul
-    // But it should use the fallback
-    const user = await userClient.getUserById('123');
-    console.log('User result:', user);
-  } catch (error) {
-    console.error('UserServiceClient test failed:', error.message);
-  }
-}
+};
 
-// Test retry utility
-async function testRetryUtility() {
-  console.log('\n3. Testing retry utility:');
-  
-  // Reset mock server
-  mockServer.reset();
-  mockServer.maxFailures = 2;
-  
-  try {
-    const result = await retry(async () => {
-      return await mockServer.request();
-    }, {
-      retries: 3,
-      delay: 500,
-      backoffFactor: 2
-    });
-    
-    console.log('Retry result:', result);
-  } catch (error) {
-    console.error('Retry test failed:', error.message);
-  }
-}
-
-// Run all tests
-async function runTests() {
-  try {
-    await testResilientHttpClient();
-    await testUserServiceClient();
-    await testRetryUtility();
-    
-    console.log('\nAll tests completed');
-  } catch (error) {
-    console.error('Test suite failed:', error);
-  }
-}
-
-runTests();

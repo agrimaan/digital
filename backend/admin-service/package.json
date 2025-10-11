@@ -9,8 +9,8 @@
     "test": "jest"
   },
   "dependencies": {
+    "@agrimaan/shared": "^1.0.24",
     "axios": "^1.5.0",
-    "@agrimaan/shared": "file:../../shared",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "csv-parser": "^3.0.0",

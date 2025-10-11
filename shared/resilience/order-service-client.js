@@ -69,4 +69,3 @@ class OrderServiceClient {
   }
 }
 
-module.exports = new OrderServiceClient();

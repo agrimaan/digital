@@ -1,5 +1,5 @@
 const asyncHandler = require('express-async-handler');
-const UserServiceClient = require('@agrimaan/shared').UserServiceClient;
+const UserServiceClient = require('@agrimaan/shared').UserServiceClient
 const FieldServiceClient = require('@agrimaan/shared').FieldServiceClient;
 const CropServiceClient = require('@agrimaan/shared').CropServiceClient;
 const SensorServiceClient = require('@agrimaan/shared').SensorServiceClient;

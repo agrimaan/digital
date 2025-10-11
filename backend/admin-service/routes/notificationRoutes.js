@@ -1,7 +1,7 @@
 const express = require('express');
 const { check } = require('express-validator');
 const notificationController = require('../controllers/notificationController');
-const { protect, authorize, logAction } = require('../middleware/auth');
+const { protect, authorize, logAction } = require('@agrimaan/shared').middleware;
 
 const router = express.Router();
 

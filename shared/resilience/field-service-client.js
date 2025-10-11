@@ -162,4 +162,3 @@ class FieldServiceClient {
   }
 }
 
-module.exports = FieldServiceClient;

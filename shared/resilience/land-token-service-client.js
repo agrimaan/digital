@@ -68,5 +68,3 @@ class LandTokenServiceClient {
     }
   }
 }
-
-module.exports = new LandTokenServiceClient();

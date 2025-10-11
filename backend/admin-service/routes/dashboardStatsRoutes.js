@@ -1,8 +1,7 @@
 
 const express = require('express');
 const dashboardStatsController = require('../controllers/dashboardStatsController');
-const { protect, authorize, logAction } = require('../middleware/auth');
-
+const { protect, authorize, logAction } = require('@agrimaan/shared').middleware;
 const router = express.Router();
 
 // Protect all routes

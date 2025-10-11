@@ -50,6 +50,3 @@ function createResilientClient(serviceName, options = {}) {
   };
 }
 
-module.exports = {
-  createResilientClient,
-};

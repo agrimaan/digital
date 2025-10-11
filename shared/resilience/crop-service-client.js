@@ -58,4 +58,3 @@ class CropServiceClient {
   }
 }
 
-module.exports = new CropServiceClient();

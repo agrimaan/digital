@@ -91,4 +91,3 @@ class ResourceServiceClient {
   }
 }
 
-module.exports = new ResourceServiceClient();

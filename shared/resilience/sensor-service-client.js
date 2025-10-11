@@ -59,4 +59,3 @@ class SensorServiceClient {
   }
 }
 
-module.exports = new SensorServiceClient();

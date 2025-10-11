@@ -1,6 +1,6 @@
 const express = require('express');
 const analyticsController = require('../controllers/analyticsController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize } = require('@agrimaan/shared').middleware;
 
 const router = express.Router();
 

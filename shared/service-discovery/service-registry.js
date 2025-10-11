@@ -118,4 +118,4 @@ class ServiceRegistry {
   }
 }
 
-module.exports = ServiceRegistry;
+module.exports = ServiceRegistry
