@@ -37,11 +37,10 @@ exports.protect = async (req, res, next) => {
 // Grant access to specific roles
 exports.authorize = (...roles) => {
   return (req, res, next) => {
-    // req.user is now the decoded token payload
-    if (!req.user || !roles.includes(req.user.role)) {
+    if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: `User role ${req.user ? req.user.role : 'none'} is not authorized to access this route`,
+        message: `User role ${req.user.role} is not authorized to access this route`
       });
     }
     next();

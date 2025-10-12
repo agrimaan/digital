@@ -7,6 +7,9 @@ const router = express.Router();
 // Protect all routes
 router.use(protect);
 
+// Admin/SuperAdmin only routes
+router.use(authorize('admin', 'super-admin'));
+
 // Get report templates
 router.get('/templates', reportController.getReportTemplates);
 

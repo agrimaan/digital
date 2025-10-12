@@ -70,7 +70,11 @@ const SystemSettingsSchema = new mongoose.Schema({
   emailSettings: {
     smtpHost: {
       type: String,
-      default: 'smtp.example.com'
+      default: 'smtp.example.com',
+      emailConfigured: {
+        type: Boolean,
+        default: false
+      },
     },
     smtpPort: {
       type: Number,
@@ -98,7 +102,11 @@ const SystemSettingsSchema = new mongoose.Schema({
     provider: {
       type: String,
       enum: ['twilio', 'aws-sns', 'nexmo', 'none'],
-      default: 'none'
+      default: 'none',
+      smsConfigured: {
+        type: Boolean,
+        default: false
+      },
     },
     apiKey: {
       type: String,

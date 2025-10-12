@@ -75,6 +75,7 @@ import axios from 'axios';
 import { API_BASE_URL } from '../../config/apiConfig';
 import adminDashboardAPI from '../../services/adminService';
 
+
 // Define types
 interface DashboardData {
   counts: {
@@ -207,88 +208,21 @@ const AdminDashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
-      const [
-        dashboardStats,
-        recentUsers,
-        recentOrders,
-        systemHealth
-      ] = await Promise.all([
-        adminDashboardAPI.dashboard.getDashboardStats,
-        adminDashboardAPI.dashboard.getRecentUsers(5),
-        adminDashboardAPI.dashboard.getRecentOrders(5),
-        adminDashboardAPI.dashboard.getSystemHealth()
-      ]);
-
-      const mockUsers: User[] = [
-        {
-          _id: 'user1',
-          name: 'John Farmer',
-          email: 'john@example.com',
-          role: 'farmer',
-          verificationStatus: 'pending',
-          createdAt: new Date().toISOString()
-        },
-        {
-          _id: 'user2',
-          name: 'Jane Buyer',
-          email: 'jane@example.com',
-          role: 'buyer',
-          verificationStatus: 'verified',
-          createdAt: new Date(Date.now() - 86400000).toISOString()
-        }
-      ];
-
-      const mockLandTokens: LandToken[] = [
-        {
-          _id: 'token1',
-          landId: 'LAND-001',
-          owner: { name: 'Farmer Singh', email: 'farmer@example.com' },
-          landDetails: {
-            location: { city: 'Barabanki', state: 'UP' },
-            area: { value: 5, unit: 'hectare' }
-          },
-          verification: { status: 'pending' },
-          status: 'pending',
-          createdAt: new Date().toISOString()
-        }
-      ];
-
-      const mockBulkUploads: BulkUpload[] = [
-        {
-          _id: 'upload1',
-          filename: 'farmers_batch_001.csv',
-          type: 'users',
-          status: 'completed',
-          records: 150,
-          success: 145,
-          failed: 5,
-          uploadedBy: 'admin@agrimaan.com',
-          uploadedAt: '2025-09-11 10:30:00'
-        }
-      ];
-      
-      const mockResources: Resource[] = [
-        {
-          _id: 'resource1',
-          name: 'Tractor (Model X)',
-          type: 'Machinery',
-          hourlyRate: 1500,
-          location: 'Field A',
-          owner: { name: 'John Farmer', email: 'john@example.com' },
-          createdAt: new Date().toISOString()
-        },
-        {
-          _id: 'resource2',
-          name: 'Harvester (Model Y)',
-          type: 'Machinery',
-          hourlyRate: 2500,
-          location: 'Field B',
-          owner: { name: 'Jane Buyer', email: 'jane@example.com' },
-          createdAt: new Date(Date.now() - 3600000).toISOString()
-        }
-      ];
-
+  
+      // ✅ CALL the async function, don’t assign it
+      const dashboardStats = await adminDashboardAPI.dashboard.getDashboardStats
+      const recentOrders = await adminDashboardAPI.dashboard.getRecentUsers();
+      const recentUsers = await adminDashboardAPI.dashboard.getRecentOrders();
+      const verificationStats = {
+        pendingUsers: dashboardStats.arguments.usersByRole.pending || 0,
+        pendingLandTokens: dashboardStats.arguments.landTokens || 0,
+        pendingBulkUploads: dashboardStats.arguments.bulkUploads || 0
+      };
+      const systemHealth = await adminDashboardAPI.dashboard.getSystemHealth();
+  
+      console.log('dashboardStats:', dashboardStats);
+  
+      // ✅ Use the returned data directly
       setDashboardData({ 
         counts: {
           users: dashboardStats.arguments.users,
@@ -298,26 +232,28 @@ const AdminDashboard: React.FC = () => {
           orders: dashboardStats.arguments.orders,
           landTokens: dashboardStats.arguments.landTokens,
           bulkUploads: dashboardStats.arguments.bulkUploads,
-          resources: 42 // Mock count for resources
+          resources: 42 // mock count
         },
         usersByRole: dashboardStats.arguments.usersByRole,
-        recentOrders: recentOrders,
-        recentUsers: recentUsers,
-        verificationStats: dashboardStats.arguments.verificationStats,
-        systemHealth: systemHealth
+        recentOrders,
+        recentUsers,
+        verificationStats,
+        systemHealth
       });
-      setUsers(mockUsers);
-      setLandTokens(mockLandTokens);
-      setBulkUploads(mockBulkUploads);
-      setResources(mockResources); // New: Set resources state
-      setLoading(false);
-      
+  
+      //setUsers(mockUsers);
+      //setLandTokens(mockLandTokens);
+      //setBulkUploads(mockBulkUploads);
+      //setResources(mockResources);
     } catch (err: any) {
-      console.error('Error fetching dashboard data:', err);
-      setError(err.response?.data?.message || 'Failed to load dashboard data');
+      console.error("Error fetching dashboard data:", err);
+    } finally {
       setLoading(false);
     }
   };
+
+      
+   
 
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { 

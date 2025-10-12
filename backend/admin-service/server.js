@@ -37,13 +37,11 @@ mongoose.connect(process.env.MONGODB_URI, {
 .catch(err => logger.error('MongoDB connection error:', err));
 
 // Routes
-app.use('/api/dashboard/stats', dashboardStatsRoutes);
-app.use('/api/system/health',getSystemHealth);
 app.use('/api/admin', adminRoutes);
-app.use('/api/admin/dashboard/stats', dashboardStatsRoutes);
-//app.use('/api/admin/dashboard-data', dashboardDataRoutes);
+app.use('/api/admin/dashboards', dashboardRoutes);
+app.use('/api/admin/dashboard', dashboardStatsRoutes);
+//app.use('/api/system', dashboardStatsRoutes);
 app.use('/api/settings', settingsRoutes);
-app.use('/api/dashboards', dashboardRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/notifications', notificationRoutes);
@@ -62,8 +60,9 @@ app.get('/', (req, res) => {
     endpoints: [
       '/api/admins',
       '/api/admin/dashboard/stats',
-      '/api/settings',
-      '/api/dashboards',
+      '/api/admin/settings',
+      '/api/admin/system',
+      '/api/admin/dashboards',
       '/api/reports',
       '/api/audit-logs',
       '/api/notifications',

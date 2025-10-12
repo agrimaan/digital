@@ -35,16 +35,16 @@ const validateUserUpdate = [
 router
   .route('/')
   .get(protect, authorize('admin'), getUsers)
-  .post(protect, authorize('admin'), validateUserCreation, createUser);
+  .post(protect, authorize('admin','super-user'), validateUserCreation, createUser);
 
   router
   .route('/recent')
-  .get(protect, authorize('admin'), getRecentUsers);
+  .get(protect, authorize('admin','super-user'), getRecentUsers);
 
 router
   .route('/:id')
   .get(protect, getUser)
   .put(protect, validateUserUpdate, updateUser)
-  .delete(protect, authorize('admin'), deleteUser);
+  .delete(protect, authorize('admin','super-user'), deleteUser);
 
 module.exports = router;

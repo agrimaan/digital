@@ -34,8 +34,8 @@ router.post(
 
 // Protected routes
 router.use(protect);
+router.get('/me', protect, authorize('superadmin', 'admin'), adminController.getMe);
 
-router.get('/me', adminController.getMe);
 
 router.post(
   '/change-password',

@@ -228,16 +228,16 @@ exports.getRecentOrders = asyncHandler(async (req, res, next) => {
 // @desc    Get system health status
 // @route   GET /api/admin/dashboard/system/health
 // @access  Private/Admin
+
 exports.getSystemHealth = asyncHandler(async (req, res, next) => {
   try {
     // Get system settings
     const settings = await Settings.findOne();
-    
+    console.log('system health', settings);
     const systemHealth = {
-      otpEnabled: settings?.security?.otpEnabled || false,
-      emailConfigured: settings?.email?.configured || false,
-      smsConfigured: settings?.sms?.configured || false,
-      oauthConfigured: settings?.oauth?.enabled || false
+      otpEnabled: settings?.security?.otp?.enabled || false,
+      otpRequired: settings?.security?.otp?.required || false,
+      twoFactorAuthEnabled: settings?.security?.twoFactorAuth?.enabled || false,
     };
 
     res.status(200).json({

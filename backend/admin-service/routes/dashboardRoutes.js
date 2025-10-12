@@ -1,12 +1,16 @@
 const express = require('express');
 const { check } = require('express-validator');
 const dashboardController = require('../controllers/dashboardController');
-const { protect, logAction } = require('@agrimaan/shared').middleware;
+const { protect, logAction, authorize } = require('@agrimaan/shared').middleware;
 
 const router = express.Router();
 
 // Protect all routes
 router.use(protect);
+
+
+// Admin/SuperAdmin only routes
+router.use(authorize('admin', 'super-admin'));
 
 // Get default dashboard
 router.get('/default', dashboardController.getDefaultDashboard);

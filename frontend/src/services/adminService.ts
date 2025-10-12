@@ -45,7 +45,7 @@ export const adminDashboardAPI = {
   // Get dashboard statistics
   getDashboardStats: async () => {
     try {
-      const response = await adminApi.get("/dashboard/stats");
+      const response = await adminApi.get("/admin/dashboard/stats");
       return response.data;
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
@@ -89,7 +89,7 @@ export const adminDashboardAPI = {
   // Get system health status
   getSystemHealth: async () => {
     try {
-      const response = await adminApi.get("/system/health");
+      const response = await adminApi.get("/admin/system/health");
       return response.data;
     } catch (error) {
       console.error("Error fetching system health:", error);

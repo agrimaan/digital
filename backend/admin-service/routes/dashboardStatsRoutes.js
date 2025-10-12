@@ -7,16 +7,19 @@ const router = express.Router();
 // Protect all routes
 router.use(protect);
 
+// Admin/SuperAdmin only routes
+router.use(authorize('admin', 'super-admin'));
+
 // Dashboard statistics routes
-router.get('/stats', dashboardStatsController.getDashboardStats);
-router.get('/users/stats', dashboardStatsController.getUserStats);
-router.get('/fields/stats', dashboardStatsController.getFieldStats);
-router.get('/crops/stats', dashboardStatsController.getCropStats);
-router.get('/sensors/stats', dashboardStatsController.getSensorStats);
-router.get('/orders/stats', dashboardStatsController.getOrderStats);
-router.get('/users/recent', dashboardStatsController.getRecentUsers);
-router.get('/orders/recent', dashboardStatsController.getRecentOrders);
-router.get('/system/health', dashboardStatsController.getSystemHealth);
-router.get('/verification/pending', dashboardStatsController.getPendingVerifications);
+router.get('/stats', protect, authorize('superadmin', 'admin'), dashboardStatsController.getDashboardStats);
+router.get('/users/stats', protect, authorize('superadmin', 'admin'),dashboardStatsController.getUserStats);
+router.get('/fields/stats',protect, authorize('superadmin', 'admin'),dashboardStatsController.getFieldStats);
+router.get('/crops/stats',protect, authorize('superadmin', 'admin'),dashboardStatsController.getCropStats);
+router.get('/sensors/stats',protect, authorize('superadmin', 'admin'),dashboardStatsController.getSensorStats);
+router.get('/orders/stats',protect, authorize('superadmin', 'admin'),dashboardStatsController.getOrderStats);
+router.get('/users/recent',protect, authorize('superadmin', 'admin'),dashboardStatsController.getRecentUsers);
+router.get('/orders/recent',protect, authorize('superadmin', 'admin'),dashboardStatsController.getRecentOrders);
+router.get('/system/health',protect, authorize('superadmin', 'admin'),dashboardStatsController.getSystemHealth);
+router.get('/verification/pending',protect, authorize('superadmin', 'admin'),dashboardStatsController.getPendingVerifications);
 
 module.exports = router;
