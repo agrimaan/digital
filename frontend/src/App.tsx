@@ -47,6 +47,7 @@ import LogisticsDashboard from './pages/logistics/LogisticsDashboard';
 
 // Layout
 import Layout from './components/layout/Layout';
+import EditField from 'pages/farmer/EditField';
 
 // HOC for protected routes
 const PrivateRoute: React.FC<{
@@ -119,6 +120,7 @@ const App: React.FC = () => {
                     <Route path="fields" element={<Fields />} />
                     <Route path="fields/new" element={<AddField />} /> 
                     <Route path="fields/:id" element={<FieldDetail />} />
+                    <Route path="fields/:id/edit" element={<EditField />} />
                     <Route path="crops" element={<Crops />} />
                     <Route path="weather" element={<Weather />} />
                     <Route path="marketplace" element={<FarmerMarketplace />} />

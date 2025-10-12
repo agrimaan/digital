@@ -25,6 +25,8 @@ export interface Fields {
   area: number;
   boundary?: string;
   soilType?: string;
+  locationName?: string;
+  description?: string;
   crops: string[];
   status: 'active' | 'fallow' | 'preparation' | 'harvested';
   irrigationSource: 'rainfed' | 'canal' | 'well' | 'borewell' | 'pond' | 'river' | 'other';
@@ -60,17 +62,20 @@ export const getFields = createAsyncThunk(
 );
 
 // Get Fields by ID
+// Get Fields by ID
 export const getFieldsById = createAsyncThunk(
   'Fields/getFieldsById',
   async (id: string, { rejectWithValue }) => {
     try {
       const res = await axios.get(`${API_BASE_URL}/api/fields/${id}`);
-      return res.data;
+      // If API returns { success: true, data: { ... } }
+      return res.data.data || res.data;
     } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to fetch Fields');
+      return rejectWithValue(err.response?.data?.message || 'Failed to fetch field');
     }
   }
 );
+
 
 // Create Fields
 export const createFields = createAsyncThunk(

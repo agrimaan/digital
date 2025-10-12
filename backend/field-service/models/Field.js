@@ -21,6 +21,16 @@ const FieldSchema = new mongoose.Schema({
       required: [true, 'Field coordinates are required']
     }
   },
+    locationName: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  description: {
+    type: String,
+    trim: true,
+    default: ''
+  },
   area: {
     type: Number, // in hectares
     required: [true, 'Field area is required']
