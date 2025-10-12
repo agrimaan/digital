@@ -57,7 +57,7 @@ exports.deleteField = async (id) => {
   if (!field) {
     return false;
   }
-  await field.remove();
+  await field.deleteOne();
   return true;
 };
 
