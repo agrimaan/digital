@@ -32,6 +32,24 @@ exports.getOrders = async (req, res) => {
   }
 };
 
+// @desc    Get recent orders
+// @route   GET /api/orders/recent
+// @access  Private/Admin
+exports.getRecentOrders = async (req, res) => {
+  try {
+    // Only admin can get all orders
+    if (req.user.role !== 'admin') {
+      return responseHandler.forbidden(res, 'Not authorized to access all orders');
+    }
+     
+    const orders = await orderService.getRecentOrders(req.query.limit);
+    
+    return responseHandler.success(res, 200, orders, 'Recent Orders retrieved successfully');
+  } catch (error) {
+    return responseHandler.error(res, 500, 'Error retrieving orders', error);
+  }
+};
+
 // @desc    Get single order
 // @route   GET /api/orders/:id
 // @access  Private

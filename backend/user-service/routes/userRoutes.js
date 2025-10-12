@@ -3,6 +3,7 @@ const { check } = require('express-validator');
 const router = express.Router();
 const { 
   getUsers, 
+  getRecentUsers,
   getUser, 
   createUser, 
   updateUser, 
@@ -35,6 +36,10 @@ router
   .route('/')
   .get(protect, authorize('admin'), getUsers)
   .post(protect, authorize('admin'), validateUserCreation, createUser);
+
+  router
+  .route('/recent')
+  .get(protect, authorize('admin'), getRecentUsers);
 
 router
   .route('/:id')

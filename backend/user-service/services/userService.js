@@ -14,7 +14,25 @@ exports.getAllUsers = async () => {
  * @param {string} id - User ID
  * @returns {Promise<Object>} User object
  */
+
+/**
+ * Get recent users for admin dashboard
+ * @param {number} limit - Number of users to return
+ * @returns {Promise<Array>} Recent users
+ */
+exports.getRecentUsers = async (limit) => {
+  console.log('Fetching recent users with limit:', limit);
+  return await User
+    .find()
+    .select('_id firstName lastName email role createdAt')
+    .sort({ createdAt: -1 })
+    .limit(limit);
+};
+
+
 exports.getUserById = async (id) => {
+  console.log ('Fetching user by ID:', id);
+
   return await User.findById(id).select('-password');
 };
 
@@ -136,19 +154,6 @@ exports.getUserStats = async () => {
     totalUsers,
     usersByRole: roleCounts
   };
-};
-
-/**
- * Get recent users for admin dashboard
- * @param {number} limit - Number of users to return
- * @returns {Promise<Array>} Recent users
- */
-exports.getRecentUsers = async (limit = 5) => {
-  return await User
-    .find()
-    .select('_id firstName lastName email role createdAt')
-    .sort({ createdAt: -1 })
-    .limit(limit);
 };
 
 /**

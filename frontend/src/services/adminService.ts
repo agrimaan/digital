@@ -2,7 +2,7 @@
 import axios from "axios";
 import { API_BASE_URL } from "../config/apiConfig";
 
-const API_URL = `${API_BASE_URL}/api/admin`;
+const API_URL = `${API_BASE_URL}/api`;
 
 // Get auth token from localStorage or Redux store
 const getAuthToken = () => {
@@ -67,7 +67,7 @@ export const adminDashboardAPI = {
   // Get recent orders
   getRecentOrders: async (limit = 10) => {
     try {
-      const response = await adminApi.get(`/orders/recent?limit=${limit}`);
+      const response = await adminApi.get(`/marketplace/orders/recent?limit=${limit}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching recent orders:", error);

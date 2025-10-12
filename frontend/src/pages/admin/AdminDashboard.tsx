@@ -114,12 +114,14 @@ interface DashboardData {
     pendingLandTokens: number;
     pendingBulkUploads: number;
   };
+  /*
   systemHealth: {
     otpEnabled: boolean;
     emailConfigured: boolean;
     smsConfigured: boolean;
     oauthConfigured: boolean;
   };
+  */
 }
 
 interface User {
@@ -211,34 +213,16 @@ const AdminDashboard: React.FC = () => {
       const [
         dashboardStats,
         recentUsers,
-        recentOrders,
-        systemHealth
+        recentOrders
+        //,systemHealth
       ] = await Promise.all([
         adminDashboardAPI.dashboard.getDashboardStats,
-        adminDashboardAPI.dashboard.getRecentUsers(5),
-        adminDashboardAPI.dashboard.getRecentOrders(5),
-        adminDashboardAPI.dashboard.getSystemHealth()
+        adminDashboardAPI.dashboard.getRecentUsers(2),
+        adminDashboardAPI.dashboard.getRecentOrders(5)
+        //,adminDashboardAPI.dashboard.getSystemHealth()
       ]);
 
-      const mockUsers: User[] = [
-        {
-          _id: 'user1',
-          name: 'John Farmer',
-          email: 'john@example.com',
-          role: 'farmer',
-          verificationStatus: 'pending',
-          createdAt: new Date().toISOString()
-        },
-        {
-          _id: 'user2',
-          name: 'Jane Buyer',
-          email: 'jane@example.com',
-          role: 'buyer',
-          verificationStatus: 'verified',
-          createdAt: new Date(Date.now() - 86400000).toISOString()
-        }
-      ];
-
+ 
       const mockLandTokens: LandToken[] = [
         {
           _id: 'token1',
@@ -291,22 +275,24 @@ const AdminDashboard: React.FC = () => {
 
       setDashboardData({ 
         counts: {
-          users: dashboardStats.arguments.users,
-          fields: dashboardStats.arguments.fields,
-          crops: dashboardStats.arguments.crops,
-          sensors: dashboardStats.arguments.sensors,
-          orders: dashboardStats.arguments.orders,
-          landTokens: dashboardStats.arguments.landTokens,
-          bulkUploads: dashboardStats.arguments.bulkUploads,
-          resources: 42 // Mock count for resources
+          users: dashboardStats.counts.users,
+          fields: dashboardStats.arguments.counts.fields,
+          crops: dashboardStats.arguments.counts.crops,
+          sensors: dashboardStats.arguments.counts.sensors,
+          orders: dashboardStats.arguments.counts.orders,
+          landTokens: dashboardStats.arguments.counts.landTokens,
+          bulkUploads: dashboardStats.arguments.counts.bulkUploads,
+          resources: dashboardStats.arguments.counts.resources || 0 // New: Set resources count
         },
         usersByRole: dashboardStats.arguments.usersByRole,
         recentOrders: recentOrders,
         recentUsers: recentUsers,
-        verificationStats: dashboardStats.arguments.verificationStats,
-        systemHealth: systemHealth
+        verificationStats: dashboardStats.arguments.verificationStats
+        //,systemHealth: systemHealth
       });
-      setUsers(mockUsers);
+      console.log('Dashboard Stats:', dashboardStats);
+
+      setUsers(recentUsers);
       setLandTokens(mockLandTokens);
       setBulkUploads(mockBulkUploads);
       setResources(mockResources); // New: Set resources state

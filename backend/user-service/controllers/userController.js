@@ -15,6 +15,21 @@ exports.getUsers = async (req, res) => {
   }
 };
 
+/**
+   * Get recent users for admin dashboard
+   * @param {number} limit - Number of users to return
+   * @returns {Promise<Array>} Recent users
+   */
+exports.getRecentUsers = async (req, res) => {
+  try {
+    const users = await userService.getRecentUsers(req.query.limit);
+    
+    return responseHandler.success(res, 200, users, 'Recent Users retrieved successfully');
+  } catch (error) {
+    return responseHandler.error(res, 500, 'Error retrieving recent users', error);
+  }
+};
+
 // @desc    Get single user
 // @route   GET /api/users/:id
 // @access  Private

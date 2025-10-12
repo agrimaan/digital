@@ -91,6 +91,7 @@ app.use('/api/analytics', createServiceProxy('analytics-service', '/api/analytic
 app.use('/api/notifications', createServiceProxy('notification-service', '/api/notifications'));
 app.use('/api/blockchain', createServiceProxy('blockchain-service', '/api/blockchain'));
 app.use('/api/reference', createServiceProxy('reference-data-service', '/api/reference'));
+app.use('api/system', createServiceProxy('user-service', '/api/system'));
 
 
 // Error handling

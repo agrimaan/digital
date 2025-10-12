@@ -16,6 +16,23 @@ exports.getAllOrders = async (filter = {}) => {
  * @param {string} id - Order ID
  * @returns {Promise<Object>} Order object
  */
+
+exports.getRecentOrders = async (limit) => {
+ 
+  console.log('Fetching recent orders with limit:', limit);
+  return await Order
+    .find()
+    .sort({ createdAt: -1 })
+    .limit(limit);
+};
+
+/**
+ * Get order by ID
+ * @param {string} id - Order ID
+ * @returns {Promise<Object>} Order object
+ */
+
+
 exports.getOrderById = async (id) => {
   return await Order.findById(id).populate('items.product');
 };

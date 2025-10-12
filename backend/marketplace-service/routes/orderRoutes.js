@@ -4,6 +4,7 @@ const router = express.Router();
 const { 
   getOrders, 
   getOrder, 
+  getRecentOrders,
   createOrder, 
   updateOrderStatus, 
   updatePaymentStatus,
@@ -61,6 +62,10 @@ router
   .route('/')
   .get(protect, getOrders)
   .post(protect, validateOrderCreation, createOrder);
+
+router
+  .route('/recent')
+  .get(protect, authorize('admin'), getRecentOrders);
 
 router
   .route('/:id')

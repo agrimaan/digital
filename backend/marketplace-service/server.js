@@ -34,8 +34,8 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
-app.use('/api/products', require('./routes/productRoutes'));
-app.use('/api/orders', require('./routes/orderRoutes'));
+app.use('/api/marketplace/products', require('./routes/productRoutes'));
+app.use('/api/marketplace/orders', require('./routes/orderRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
