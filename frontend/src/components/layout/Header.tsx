@@ -50,7 +50,10 @@ const Header: React.FC<HeaderProps> = ({ toggleDrawer }) => {
   return (
     <AppBar
       position="fixed"
-      sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+      sx={{
+        zIndex: (theme) => theme.zIndex.drawer + 1,
+        backgroundColor: '#2E7D32', // Green theme
+      }}
     >
       <Toolbar>
         <IconButton
@@ -63,14 +66,19 @@ const Header: React.FC<HeaderProps> = ({ toggleDrawer }) => {
           <MenuIcon />
         </IconButton>
 
-        <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+        <Typography
+          variant="h6"
+          noWrap
+          component="div"
+          sx={{ flexGrow: 1, fontWeight: 600 }}
+        >
           Agrimaan
         </Typography>
 
         <LanguageSwitcher />
 
         {user ? (
-          <div>
+          <>
             <IconButton
               size="large"
               aria-label="account of current user"
@@ -79,25 +87,64 @@ const Header: React.FC<HeaderProps> = ({ toggleDrawer }) => {
               onClick={handleMenu}
               color="inherit"
             >
-              <Avatar src={user.profileImage || undefined} alt={user.name} />
+              <Avatar src={user.profileImage || undefined} alt={user.name}>
+                {user.name?.[0]?.toUpperCase() || 'A'}
+              </Avatar>
             </IconButton>
 
             <Menu
               id="menu-appbar"
               anchorEl={anchorEl}
-              anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-              keepMounted
-              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
               open={Boolean(anchorEl)}
               onClose={handleClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              PaperProps={{
+                elevation: 4,
+                sx: {
+                  mt: 1.5,
+                  overflow: 'visible',
+                  filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.15))',
+                  borderRadius: 2,
+                  minWidth: 160,
+                  '& .MuiAvatar-root': {
+                    width: 32,
+                    height: 32,
+                    ml: -0.5,
+                    mr: 1,
+                  },
+                  '&:before': {
+                    content: '""',
+                    display: 'block',
+                    position: 'absolute',
+                    top: 0,
+                    right: 18,
+                    width: 10,
+                    height: 10,
+                    bgcolor: 'background.paper',
+                    transform: 'translateY(-50%) rotate(45deg)',
+                    zIndex: 0,
+                  },
+                },
+              }}
             >
-              <MenuItem onClick={handleProfile}>{t('common.profile')}</MenuItem>
-              <MenuItem onClick={handleLogout}>{t('auth.logout')}</MenuItem>
+              <MenuItem onClick={handleProfile}>
+                {t('common.profile') || 'Profile'}
+              </MenuItem>
+              <MenuItem onClick={handleLogout}>
+                {t('auth.logout') || 'Logout'}
+              </MenuItem>
             </Menu>
-          </div>
+          </>
         ) : (
           <Button color="inherit" component={RouterLink} to="/login">
-            {t('auth.login')}
+            {t('auth.login') || 'Login'}
           </Button>
         )}
       </Toolbar>
