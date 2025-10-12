@@ -204,7 +204,7 @@ exports.getRecentUsers = asyncHandler(async (req, res, next) => {
 });
 
 // @desc    Get recent orders
-// @route   GET /api/admin/dashboard/orders/recent
+// @route   GET /api/orders/recent
 // @access  Private/Admin
 exports.getRecentOrders = asyncHandler(async (req, res, next) => {
   try {

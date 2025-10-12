@@ -87,7 +87,8 @@ const FarmerDashboard: React.FC = () => {
     dispatch(getSensors({}) as any);
     dispatch(getRecommendations() as any);
   }, [dispatch]);
-  
+  const filteredCrops = (crops || []).filter(crop => crop.type === "vegetable");
+
   // Add function to get crops ready for sale
   const cropsReadyForSale = crops.filter(crop => 
     crop.status === 'harvested' || crop.status === 'growing'

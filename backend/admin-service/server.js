@@ -17,6 +17,7 @@ const analyticsRoutes = require('./routes/analyticsRoutes');
 
 // Import logger
 const logger = require('./utils/logger');
+const { getSystemHealth } = require('./controllers/dashboardStatsController');
 
 // Initialize express app
 const app = express();
@@ -36,6 +37,8 @@ mongoose.connect(process.env.MONGODB_URI, {
 .catch(err => logger.error('MongoDB connection error:', err));
 
 // Routes
+app.use('/api/dashboard/stats', dashboardStatsRoutes);
+app.use('/api/system/health',getSystemHealth);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/dashboard/stats', dashboardStatsRoutes);
 //app.use('/api/admin/dashboard-data', dashboardDataRoutes);
