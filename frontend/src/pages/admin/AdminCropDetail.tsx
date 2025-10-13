@@ -148,98 +148,17 @@ const AdminCropDetail: React.FC = () => {
     const fetchCropData = async () => {
       setLoading(true);
       try {
-        // In a real implementation, this would be an API call
-        // For now, we'll use mock data
+        // Real API call to fetch details
+        const response = await axios.get(`${API_BASE_URL}/api/crops/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         
-        // Mock crop data
-        const mockCrop: Crop = {
-          _id: id || 'c1',
-          name: 'Wheat',
-          variety: 'HD-2967',
-          Fields: {
-            _id: 'f1',
-            name: 'North Farm',
-            owner: {
-              _id: 'u1',
-              name: 'Farmer Singh'
-            }
-          },
-          plantingDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-          harvestDate: null,
-          expectedHarvestDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-          status: 'growing',
-          quantity: {
-            expected: 2500,
-            actual: null,
-            unit: 'kg'
-          },
-          healthStatus: 'excellent',
-          growthStage: 'Vegetative',
-          notes: 'Growing well with adequate irrigation. No pest issues observed so far.',
-          activities: [
-            {
-              _id: 'a1',
-              type: 'Planting',
-              date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-              description: 'Seeds planted at 5cm depth with row spacing of 20cm',
-              performedBy: 'Farmer Singh'
-            },
-            {
-              _id: 'a2',
-              type: 'Fertilizer Application',
-              date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-              description: 'Applied NPK fertilizer at recommended dosage',
-              performedBy: 'Farm Worker 1'
-            },
-            {
-              _id: 'a3',
-              type: 'Irrigation',
-              date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-              description: 'Flood irrigation applied',
-              performedBy: 'Farmer Singh'
-            },
-            {
-              _id: 'a4',
-              type: 'Pest Control',
-              date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-              description: 'Applied organic pesticide to control aphids',
-              performedBy: 'Farm Worker 2'
-            }
-          ],
-          sensorData: {
-            soilMoisture: [
-              { date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), value: 42 },
-              { date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), value: 40 },
-              { date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), value: 38 },
-              { date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), value: 45 },
-              { date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), value: 43 },
-              { date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), value: 41 },
-              { date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), value: 40 }
-            ],
-            temperature: [
-              { date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), value: 28 },
-              { date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), value: 29 },
-              { date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), value: 30 },
-              { date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), value: 31 },
-              { date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), value: 30 },
-              { date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), value: 29 },
-              { date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), value: 28 }
-            ],
-            humidity: [
-              { date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), value: 65 },
-              { date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), value: 68 },
-              { date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), value: 70 },
-              { date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), value: 72 },
-              { date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), value: 69 },
-              { date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), value: 67 },
-              { date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), value: 66 }
-            ]
-          },
-          createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
-        };
+        const data = response.data.data || response.data;
+        setCrop(data);
         
-        setCrop(mockCrop);
+                setCrop(data);
         setLoading(false);
       } catch (err: any) {
         console.error('Error fetching crop data:', err);

@@ -75,7 +75,6 @@ import axios from 'axios';
 import { API_BASE_URL } from '../../config/apiConfig';
 import adminDashboardAPI from '../../services/adminService';
 
-
 // Define types
 interface DashboardData {
   counts: {
@@ -208,21 +207,67 @@ const AdminDashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-  
-      // ✅ CALL the async function, don’t assign it
-      const dashboardStats = await adminDashboardAPI.dashboard.getDashboardStats
-      const recentOrders = await adminDashboardAPI.dashboard.getRecentUsers();
-      const recentUsers = await adminDashboardAPI.dashboard.getRecentOrders();
-      const verificationStats = {
-        pendingUsers: dashboardStats.arguments.usersByRole.pending || 0,
-        pendingLandTokens: dashboardStats.arguments.landTokens || 0,
-        pendingBulkUploads: dashboardStats.arguments.bulkUploads || 0
-      };
-      const systemHealth = await adminDashboardAPI.dashboard.getSystemHealth();
-  
-      console.log('dashboardStats:', dashboardStats);
-  
-      // ✅ Use the returned data directly
+      
+      const [
+        dashboardStats,
+        recentUsers,
+        recentOrders,
+        systemHealth
+      ] = await Promise.all([
+        adminDashboardAPI.dashboard.getDashboardStats,
+        adminDashboardAPI.dashboard.getRecentUsers(5),
+        adminDashboardAPI.dashboard.getRecentOrders(5),
+        adminDashboardAPI.dashboard.getSystemHealth()
+      ]);
+
+      // Get real users data from API response
+      const realUsers = recentUsers || [];
+      /*
+          name: 'Jane Buyer',
+          email: 'jane@example.com',
+          role: 'buyer',
+          verificationStatus: 'verified',
+          createdAt: new Date(Date.now() - 86400000).toISOString()
+        }
+      ];
+      */
+      // Get real land tokens from blockchain service
+      let realLandTokens = [];
+      try {
+        const landTokensResponse = await axios.get(`${API_BASE_URL}/api/blockchain/land-tokens`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        realLandTokens = landTokensResponse.data.data || [];
+      } catch (err) {
+        console.warn('Land tokens service unavailable:', err);
+        realLandTokens = [];
+      }
+
+      // Get real bulk uploads data
+      let realBulkUploads = [];
+      try {
+        const bulkUploadsResponse = await axios.get(`${API_BASE_URL}/api/admin/bulk-uploads`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        realBulkUploads = bulkUploadsResponse.data.data || [];
+      } catch (err) {
+        console.warn('Bulk uploads service unavailable:', err);
+        realBulkUploads = [];
+      }
+      
+      // Get real resources data
+      let realResources = [];
+      try {
+        const resourcesResponse = await axios.get(`${API_BASE_URL}/api/admin/resources`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        realResources = resourcesResponse.data.data || [];
+      } catch (err) {
+        console.warn('Resources service unavailable:', err);
+        realResources = [];
+      }
+
+
       setDashboardData({ 
         counts: {
           users: dashboardStats.arguments.users,
@@ -232,28 +277,26 @@ const AdminDashboard: React.FC = () => {
           orders: dashboardStats.arguments.orders,
           landTokens: dashboardStats.arguments.landTokens,
           bulkUploads: dashboardStats.arguments.bulkUploads,
-          resources: 42 // mock count
+          resources: realResources.length
         },
         usersByRole: dashboardStats.arguments.usersByRole,
-        recentOrders,
-        recentUsers,
-        verificationStats,
-        systemHealth
+        recentOrders: recentOrders,
+        recentUsers: recentUsers,
+        verificationStats: dashboardStats.arguments.verificationStats,
+        systemHealth: systemHealth
       });
-  
-      //setUsers(mockUsers);
-      //setLandTokens(mockLandTokens);
-      //setBulkUploads(mockBulkUploads);
-      //setResources(mockResources);
+      setUsers(realUsers);
+      setLandTokens(realLandTokens);
+      setBulkUploads(realBulkUploads);
+      setResources(realResources);
+      setLoading(false);
+      
     } catch (err: any) {
-      console.error("Error fetching dashboard data:", err);
-    } finally {
+      console.error('Error fetching dashboard data:', err);
+      setError(err.response?.data?.message || 'Failed to load dashboard data');
       setLoading(false);
     }
   };
-
-      
-   
 
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { 

@@ -103,7 +103,7 @@ const AdminUsers: React.FC = () => {
         params.append('role', roleFilter);
       }
       
-      const res = await axios.get(`${API_BASE_URL}/api/admin/users?${params.toString()}`);
+      const res = await axios.get(`${API_BASE_URL}/api/users?${params.toString()}`);
       setUsers(res.data.users);
       setPagination(res.data.pagination);
       setLoading(false);
@@ -153,7 +153,7 @@ const AdminUsers: React.FC = () => {
     if (!userToDelete) return;
     
     try {
-      await axios.delete(`${API_BASE_URL}/api/admin/users/${userToDelete._id}`);
+      await axios.delete(`${API_BASE_URL}/api/users/${userToDelete._id}`);
       fetchUsers();
       closeDeleteDialog();
     } catch (err: any) {

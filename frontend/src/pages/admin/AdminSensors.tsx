@@ -103,157 +103,26 @@ const AdminSensors: React.FC = () => {
   const [FieldsOwners, setFieldsOwners] = useState<Array<{id: string, name: string}>>([]);
 
   useEffect(() => {
-    // In a real implementation, these would be API calls
-    // For now, we'll use mock data
+    // Real API implementation
     const fetchSensors = async () => {
       setLoading(true);
       try {
-        // Mock data - in real implementation, this would be an API call
-        const mockSensors: Sensor[] = [
-          {
-            _id: 's1',
-            name: 'Soil Moisture Sensor 1',
-            type: 'soil_moisture',
-            Fields: {
-              _id: 'f1',
-              name: 'North Farm',
-              owner: {
-                _id: 'u1',
-                name: 'Farmer Singh'
-              }
-            },
-            location: {
-              latitude: 28.6139,
-              longitude: 77.2090,
-              description: 'North-east corner'
-            },
-            status: 'active',
-            batteryLevel: 85,
-            lastReading: {
-              value: 42.5,
-              unit: '%',
-              timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-            },
-            installationDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-            lastMaintenance: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            _id: 's2',
-            name: 'Temperature Sensor 1',
-            type: 'temperature',
-            Fields: {
-              _id: 'f1',
-              name: 'North Farm',
-              owner: {
-                _id: 'u1',
-                name: 'Farmer Singh'
-              }
-            },
-            location: {
-              latitude: 28.6140,
-              longitude: 77.2095,
-              description: 'Center of Fields'
-            },
-            status: 'active',
-            batteryLevel: 92,
-            lastReading: {
-              value: 28.3,
-              unit: '°C',
-              timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
-            },
-            installationDate: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
-            lastMaintenance: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            _id: 's3',
-            name: 'Humidity Sensor 1',
-            type: 'humidity',
-            Fields: {
-              _id: 'f2',
-              name: 'South Plantation',
-              owner: {
-                _id: 'u2',
-                name: 'Farmer Patel'
-              }
-            },
-            location: {
-              latitude: 13.0827,
-              longitude: 80.2707,
-              description: 'South corner'
-            },
-            status: 'inactive',
-            batteryLevel: 15,
-            lastReading: {
-              value: 65.8,
-              unit: '%',
-              timestamp: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
-            },
-            installationDate: new Date(Date.now() - 150 * 24 * 60 * 60 * 1000).toISOString(),
-            lastMaintenance: null
-          },
-          {
-            _id: 's4',
-            name: 'Light Sensor 1',
-            type: 'light',
-            Fields: {
-              _id: 'f3',
-              name: 'East Orchard',
-              owner: {
-                _id: 'u3',
-                name: 'Farmer Kumar'
-              }
-            },
-            location: {
-              latitude: 19.0760,
-              longitude: 72.8777,
-              description: 'East side'
-            },
-            status: 'maintenance',
-            batteryLevel: 50,
-            lastReading: {
-              value: 12500,
-              unit: 'lux',
-              timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-            },
-            installationDate: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
-            lastMaintenance: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            _id: 's5',
-            name: 'pH Sensor 1',
-            type: 'ph',
-            Fields: {
-              _id: 'f4',
-              name: 'West Fields',
-              owner: {
-                _id: 'u1',
-                name: 'Farmer Singh'
-              }
-            },
-            location: {
-              latitude: 17.3850,
-              longitude: 78.4867,
-              description: 'West corner'
-            },
-            status: 'error',
-            batteryLevel: 65,
-            lastReading: {
-              value: 6.8,
-              unit: 'pH',
-              timestamp: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
-            },
-            installationDate: new Date(Date.now() - 210 * 24 * 60 * 60 * 1000).toISOString(),
-            lastMaintenance: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
+        // Real API call to fetch sensors/devices
+        const response = await axios.get(`${API_BASE_URL}/api/iot`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
-        ];
-
-        setSensors(mockSensors);
-        setFilteredSensors(mockSensors);
+        });
         
-        // Extract unique Fields owners for filter
-        const uniqueOwners = Array.from(new Set(mockSensors.map(sensor => sensor.Fields.owner._id)))
-          .map(ownerId => {
-            const owner = mockSensors.find(sensor => sensor.Fields.owner._id === ownerId)?.Fields.owner;
+        const sensorsData = response.data.data || response.data || [];
+        setSensors(sensorsData);
+        setFilteredSensors(sensorsData);
+        
+        // Extract unique field owners for filter
+        const uniqueOwners = Array.from(new Set(sensorsData.map((sensor: any) => sensor.field?.owner?._id || sensor.fieldId)))
+        .filter((ownerId): ownerId is string => typeof ownerId === 'string' && ownerId !== '')
+        .map((ownerId: string) => {
+            const owner = sensorsData.find((sensor: any) => (sensor.field?.owner?._id || sensor.fieldId) === ownerId)?.field?.owner;
             return {
               id: ownerId,
               name: owner?.name || 'Unknown'
@@ -261,7 +130,8 @@ const AdminSensors: React.FC = () => {
           });
         setFieldsOwners(uniqueOwners);
         
-        setLoading(false);
+
+                setLoading(false);
       } catch (err: any) {
         console.error('Error fetching sensors:', err);
         setError(err.message || 'Failed to load sensors');

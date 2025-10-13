@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link as RouterLink } from 'react-router-dom';
@@ -6,44 +7,50 @@ import {
   Button,
   Container,
   Paper,
+  Typography,
+  Grid,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Typography,
+  Chip,
   IconButton,
   Tooltip,
+  CircularProgress,
+  Alert,
   TextField,
   InputAdornment,
-  Chip,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
-  CircularProgress,
-  Alert,
-  Grid,
   Card,
   CardContent,
   CardActions,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  SelectChangeEvent
+  CardHeader,
+  Avatar,
+  ToggleButton,
+  ToggleButtonGroup
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Visibility as VisibilityIcon,
   Search as SearchIcon,
-  FilterList as FilterListIcon,
+  FilterList as FilterIcon,
+  ViewModule as ViewModuleIcon,
+  ViewList as ViewListIcon,
   Terrain as TerrainIcon,
-  LocationOn as LocationOnIcon
+  Person as PersonIcon,
+  LocationOn as LocationIcon,
+  Straighten as StraightenIcon
 } from '@mui/icons-material';
 import { RootState } from '../../store';
 import axios from 'axios';
@@ -79,12 +86,12 @@ interface Fields {
   createdAt: string;
 }
 
-const Adminfields: React.FC = () => {
+const AdminFields: React.FC = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
   
-  const [fields, setfields] = useState<Fields[]>([]);
-  const [filteredfields, setFilteredfields] = useState<Fields[]>([]);
+  const [fields, setFields] = useState<Fields[]>([]);
+  const [filteredFields, setFilteredFields] = useState<Fields[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -94,160 +101,32 @@ const Adminfields: React.FC = () => {
   
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [FieldsToDelete, setFieldsToDelete] = useState<string | null>(null);
+  const [fieldToDelete, setFieldToDelete] = useState<string | null>(null);
 
-  // Owners list for filter
+  // Owners and soil types lists for filters
   const [owners, setOwners] = useState<Array<{id: string, name: string}>>([]);
-  // Soil types list for filter
   const [soilTypes, setSoilTypes] = useState<string[]>([]);
 
   useEffect(() => {
-    // In a real implementation, these would be API calls
-    // For now, we'll use mock data
-    const fetchfields = async () => {
+    // Real API implementation
+    const fetchFields = async () => {
       setLoading(true);
       try {
-        // Mock data - in real implementation, this would be an API call
-        const mockfields: Fields[] = [
-          {
-            _id: 'f1',
-            name: 'North Farm',
-            location: {
-              address: 'Village X, District Y, State Z',
-              coordinates: {
-                latitude: 28.6139,
-                longitude: 77.2090
-              }
-            },
-            size: {
-              value: 5.2,
-              unit: 'hectares'
-            },
-            owner: {
-              _id: 'u1',
-              name: 'Farmer Singh',
-              email: 'farmer.singh@example.com'
-            },
-            soilType: 'Clay Loam',
-            crops: [
-              {
-                _id: 'c1',
-                name: 'Wheat',
-                status: 'growing'
-              },
-              {
-                _id: 'c2',
-                name: 'Rice',
-                status: 'harvested'
-              }
-            ],
-            sensors: 3,
-            createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            _id: 'f2',
-            name: 'South Plantation',
-            location: {
-              address: 'Village P, District Q, State R',
-              coordinates: {
-                latitude: 13.0827,
-                longitude: 80.2707
-              }
-            },
-            size: {
-              value: 3.8,
-              unit: 'hectares'
-            },
-            owner: {
-              _id: 'u2',
-              name: 'Farmer Patel',
-              email: 'farmer.patel@example.com'
-            },
-            soilType: 'Sandy Loam',
-            crops: [
-              {
-                _id: 'c3',
-                name: 'Cotton',
-                status: 'growing'
-              }
-            ],
-            sensors: 2,
-            createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            _id: 'f3',
-            name: 'East Orchard',
-            location: {
-              address: 'Village M, District N, State O',
-              coordinates: {
-                latitude: 19.0760,
-                longitude: 72.8777
-              }
-            },
-            size: {
-              value: 2.5,
-              unit: 'hectares'
-            },
-            owner: {
-              _id: 'u3',
-              name: 'Farmer Kumar',
-              email: 'farmer.kumar@example.com'
-            },
-            soilType: 'Silt Loam',
-            crops: [
-              {
-                _id: 'c4',
-                name: 'Mango',
-                status: 'growing'
-              },
-              {
-                _id: 'c5',
-                name: 'Banana',
-                status: 'growing'
-              }
-            ],
-            sensors: 4,
-            createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            _id: 'f4',
-            name: 'West Fields',
-            location: {
-              address: 'Village J, District K, State L',
-              coordinates: {
-                latitude: 17.3850,
-                longitude: 78.4867
-              }
-            },
-            size: {
-              value: 4.1,
-              unit: 'hectares'
-            },
-            owner: {
-              _id: 'u1',
-              name: 'Farmer Singh',
-              email: 'farmer.singh@example.com'
-            },
-            soilType: 'Clay',
-            crops: [
-              {
-                _id: 'c6',
-                name: 'Sugarcane',
-                status: 'growing'
-              }
-            ],
-            sensors: 2,
-            createdAt: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString()
+        const response = await axios.get(`${API_BASE_URL}/api/fields`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
-        ];
-
-        setfields(mockfields);
-        setFilteredfields(mockfields);
+        });
+        
+        const fieldsData = response.data.data || response.data || [];
+        setFields(fieldsData);
+        setFilteredFields(fieldsData);
         
         // Extract unique owners for filter
-        const uniqueOwners = Array.from(new Set(mockfields.map(Fields => Fields.owner._id)))
-          .map(ownerId => {
-            const owner = mockfields.find(Fields => Fields.owner._id === ownerId)?.owner;
+        const uniqueOwners = Array.from(new Set(fieldsData.map((field: any) => field.owner?._id)))
+          .filter((ownerId): ownerId is string => typeof ownerId === 'string' && ownerId !== '')
+          .map((ownerId: string) => {
+            const owner = fieldsData.find((field: any) => field.owner?._id === ownerId)?.owner;
             return {
               id: ownerId,
               name: owner?.name || 'Unknown'
@@ -256,7 +135,8 @@ const Adminfields: React.FC = () => {
         setOwners(uniqueOwners);
         
         // Extract unique soil types for filter
-        const uniqueSoilTypes = Array.from(new Set(mockfields.map(Fields => Fields.soilType)));
+        const uniqueSoilTypes = Array.from(new Set(fieldsData.map((field: any) => field.soilType)))
+          .filter((soilType): soilType is string => typeof soilType === 'string' && soilType !== '');
         setSoilTypes(uniqueSoilTypes);
         
         setLoading(false);
@@ -267,7 +147,7 @@ const Adminfields: React.FC = () => {
       }
     };
 
-    fetchfields();
+    fetchFields();
   }, []);
 
   // Apply filters
@@ -277,324 +157,313 @@ const Adminfields: React.FC = () => {
     // Apply search term
     if (searchTerm) {
       result = result.filter(
-        Fields => 
-          Fields.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          Fields.location.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          Fields.owner.name.toLowerCase().includes(searchTerm.toLowerCase())
+        field => 
+          field.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          field.location.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          field.owner.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
     // Apply owner filter
     if (filterOwner !== 'all') {
-      result = result.filter(Fields => Fields.owner._id === filterOwner);
+      result = result.filter(field => field.owner._id === filterOwner);
     }
     
     // Apply soil type filter
     if (filterSoilType !== 'all') {
-      result = result.filter(Fields => Fields.soilType === filterSoilType);
+      result = result.filter(field => field.soilType === filterSoilType);
     }
     
-    setFilteredfields(result);
+    setFilteredFields(result);
   }, [searchTerm, filterOwner, filterSoilType, fields]);
 
   // Format date
   const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric'
-    };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+    return new Date(dateString).toLocaleDateString();
   };
 
-  // Handle delete Fields
-  const handleDeleteFields = (FieldsId: string) => {
-    setFieldsToDelete(FieldsId);
+  // Handle delete field
+  const handleDeleteField = (fieldId: string) => {
+    setFieldToDelete(fieldId);
     setDeleteDialogOpen(true);
   };
 
-  // Confirm delete Fields
-  const confirmDeleteFields = () => {
-    if (FieldsToDelete) {
-      // In a real implementation, this would be an API call
-      setfields(prevfields => prevfields.filter(Fields => Fields._id !== FieldsToDelete));
-      setFilteredfields(prevfields => prevfields.filter(Fields => Fields._id !== FieldsToDelete));
+  // Confirm delete field
+  const confirmDeleteField = async () => {
+    if (fieldToDelete) {
+      try {
+        // Real API call to delete field
+        await axios.delete(`${API_BASE_URL}/api/fields/${fieldToDelete}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        // Update local state after successful deletion
+        setFields(prevFields => prevFields.filter(field => field._id !== fieldToDelete));
+        setFilteredFields(prevFields => prevFields.filter(field => field._id !== fieldToDelete));
+      } catch (err: any) {
+        console.error('Error deleting field:', err);
+        setError(err.response?.data?.message || 'Failed to delete field');
+      }
     }
     setDeleteDialogOpen(false);
-    setFieldsToDelete(null);
+    setFieldToDelete(null);
   };
 
-  return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Manage fields
-        </Typography>
-        
-        <Button
-          component={RouterLink}
-          to="/admin/fields/new"
-          variant="contained"
-          startIcon={<AddIcon />}
-        >
-          Add New Fields
-        </Button>
-      </Box>
-
-      {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label="Search"
-              variant="outlined"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-              placeholder="Search by name, location, or owner"
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth variant="outlined">
-              <InputLabel id="owner-filter-label">Owner</InputLabel>
-              <Select
-                labelId="owner-filter-label"
-                value={filterOwner}
-                onChange={(e: SelectChangeEvent) => setFilterOwner(e.target.value)}
-                label="Owner"
-              >
-                <MenuItem value="all">All Owners</MenuItem>
-                {owners.map(owner => (
-                  <MenuItem key={owner.id} value={owner.id}>{owner.name}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth variant="outlined">
-              <InputLabel id="soil-filter-label">Soil Type</InputLabel>
-              <Select
-                labelId="soil-filter-label"
-                value={filterSoilType}
-                onChange={(e: SelectChangeEvent) => setFilterSoilType(e.target.value)}
-                label="Soil Type"
-              >
-                <MenuItem value="all">All Soil Types</MenuItem>
-                {soilTypes.map(soilType => (
-                  <MenuItem key={soilType} value={soilType}>{soilType}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12} md={2}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Tooltip title="Table View">
-                <IconButton 
-                  color={viewMode === 'table' ? 'primary' : 'default'} 
-                  onClick={() => setViewMode('table')}
-                >
-                  <FilterListIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Grid View">
-                <IconButton 
-                  color={viewMode === 'grid' ? 'primary' : 'default'} 
-                  onClick={() => setViewMode('grid')}
-                >
-                  <TerrainIcon />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </Grid>
-        </Grid>
-      </Paper>
-
-      {/* fields List */}
-      {loading ? (
+  if (loading) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
           <CircularProgress />
         </Box>
-      ) : error ? (
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         <Alert severity="error">{error}</Alert>
-      ) : filteredfields.length === 0 ? (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
-          <Typography color="text.secondary">
-            No fields found matching your criteria
+      </Container>
+    );
+  }
+
+  return (
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Paper sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1">
+            Field Management
           </Typography>
           <Button
-            component={RouterLink}
-            to="/admin/fields/new"
             variant="contained"
-            sx={{ mt: 2 }}
+            startIcon={<AddIcon />}
+            component={RouterLink}
+            to="/admin/fields/create"
           >
-            Add New Fields
+            Add New Field
           </Button>
-        </Paper>
-      ) : viewMode === 'table' ? (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Location</TableCell>
-                <TableCell>Size</TableCell>
-                <TableCell>Owner</TableCell>
-                <TableCell>Soil Type</TableCell>
-                <TableCell>Crops</TableCell>
-                <TableCell>Sensors</TableCell>
-                <TableCell>Created</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredfields.map((Fields) => (
-                <TableRow key={Fields._id}>
-                  <TableCell>{Fields.name}</TableCell>
-                  <TableCell>{Fields.location.address}</TableCell>
-                  <TableCell>{Fields.size.value} {Fields.size.unit}</TableCell>
-                  <TableCell>{Fields.owner.name}</TableCell>
-                  <TableCell>{Fields.soilType}</TableCell>
-                  <TableCell>
-                    {Fields.crops.map(crop => (
-                      <Chip 
-                        key={crop._id}
-                        label={crop.name} 
-                        size="small" 
-                        color={crop.status === 'growing' ? 'success' : 'default'}
-                        sx={{ mr: 0.5, mb: 0.5 }}
-                      />
-                    ))}
-                  </TableCell>
-                  <TableCell>{Fields.sensors}</TableCell>
-                  <TableCell>{formatDate(Fields.createdAt)}</TableCell>
-                  <TableCell align="right">
-                    <Tooltip title="View Details">
-                      <IconButton 
-                        component={RouterLink} 
-                        to={`/admin/fields/${Fields._id}`} 
-                        size="small"
-                      >
-                        <VisibilityIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Edit">
-                      <IconButton 
-                        component={RouterLink} 
-                        to={`/admin/fields/${Fields._id}/edit`} 
-                        size="small"
-                        color="primary"
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete">
-                      <IconButton 
-                        size="small"
-                        color="error"
-                        onClick={() => handleDeleteFields(Fields._id)}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      ) : (
-        <Grid container spacing={3}>
-          {filteredfields.map((Fields) => (
-            <Grid item xs={12} sm={6} md={4} key={Fields._id}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" component="h2" gutterBottom>
-                    {Fields.name}
-                  </Typography>
-                  
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
-                    <LocationOnIcon color="primary" sx={{ mr: 1, mt: 0.5 }} fontSize="small" />
-                    <Typography variant="body2" color="text.secondary">
-                      {Fields.location.address}
-                    </Typography>
-                  </Box>
-                  
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Size:</strong> {Fields.size.value} {Fields.size.unit}
-                  </Typography>
-                  
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Owner:</strong> {Fields.owner.name}
-                  </Typography>
-                  
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Soil Type:</strong> {Fields.soilType}
-                  </Typography>
-                  
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Crops:</strong>
-                  </Typography>
-                  <Box sx={{ mb: 1 }}>
-                    {Fields.crops.map(crop => (
-                      <Chip 
-                        key={crop._id}
-                        label={crop.name} 
-                        size="small" 
-                        color={crop.status === 'growing' ? 'success' : 'default'}
-                        sx={{ mr: 0.5, mb: 0.5 }}
-                      />
-                    ))}
-                  </Box>
-                  
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Sensors:</strong> {Fields.sensors}
-                  </Typography>
-                  
-                  <Typography variant="body2" color="text.secondary">
-                    Created: {formatDate(Fields.createdAt)}
-                  </Typography>
-                </CardContent>
-                <CardActions>
-                  <Button 
-                    component={RouterLink} 
-                    to={`/admin/fields/${Fields._id}`} 
-                    size="small"
-                  >
-                    View
-                  </Button>
-                  <Button 
-                    component={RouterLink} 
-                    to={`/admin/fields/${Fields._id}/edit`} 
-                    size="small"
-                    color="primary"
-                  >
-                    Edit
-                  </Button>
-                  <Button 
-                    size="small"
-                    color="error"
-                    onClick={() => handleDeleteFields(Fields._id)}
-                  >
-                    Delete
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      )}
+        </Box>
 
-      {/* Delete Confirmation Dialog */}
+        {/* Filters and Search */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+          <TextField
+            placeholder="Search fields..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            size="small"
+            sx={{ minWidth: 250 }}
+          />
+          
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel>Owner</InputLabel>
+            <Select
+              value={filterOwner}
+              label="Owner"
+              onChange={(e) => setFilterOwner(e.target.value)}
+            >
+              <MenuItem value="all">All Owners</MenuItem>
+              {owners.map((owner) => (
+                <MenuItem key={owner.id} value={owner.id}>
+                  {owner.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel>Soil Type</InputLabel>
+            <Select
+              value={filterSoilType}
+              label="Soil Type"
+              onChange={(e) => setFilterSoilType(e.target.value)}
+            >
+              <MenuItem value="all">All Soil Types</MenuItem>
+              {soilTypes.map((soilType) => (
+                <MenuItem key={soilType} value={soilType}>
+                  {soilType}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={(e, value) => value && setViewMode(value)}
+            size="small"
+          >
+            <ToggleButton value="table">
+              <ViewListIcon />
+            </ToggleButton>
+            <ToggleButton value="grid">
+              <ViewModuleIcon />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
+        {/* Results count */}
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Showing {filteredFields.length} of {fields.length} fields
+        </Typography>
+
+        {/* Fields Table */}
+        {viewMode === 'table' && (
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Field Name</TableCell>
+                  <TableCell>Location</TableCell>
+                  <TableCell>Owner</TableCell>
+                  <TableCell>Size</TableCell>
+                  <TableCell>Soil Type</TableCell>
+                  <TableCell>Crops</TableCell>
+                  <TableCell>Sensors</TableCell>
+                  <TableCell>Created</TableCell>
+                  <TableCell align="center">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredFields.map((field) => (
+                  <TableRow key={field._id}>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <TerrainIcon color="primary" />
+                        <Typography variant="subtitle2">{field.name}</Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>{field.location.address}</TableCell>
+                    <TableCell>{field.owner.name}</TableCell>
+                    <TableCell>{field.size.value} {field.size.unit}</TableCell>
+                    <TableCell>{field.soilType}</TableCell>
+                    <TableCell>{field.crops.length}</TableCell>
+                    <TableCell>{field.sensors}</TableCell>
+                    <TableCell>{formatDate(field.createdAt)}</TableCell>
+                    <TableCell align="center">
+                      <Tooltip title="View Details">
+                        <IconButton 
+                          component={RouterLink}
+                          to={`/admin/fields/${field._id}`}
+                          size="small"
+                        >
+                          <TerrainIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Edit">
+                        <IconButton 
+                          component={RouterLink}
+                          to={`/admin/fields/${field._id}/edit`}
+                          size="small"
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete">
+                        <IconButton 
+                          onClick={() => handleDeleteField(field._id)}
+                          size="small"
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+
+        {/* Grid View */}
+        {viewMode === 'grid' && (
+          <Grid container spacing={3}>
+            {filteredFields.map((field) => (
+              <Grid item xs={12} sm={6} md={4} key={field._id}>
+                <Card>
+                  <CardHeader
+                    avatar={
+                      <Avatar sx={{ bgcolor: 'primary.main' }}>
+                        <TerrainIcon />
+                      </Avatar>
+                    }
+                    title={field.name}
+                    subheader={field.location.address}
+                  />
+                  <CardContent>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Owner: {field.owner.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Size: {field.size.value} {field.size.unit}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Soil: {field.soilType}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Chip 
+                        label={`${field.crops.length} crops`} 
+                        size="small"
+                      />
+                      <Chip 
+                        label={`${field.sensors} sensors`} 
+                        size="small"
+                      />
+                    </Box>
+                  </CardContent>
+                  <CardActions>
+                    <Button 
+                      size="small" 
+                      component={RouterLink}
+                      to={`/admin/fields/${field._id}`}
+                    >
+                      View
+                    </Button>
+                    <Button 
+                      size="small" 
+                      component={RouterLink}
+                      to={`/admin/fields/${field._id}/edit`}
+                    >
+                      Edit
+                    </Button>
+                    <Button 
+                      size="small" 
+                      color="error"
+                      onClick={() => handleDeleteField(field._id)}
+                    >
+                      Delete
+                    </Button>
+                  </CardActions>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+
+        {/* Empty state */}
+        {filteredFields.length === 0 && (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <TerrainIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary">
+              No fields found
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Try adjusting your search or filter criteria
+            </Typography>
+          </Box>
+        )}
+      </Paper>
+
+      {/* Delete Dialog */}
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
@@ -602,12 +471,12 @@ const Adminfields: React.FC = () => {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete this Fields? This action cannot be undone.
+            Are you sure you want to delete this field? This action cannot be undone and will remove all associated data.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDeleteFields} color="error" autoFocus>
+          <Button onClick={confirmDeleteField} color="error" autoFocus>
             Delete
           </Button>
         </DialogActions>
@@ -616,4 +485,4 @@ const Adminfields: React.FC = () => {
   );
 };
 
-export default Adminfields;
+export default AdminFields;

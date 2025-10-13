@@ -13,7 +13,9 @@ const {
   getHarvestStatistics,
   getUpcomingHarvests
 } = require('../controllers/harvestController');
-const { protect, authorize } = require('../middleware/auth');
+//const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize, logAction } = require('@agrimaan/shared').middleware;
+
 
 // Validation middleware
 const validateHarvestCreation = [

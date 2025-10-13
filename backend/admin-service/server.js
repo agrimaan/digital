@@ -40,7 +40,6 @@ mongoose.connect(process.env.MONGODB_URI, {
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/dashboards', dashboardRoutes);
 app.use('/api/admin/dashboard', dashboardStatsRoutes);
-//app.use('/api/system', dashboardStatsRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/audit-logs', auditLogRoutes);

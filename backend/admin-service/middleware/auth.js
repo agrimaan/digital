@@ -1,4 +1,3 @@
-
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
 const AuditLog = require('../models/AuditLog');
@@ -28,8 +27,31 @@ exports.protect = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Get admin from the token
-    const admin = await Admin.findById(decoded.id);
+    // First, try to find an admin with this ID
+    let admin = await Admin.findById(decoded.id);
+    console.log('Decoded JWT:', decoded);
+
+    // If no admin found, check if it's a regular user with admin role
+    if (!admin && decoded.role === 'admin') {
+      // Create a mock admin object from the user data
+      admin = {
+        _id: decoded.id,
+        role: decoded.role,
+        name: 'Agrimaan Admin',
+        email: decoded.email || 'admin@agrimaan.io',
+        active: true,
+        permissions: {
+          users: { read: true, write: true, delete: true },
+          fields: { read: true, write: true, delete: true },
+          crops: { read: true, write: true, delete: true },
+          sensors: { read: true, write: true, delete: true },
+          orders: { read: true, write: true, delete: true },
+          analytics: { read: true, write: true, delete: true },
+          reports: { read: true, write: true, delete: true },
+          settings: { read: true, write: true, delete: true }
+        }
+      };
+    }
 
     if (!admin) {
       return res.status(401).json({
@@ -39,7 +61,7 @@ exports.protect = async (req, res, next) => {
     }
 
     // Check if admin is active
-    if (!admin.active) {
+    if (admin.active === false) {
       return res.status(401).json({
         success: false,
         message: 'Your account has been deactivated. Please contact a super-admin.'
@@ -60,6 +82,7 @@ exports.protect = async (req, res, next) => {
 // Grant access to specific roles
 exports.authorize = (...roles) => {
   return (req, res, next) => {
+    console.log('Roles:', roles);
     if (!roles.includes(req.admin.role)) {
       return res.status(403).json({
         success: false,

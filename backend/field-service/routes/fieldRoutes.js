@@ -9,7 +9,8 @@ const {
   deleteField,
   getNearbyFields
 } = require('../controllers/fieldController');
-const { protect, authorize } = require('../middleware/auth');
+//const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize, logAction } = require('@agrimaan/shared').middleware;
 
 // Validation middleware
 const validateFieldCreation = [

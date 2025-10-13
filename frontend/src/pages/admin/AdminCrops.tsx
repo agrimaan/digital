@@ -6,44 +6,53 @@ import {
   Button,
   Container,
   Paper,
+  Typography,
+  Grid,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Typography,
+  Chip,
   IconButton,
   Tooltip,
+  CircularProgress,
+  Alert,
   TextField,
   InputAdornment,
-  Chip,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
-  CircularProgress,
-  Alert,
-  Grid,
   Card,
   CardContent,
   CardActions,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  SelectChangeEvent
+  CardHeader,
+  Avatar,
+  Badge,
+  ToggleButton,
+  ToggleButtonGroup
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Visibility as VisibilityIcon,
   Search as SearchIcon,
-  FilterList as FilterListIcon,
+  FilterList as FilterIcon,
+  ViewModule as ViewModuleIcon,
+  ViewList as ViewListIcon,
   Grass as GrassIcon,
-  LocalOffer as LocalOfferIcon
+  LocalOffer as LocalOfferIcon,
+  Person as PersonIcon,
+  CalendarMonth as CalendarIcon,
+  TrendingUp as TrendingUpIcon,
+  Warning as WarningIcon
 } from '@mui/icons-material';
 import { RootState } from '../../store';
 import axios from 'axios';
@@ -96,142 +105,25 @@ const AdminCrops: React.FC = () => {
   const [FieldsOwners, setFieldsOwners] = useState<Array<{id: string, name: string}>>([]);
 
   useEffect(() => {
-    // In a real implementation, these would be API calls
-    // For now, we'll use mock data
+    // Real API implementation
     const fetchCrops = async () => {
       setLoading(true);
       try {
-        // Mock data - in real implementation, this would be an API call
-        const mockCrops: Crop[] = [
-          {
-            _id: 'c1',
-            name: 'Wheat',
-            variety: 'HD-2967',
-            Fields: {
-              _id: 'f1',
-              name: 'North Farm',
-              owner: {
-                _id: 'u1',
-                name: 'Farmer Singh'
-              }
-            },
-            plantingDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-            harvestDate: null,
-            status: 'growing',
-            quantity: {
-              expected: 2500,
-              actual: null,
-              unit: 'kg'
-            },
-            healthStatus: 'excellent',
-            notes: 'Growing well with adequate irrigation',
-            createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            _id: 'c2',
-            name: 'Rice',
-            variety: 'Basmati-1121',
-            Fields: {
-              _id: 'f2',
-              name: 'South Plantation',
-              owner: {
-                _id: 'u2',
-                name: 'Farmer Patel'
-              }
-            },
-            plantingDate: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
-            harvestDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-            status: 'harvested',
-            quantity: {
-              expected: 3000,
-              actual: 2800,
-              unit: 'kg'
-            },
-            healthStatus: 'good',
-            notes: 'Harvested with good yield',
-            createdAt: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            _id: 'c3',
-            name: 'Cotton',
-            variety: 'Bt Cotton',
-            Fields: {
-              _id: 'f3',
-              name: 'East Orchard',
-              owner: {
-                _id: 'u3',
-                name: 'Farmer Kumar'
-              }
-            },
-            plantingDate: new Date(Date.now() - 150 * 24 * 60 * 60 * 1000).toISOString(),
-            harvestDate: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-            status: 'sold',
-            quantity: {
-              expected: 1500,
-              actual: 1600,
-              unit: 'kg'
-            },
-            healthStatus: 'excellent',
-            notes: 'Sold at good market price',
-            createdAt: new Date(Date.now() - 150 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            _id: 'c4',
-            name: 'Sugarcane',
-            variety: 'CO-0238',
-            Fields: {
-              _id: 'f4',
-              name: 'West Fields',
-              owner: {
-                _id: 'u1',
-                name: 'Farmer Singh'
-              }
-            },
-            plantingDate: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
-            harvestDate: null,
-            status: 'growing',
-            quantity: {
-              expected: 5000,
-              actual: null,
-              unit: 'kg'
-            },
-            healthStatus: 'fair',
-            notes: 'Some pest issues observed, treatment applied',
-            createdAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            _id: 'c5',
-            name: 'Tomato',
-            variety: 'Pusa Ruby',
-            Fields: {
-              _id: 'f2',
-              name: 'South Plantation',
-              owner: {
-                _id: 'u2',
-                name: 'Farmer Patel'
-              }
-            },
-            plantingDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-            harvestDate: null,
-            status: 'failed',
-            quantity: {
-              expected: 1000,
-              actual: 0,
-              unit: 'kg'
-            },
-            healthStatus: 'poor',
-            notes: 'Crop failed due to disease outbreak',
-            createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
+        const response = await axios.get(`${API_BASE_URL}/api/crops`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
-        ];
-
-        setCrops(mockCrops);
-        setFilteredCrops(mockCrops);
+        });
         
-        // Extract unique Fields owners for filter
-        const uniqueOwners = Array.from(new Set(mockCrops.map(crop => crop.Fields.owner._id)))
-          .map(ownerId => {
-            const owner = mockCrops.find(crop => crop.Fields.owner._id === ownerId)?.Fields.owner;
+        const cropsData = response.data.data || response.data || [];
+        setCrops(cropsData);
+        setFilteredCrops(cropsData);
+        
+        // Extract unique field owners for filter
+        const uniqueOwners = Array.from(new Set(cropsData.map((crop: any) => crop.farmId?.owner?._id || crop.farmerId)))
+          .filter((ownerId): ownerId is string => typeof ownerId === 'string' && ownerId !== '')
+          .map((ownerId: string) => {
+            const owner = cropsData.find((crop: any) => (crop.farmId?.owner?._id || crop.farmerId) === ownerId)?.farmId?.owner;
             return {
               id: ownerId,
               name: owner?.name || 'Unknown'
@@ -280,45 +172,29 @@ const AdminCrops: React.FC = () => {
 
   // Format date
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Not set';
-    
-    const options: Intl.DateTimeFormatOptions = { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric'
-    };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString();
   };
 
   // Get status color
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'growing':
-        return 'primary';
-      case 'harvested':
-        return 'success';
-      case 'sold':
-        return 'info';
-      case 'failed':
-        return 'error';
-      default:
-        return 'default';
+      case 'growing': return 'success';
+      case 'harvested': return 'info';
+      case 'sold': return 'primary';
+      case 'failed': return 'error';
+      default: return 'default';
     }
   };
 
-  // Get health status color
+  // Get health color
   const getHealthColor = (health: string) => {
     switch (health) {
-      case 'excellent':
-        return 'success';
-      case 'good':
-        return 'info';
-      case 'fair':
-        return 'warning';
-      case 'poor':
-        return 'error';
-      default:
-        return 'default';
+      case 'excellent': return 'success';
+      case 'good': return 'info';
+      case 'fair': return 'warning';
+      case 'poor': return 'error';
+      default: return 'default';
     }
   };
 
@@ -339,297 +215,260 @@ const AdminCrops: React.FC = () => {
     setCropToDelete(null);
   };
 
-  return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Manage Crops
-        </Typography>
-        
-        <Button
-          component={RouterLink}
-          to="/admin/crops/new"
-          variant="contained"
-          startIcon={<AddIcon />}
-        >
-          Add New Crop
-        </Button>
-      </Box>
-
-      {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label="Search"
-              variant="outlined"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-              placeholder="Search by name, variety, Fields, or owner"
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth variant="outlined">
-              <InputLabel id="status-filter-label">Status</InputLabel>
-              <Select
-                labelId="status-filter-label"
-                value={filterStatus}
-                onChange={(e: SelectChangeEvent) => setFilterStatus(e.target.value)}
-                label="Status"
-              >
-                <MenuItem value="all">All Statuses</MenuItem>
-                <MenuItem value="growing">Growing</MenuItem>
-                <MenuItem value="harvested">Harvested</MenuItem>
-                <MenuItem value="sold">Sold</MenuItem>
-                <MenuItem value="failed">Failed</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth variant="outlined">
-              <InputLabel id="health-filter-label">Health Status</InputLabel>
-              <Select
-                labelId="health-filter-label"
-                value={filterHealth}
-                onChange={(e: SelectChangeEvent) => setFilterHealth(e.target.value)}
-                label="Health Status"
-              >
-                <MenuItem value="all">All Health Statuses</MenuItem>
-                <MenuItem value="excellent">Excellent</MenuItem>
-                <MenuItem value="good">Good</MenuItem>
-                <MenuItem value="fair">Fair</MenuItem>
-                <MenuItem value="poor">Poor</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12} md={2}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Tooltip title="Table View">
-                <IconButton 
-                  color={viewMode === 'table' ? 'primary' : 'default'} 
-                  onClick={() => setViewMode('table')}
-                >
-                  <FilterListIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Grid View">
-                <IconButton 
-                  color={viewMode === 'grid' ? 'primary' : 'default'} 
-                  onClick={() => setViewMode('grid')}
-                >
-                  <GrassIcon />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </Grid>
-        </Grid>
-      </Paper>
-
-      {/* Crops List */}
-      {loading ? (
+  if (loading) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
           <CircularProgress />
         </Box>
-      ) : error ? (
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         <Alert severity="error">{error}</Alert>
-      ) : filteredCrops.length === 0 ? (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
-          <Typography color="text.secondary">
-            No crops found matching your criteria
+      </Container>
+    );
+  }
+
+  return (
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Paper sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1">
+            Crop Management
           </Typography>
           <Button
-            component={RouterLink}
-            to="/admin/crops/new"
             variant="contained"
-            sx={{ mt: 2 }}
+            startIcon={<AddIcon />}
+            component={RouterLink}
+            to="/admin/crops/create"
           >
             Add New Crop
           </Button>
-        </Paper>
-      ) : viewMode === 'table' ? (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Variety</TableCell>
-                <TableCell>Fields</TableCell>
-                <TableCell>Owner</TableCell>
-                <TableCell>Planting Date</TableCell>
-                <TableCell>Harvest Date</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Quantity</TableCell>
-                <TableCell>Health</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredCrops.map((crop) => (
-                <TableRow key={crop._id}>
-                  <TableCell>{crop.name}</TableCell>
-                  <TableCell>{crop.variety}</TableCell>
-                  <TableCell>{crop.Fields.name}</TableCell>
-                  <TableCell>{crop.Fields.owner.name}</TableCell>
-                  <TableCell>{formatDate(crop.plantingDate)}</TableCell>
-                  <TableCell>{formatDate(crop.harvestDate)}</TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={crop.status.charAt(0).toUpperCase() + crop.status.slice(1)} 
-                      color={getStatusColor(crop.status)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {crop.quantity.actual !== null ? 
-                      `${crop.quantity.actual} ${crop.quantity.unit}` : 
-                      `${crop.quantity.expected} ${crop.quantity.unit} (expected)`
-                    }
-                  </TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={crop.healthStatus.charAt(0).toUpperCase() + crop.healthStatus.slice(1)} 
-                      color={getHealthColor(crop.healthStatus)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <Tooltip title="View Details">
-                      <IconButton 
-                        component={RouterLink} 
-                        to={`/admin/crops/${crop._id}`} 
-                        size="small"
-                      >
-                        <VisibilityIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Edit">
-                      <IconButton 
-                        component={RouterLink} 
-                        to={`/admin/crops/${crop._id}/edit`} 
-                        size="small"
-                        color="primary"
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete">
-                      <IconButton 
-                        size="small"
-                        color="error"
-                        onClick={() => handleDeleteCrop(crop._id)}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      ) : (
-        <Grid container spacing={3}>
-          {filteredCrops.map((crop) => (
-            <Grid item xs={12} sm={6} md={4} key={crop._id}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                    <Typography variant="h6" component="h2">
-                      {crop.name}
-                    </Typography>
-                    <Chip 
-                      label={crop.status.charAt(0).toUpperCase() + crop.status.slice(1)} 
-                      color={getStatusColor(crop.status)}
-                      size="small"
-                    />
-                  </Box>
-                  
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Variety:</strong> {crop.variety}
-                  </Typography>
-                  
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Fields:</strong> {crop.Fields.name}
-                  </Typography>
-                  
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Owner:</strong> {crop.Fields.owner.name}
-                  </Typography>
-                  
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Planting Date:</strong> {formatDate(crop.plantingDate)}
-                  </Typography>
-                  
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Harvest Date:</strong> {formatDate(crop.harvestDate)}
-                  </Typography>
-                  
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Quantity:</strong> {crop.quantity.actual !== null ? 
-                      `${crop.quantity.actual} ${crop.quantity.unit}` : 
-                      `${crop.quantity.expected} ${crop.quantity.unit} (expected)`
-                    }
-                  </Typography>
-                  
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Typography variant="body2" sx={{ mr: 1 }}>
-                      <strong>Health:</strong>
-                    </Typography>
-                    <Chip 
-                      label={crop.healthStatus.charAt(0).toUpperCase() + crop.healthStatus.slice(1)} 
-                      color={getHealthColor(crop.healthStatus)}
-                      size="small"
-                    />
-                  </Box>
-                  
-                  {crop.notes && (
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      <strong>Notes:</strong> {crop.notes}
-                    </Typography>
-                  )}
-                </CardContent>
-                <CardActions>
-                  <Button 
-                    component={RouterLink} 
-                    to={`/admin/crops/${crop._id}`} 
-                    size="small"
-                  >
-                    View
-                  </Button>
-                  <Button 
-                    component={RouterLink} 
-                    to={`/admin/crops/${crop._id}/edit`} 
-                    size="small"
-                    color="primary"
-                  >
-                    Edit
-                  </Button>
-                  <Button 
-                    size="small"
-                    color="error"
-                    onClick={() => handleDeleteCrop(crop._id)}
-                  >
-                    Delete
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      )}
+        </Box>
 
-      {/* Delete Confirmation Dialog */}
+        {/* Filters and Search */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+          <TextField
+            placeholder="Search crops..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            size="small"
+            sx={{ minWidth: 250 }}
+          />
+          
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel>Status</InputLabel>
+            <Select
+              value={filterStatus}
+              label="Status"
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <MenuItem value="all">All Statuses</MenuItem>
+              <MenuItem value="growing">Growing</MenuItem>
+              <MenuItem value="harvested">Harvested</MenuItem>
+              <MenuItem value="sold">Sold</MenuItem>
+              <MenuItem value="failed">Failed</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel>Health</InputLabel>
+            <Select
+              value={filterHealth}
+              label="Health"
+              onChange={(e) => setFilterHealth(e.target.value)}
+            >
+              <MenuItem value="all">All Health</MenuItem>
+              <MenuItem value="excellent">Excellent</MenuItem>
+              <MenuItem value="good">Good</MenuItem>
+              <MenuItem value="fair">Fair</MenuItem>
+              <MenuItem value="poor">Poor</MenuItem>
+            </Select>
+          </FormControl>
+
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={(e, value) => value && setViewMode(value)}
+            size="small"
+          >
+            <ToggleButton value="table">
+              <ViewListIcon />
+            </ToggleButton>
+            <ToggleButton value="grid">
+              <ViewModuleIcon />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
+        {/* Results count */}
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Showing {filteredCrops.length} of {crops.length} crops
+        </Typography>
+
+        {/* Crops Table */}
+        {viewMode === 'table' && (
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Crop Name</TableCell>
+                  <TableCell>Variety</TableCell>
+                  <TableCell>Field</TableCell>
+                  <TableCell>Owner</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Health</TableCell>
+                  <TableCell>Planting Date</TableCell>
+                  <TableCell>Expected Yield</TableCell>
+                  <TableCell align="center">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredCrops.map((crop) => (
+                  <TableRow key={crop._id}>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <GrassIcon color="primary" />
+                        <Typography variant="subtitle2">{crop.name}</Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>{crop.variety}</TableCell>
+                    <TableCell>{crop.Fields.name}</TableCell>
+                    <TableCell>{crop.Fields.owner.name}</TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={crop.status} 
+                        color={getStatusColor(crop.status) as any}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={crop.healthStatus} 
+                        color={getHealthColor(crop.healthStatus) as any}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>{formatDate(crop.plantingDate)}</TableCell>
+                    <TableCell>
+                      {crop.quantity.expected} {crop.quantity.unit}
+                    </TableCell>
+                    <TableCell align="center">
+                      <Tooltip title="Edit">
+                        <IconButton 
+                          component={RouterLink}
+                          to={`/admin/crops/${crop._id}/edit`}
+                          size="small"
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete">
+                        <IconButton 
+                          onClick={() => handleDeleteCrop(crop._id)}
+                          size="small"
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+
+        {/* Grid View */}
+        {viewMode === 'grid' && (
+          <Grid container spacing={3}>
+            {filteredCrops.map((crop) => (
+              <Grid item xs={12} sm={6} md={4} key={crop._id}>
+                <Card>
+                  <CardHeader
+                    avatar={
+                      <Avatar sx={{ bgcolor: 'primary.main' }}>
+                        <GrassIcon />
+                      </Avatar>
+                    }
+                    title={crop.name}
+                    subheader={crop.variety}
+                  />
+                  <CardContent>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Field: {crop.Fields.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Owner: {crop.Fields.owner.name}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                      <Chip 
+                        label={crop.status} 
+                        color={getStatusColor(crop.status) as any}
+                        size="small"
+                      />
+                      <Chip 
+                        label={crop.healthStatus} 
+                        color={getHealthColor(crop.healthStatus) as any}
+                        size="small"
+                      />
+                    </Box>
+                    <Typography variant="body2">
+                      Planting: {formatDate(crop.plantingDate)}
+                    </Typography>
+                    <Typography variant="body2">
+                      Expected: {crop.quantity.expected} {crop.quantity.unit}
+                    </Typography>
+                  </CardContent>
+                  <CardActions>
+                    <Button 
+                      size="small" 
+                      component={RouterLink}
+                      to={`/admin/crops/${crop._id}/edit`}
+                    >
+                      Edit
+                    </Button>
+                    <Button 
+                      size="small" 
+                      color="error"
+                      onClick={() => handleDeleteCrop(crop._id)}
+                    >
+                      Delete
+                    </Button>
+                  </CardActions>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+
+        {/* Empty state */}
+        {filteredCrops.length === 0 && (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <GrassIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary">
+              No crops found
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Try adjusting your search or filter criteria
+            </Typography>
+          </Box>
+        )}
+      </Paper>
+
+      {/* Delete Dialog */}
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}

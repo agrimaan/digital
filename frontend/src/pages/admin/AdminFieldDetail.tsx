@@ -136,89 +136,17 @@ const AdminFieldsDetail: React.FC = () => {
     const fetchFieldsData = async () => {
       setLoading(true);
       try {
-        // In a real implementation, this would be an API call
-        // For now, we'll use mock data
+        // Real API call to fetch details
+        const response = await axios.get(`${API_BASE_URL}/api/fields/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         
-        // Mock Fields data
-        const mockFields: Fields = {
-          _id: id || 'f1',
-          name: 'North Farm',
-          location: {
-            address: 'Village X, District Y, State Z',
-            coordinates: {
-              latitude: 28.6139,
-              longitude: 77.2090
-            }
-          },
-          size: {
-            value: 5.2,
-            unit: 'hectares'
-          },
-          owner: {
-            _id: 'u1',
-            name: 'Farmer Singh',
-            email: 'farmer.singh@example.com'
-          },
-          soilType: 'Clay Loam',
-          waterSource: 'Canal Irrigation',
-          crops: [
-            {
-              _id: 'c1',
-              name: 'Wheat',
-              variety: 'HD-2967',
-              status: 'growing',
-              plantingDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-              harvestDate: null
-            },
-            {
-              _id: 'c2',
-              name: 'Rice',
-              variety: 'Basmati-1121',
-              status: 'harvested',
-              plantingDate: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
-              harvestDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-            }
-          ],
-          sensors: [
-            {
-              _id: 's1',
-              name: 'Soil Moisture Sensor 1',
-              type: 'soil_moisture',
-              status: 'active',
-              lastReading: {
-                value: 42.5,
-                unit: '%',
-                timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-              }
-            },
-            {
-              _id: 's2',
-              name: 'Temperature Sensor 1',
-              type: 'temperature',
-              status: 'active',
-              lastReading: {
-                value: 28.3,
-                unit: '°C',
-                timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
-              }
-            },
-            {
-              _id: 's3',
-              name: 'Humidity Sensor 1',
-              type: 'humidity',
-              status: 'inactive',
-              lastReading: {
-                value: 65.8,
-                unit: '%',
-                timestamp: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
-              }
-            }
-          ],
-          createdAt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
-        };
+        const data = response.data.data || response.data;
+        setFields(data);
         
-        setFields(mockFields);
+                setFields(data);
         setLoading(false);
       } catch (err: any) {
         console.error('Error fetching Fields data:', err);

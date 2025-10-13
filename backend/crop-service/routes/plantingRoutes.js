@@ -15,7 +15,9 @@ const {
   getUpcomingPlantings,
   getPlantingsReadyForHarvest
 } = require('../controllers/plantingController');
-const { protect, authorize } = require('../middleware/auth');
+//const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize, logAction } = require('@agrimaan/shared').middleware;
+
 
 // Validation middleware
 const validatePlantingCreation = [

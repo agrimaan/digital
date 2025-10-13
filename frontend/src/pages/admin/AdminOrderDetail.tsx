@@ -164,98 +164,17 @@ const AdminOrderDetail: React.FC = () => {
     const fetchOrderData = async () => {
       setLoading(true);
       try {
-        // In a real implementation, this would be an API call
-        // For now, we'll use mock data
+        // Real API call to fetch details
+        const response = await axios.get(`${API_BASE_URL}/api/marketplace/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         
-        // Mock order data
-        const mockOrder: Order = {
-          _id: id || 'o1',
-          orderNumber: 'ORD-2025-001',
-          buyer: {
-            _id: 'b1',
-            name: 'Buyer Kumar',
-            email: 'buyer.kumar@example.com',
-            phone: '+91 9876543210'
-          },
-          seller: {
-            _id: 's1',
-            name: 'Farmer Singh',
-            email: 'farmer.singh@example.com',
-            phone: '+91 9876543211'
-          },
-          items: [
-            {
-              _id: 'i1',
-              crop: {
-                _id: 'c1',
-                name: 'Wheat',
-                variety: 'HD-2967'
-              },
-              quantity: 500,
-              unit: 'kg',
-              pricePerUnit: 25,
-              totalPrice: 12500
-            },
-            {
-              _id: 'i2',
-              crop: {
-                _id: 'c2',
-                name: 'Rice',
-                variety: 'Basmati-1121'
-              },
-              quantity: 200,
-              unit: 'kg',
-              pricePerUnit: 60,
-              totalPrice: 12000
-            }
-          ],
-          totalAmount: 24500,
-          status: 'confirmed',
-          paymentStatus: 'completed',
-          paymentMethod: 'online',
-          paymentDetails: {
-            transactionId: 'TXN123456789',
-            paymentDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            paymentGateway: 'RazorPay'
-          },
-          shippingAddress: {
-            street: '123 Market Street',
-            city: 'Mumbai',
-            state: 'Maharashtra',
-            zipCode: '400001',
-            country: 'India'
-          },
-          billingAddress: {
-            street: '123 Market Street',
-            city: 'Mumbai',
-            state: 'Maharashtra',
-            zipCode: '400001',
-            country: 'India'
-          },
-          deliveryDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-          trackingInfo: {
-            provider: 'AgriExpress',
-            trackingNumber: 'AE123456789',
-            trackingUrl: 'https://agriexpress.com/track/AE123456789'
-          },
-          notes: 'Please deliver during business hours.',
-          statusHistory: [
-            {
-              status: 'pending',
-              timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-              comment: 'Order placed by buyer'
-            },
-            {
-              status: 'confirmed',
-              timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-              comment: 'Payment received, order confirmed'
-            }
-          ],
-          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-        };
+        const data = response.data.data || response.data;
+        setOrder(data);
         
-        setOrder(mockOrder);
+                setOrder(data);
         setLoading(false);
       } catch (err: any) {
         console.error('Error fetching order data:', err);

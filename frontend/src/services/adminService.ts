@@ -78,7 +78,7 @@ export const adminDashboardAPI = {
   // Get pending verifications
   getPendingVerifications: async () => {
     try {
-      const response = await adminApi.get("/verification/pending");
+      const response = await adminApi.get("/admin/dashboard/verification/pending");
       return response.data;
     } catch (error) {
       console.error("Error fetching pending verifications:", error);
@@ -89,7 +89,7 @@ export const adminDashboardAPI = {
   // Get system health status
   getSystemHealth: async () => {
     try {
-      const response = await adminApi.get("/admin/system/health");
+      const response = await adminApi.get("/admin/dashboard/system/health");
       return response.data;
     } catch (error) {
       console.error("Error fetching system health:", error);

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -12,19 +13,20 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  SelectChangeEvent,
   CircularProgress,
   Alert,
-  Divider,
-  IconButton,
-  Avatar
+  Card,
+  CardContent,
+  CardHeader,
+  Divider
 } from '@mui/material';
 import {
   Save as SaveIcon,
   Cancel as CancelIcon,
-  ArrowBack as ArrowBackIcon,
-  PhotoCamera as PhotoCameraIcon
+  Person as PersonIcon
 } from '@mui/icons-material';
+import { RootState } from '../../store';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { API_BASE_URL } from '../../config/apiConfig';
 
@@ -33,41 +35,37 @@ interface User {
   _id: string;
   name: string;
   email: string;
-  role: 'farmer' | 'buyer' | 'admin' | 'agronomist' | 'investor' | 'logistics';
-  phone: string;
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    country: string;
-    zipCode: string;
+  role: 'admin' | 'farmer' | 'buyer' | 'seller';
+  phone?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    zipCode?: string;
   };
-  profileImage: string | null;
+  profileImage?: string;
+  verificationStatus: 'verified' | 'pending' | 'rejected';
   createdAt: string;
   updatedAt: string;
-}
-
-interface FormData {
-  name: string;
-  email: string;
-  role: string;
-  phone: string;
-  street: string;
-  city: string;
-  state: string;
-  country: string;
-  zipCode: string;
 }
 
 const AdminUserEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { user } = useSelector((state: RootState) => state.auth);
   
-  const [user, setUser] = useState<User | null>(null);
-  const [formData, setFormData] = useState<FormData>({
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  
+  const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role: '',
+    role: 'farmer' as 'admin' | 'farmer' | 'buyer' | 'seller',
     phone: '',
     street: '',
     city: '',
@@ -75,51 +73,31 @@ const AdminUserEdit: React.FC = () => {
     country: '',
     zipCode: ''
   });
-  
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
       setLoading(true);
       try {
-        // In a real implementation, this would be an API call
-        // For now, we'll use mock data
+        const response = await axios.get(`${API_BASE_URL}/api/users/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         
-        // Mock user data
-        const mockUser: User = {
-          _id: id || 'u1',
-          name: 'Farmer Singh',
-          email: 'farmer.singh@example.com',
-          role: 'farmer',
-          phone: '+91 9876543210',
-          address: {
-            street: '123 Farm Road',
-            city: 'Amritsar',
-            state: 'Punjab',
-            country: 'India',
-            zipCode: '143001'
-          },
-          profileImage: null,
-          createdAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-        };
+        const userData = response.data.data || response.data;
+        setCurrentUser(userData);
         
-        setUser(mockUser);
-        
-        // Initialize form data
+        // Initialize form with user data
         setFormData({
-          name: mockUser.name,
-          email: mockUser.email,
-          role: mockUser.role,
-          phone: mockUser.phone || '',
-          street: mockUser.address?.street || '',
-          city: mockUser.address?.city || '',
-          state: mockUser.address?.state || '',
-          country: mockUser.address?.country || '',
-          zipCode: mockUser.address?.zipCode || ''
+          name: userData.name || '',
+          email: userData.email || '',
+          role: userData.role || 'farmer',
+          phone: userData.phone || '',
+          street: userData.address?.street || '',
+          city: userData.address?.city || '',
+          state: userData.address?.state || '',
+          country: userData.address?.country || '',
+          zipCode: userData.address?.zipCode || ''
         });
         
         setLoading(false);
@@ -141,7 +119,7 @@ const AdminUserEdit: React.FC = () => {
     }));
   };
 
-  const handleRoleChange = (e: SelectChangeEvent<string>) => {
+  const handleRoleChange = (e: any) => {
     setFormData(prev => ({
       ...prev,
       role: e.target.value
@@ -155,13 +133,29 @@ const AdminUserEdit: React.FC = () => {
     setSuccess(null);
     
     try {
-      // In a real implementation, this would be an API call
-      // For now, we'll simulate a successful update
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Update success message
+      // Prepare user data for API
+      const updatedUserData = {
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        phone: formData.phone,
+        address: {
+          street: formData.street,
+          city: formData.city,
+          state: formData.state,
+          country: formData.country,
+          zipCode: formData.zipCode
+        }
+      };
+
+      // Make API call to update user
+      await axios.put(`${API_BASE_URL}/api/users/${id}`, updatedUserData, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
       setSuccess('User updated successfully');
       setSaving(false);
       
@@ -171,7 +165,7 @@ const AdminUserEdit: React.FC = () => {
       }, 1500);
     } catch (err: any) {
       console.error('Error updating user:', err);
-      setError(err.message || 'Failed to update user');
+      setError(err.response?.data?.message || 'Failed to update user');
       setSaving(false);
     }
   };
@@ -190,223 +184,184 @@ const AdminUserEdit: React.FC = () => {
     );
   }
 
-  if (error && !user) {
+  if (error && !currentUser) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Alert severity="error">
-          {error || 'User not found'}
-        </Alert>
-        <Button
-          component={RouterLink}
-          to="/admin/users"
-          startIcon={<ArrowBackIcon />}
-          sx={{ mt: 2 }}
-        >
-          Back to Users
-        </Button>
+        <Alert severity="error">{error}</Alert>
       </Container>
     );
   }
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <Button
-          component={RouterLink}
-          to={`/admin/users/${id}`}
-          startIcon={<ArrowBackIcon />}
-          sx={{ mr: 2 }}
-        >
-          Back
-        </Button>
-        <Typography variant="h4" component="h1">
-          Edit User
-        </Typography>
-      </Box>
+      <Paper sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1">
+            Edit User
+          </Typography>
+          <Button
+            onClick={handleCancel}
+            startIcon={<CancelIcon />}
+          >
+            Cancel
+          </Button>
+        </Box>
 
-      {success && (
-        <Alert severity="success" sx={{ mb: 3 }}>
-          {success}
-        </Alert>
-      )}
+        {success && (
+          <Alert severity="success" sx={{ mb: 3 }}>
+            {success}
+          </Alert>
+        )}
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
 
-      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-        <Box component="form" onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
-            {/* Profile Image */}
-            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-              <Box sx={{ position: 'relative' }}>
-                <Avatar 
-                  sx={{ 
-                    width: 120, 
-                    height: 120, 
-                    bgcolor: 'primary.main',
-                    fontSize: '3rem'
-                  }}
-                >
-                  {formData.name.charAt(0)}
-                </Avatar>
-                <IconButton 
-                  sx={{ 
-                    position: 'absolute', 
-                    bottom: 0, 
-                    right: 0, 
-                    bgcolor: 'background.paper',
-                    '&:hover': { bgcolor: 'background.default' }
-                  }}
-                >
-                  <PhotoCameraIcon />
-                </IconButton>
-              </Box>
-            </Grid>
-
             {/* Basic Information */}
             <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom>
-                Basic Information
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Full Name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Email Address"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel id="role-label">Role</InputLabel>
-                <Select
-                  labelId="role-label"
-                  id="role"
-                  value={formData.role}
-                  label="Role"
-                  onChange={handleRoleChange}
-                  required
-                >
-                  <MenuItem value="farmer">Farmer</MenuItem>
-                  <MenuItem value="buyer">Buyer</MenuItem>
-                  <MenuItem value="admin">Admin</MenuItem>
-                  <MenuItem value="agronomist">Agronomist</MenuItem>
-                  <MenuItem value="investor">Investor</MenuItem>
-                  <MenuItem value="logistics">Logistics</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Phone Number"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-              />
+              <Card>
+                <CardHeader 
+                  title="Basic Information"
+                  avatar={<PersonIcon />}
+                />
+                <CardContent>
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Full Name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        required
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Email Address"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <FormControl fullWidth>
+                        <InputLabel>Role</InputLabel>
+                        <Select
+                          name="role"
+                          value={formData.role}
+                          label="Role"
+                          onChange={handleRoleChange}
+                        >
+                          <MenuItem value="admin">Admin</MenuItem>
+                          <MenuItem value="farmer">Farmer</MenuItem>
+                          <MenuItem value="buyer">Buyer</MenuItem>
+                          <MenuItem value="seller">Seller</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Phone Number"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                      />
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
             </Grid>
 
             {/* Address Information */}
             <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-                Address Information
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
+              <Card>
+                <CardHeader 
+                  title="Address Information"
+                  avatar={<PersonIcon />}
+                />
+                <CardContent>
+                  <Grid container spacing={3}>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Street Address"
+                        name="street"
+                        value={formData.street}
+                        onChange={handleChange}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="City"
+                        name="city"
+                        value={formData.city}
+                        onChange={handleChange}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="State"
+                        name="state"
+                        value={formData.state}
+                        onChange={handleChange}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Country"
+                        name="country"
+                        value={formData.country}
+                        onChange={handleChange}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="ZIP Code"
+                        name="zipCode"
+                        value={formData.zipCode}
+                        onChange={handleChange}
+                      />
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
             </Grid>
 
+            {/* Submit Button */}
             <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Street Address"
-                name="street"
-                value={formData.street}
-                onChange={handleChange}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="City"
-                name="city"
-                value={formData.city}
-                onChange={handleChange}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="State/Province"
-                name="state"
-                value={formData.state}
-                onChange={handleChange}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Country"
-                name="country"
-                value={formData.country}
-                onChange={handleChange}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="ZIP/Postal Code"
-                name="zipCode"
-                value={formData.zipCode}
-                onChange={handleChange}
-              />
-            </Grid>
-
-            {/* Action Buttons */}
-            <Grid item xs={12} sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-              <Button
-                variant="outlined"
-                onClick={handleCancel}
-                startIcon={<CancelIcon />}
-                sx={{ mr: 2 }}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                startIcon={<SaveIcon />}
-                disabled={saving}
-              >
-                {saving ? 'Saving...' : 'Save Changes'}
-              </Button>
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                <Button
+                  variant="outlined"
+                  onClick={handleCancel}
+                  disabled={saving}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
+                  disabled={saving}
+                >
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </Box>
             </Grid>
           </Grid>
-        </Box>
+        </form>
       </Paper>
     </Container>
   );

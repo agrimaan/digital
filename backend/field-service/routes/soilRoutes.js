@@ -9,7 +9,8 @@ const {
   deleteSoilType,
   getSoilTypesByCrop
 } = require('../controllers/soilController');
-const { protect, authorize } = require('../middleware/auth');
+//const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize, logAction } = require('@agrimaan/shared').middleware;
 
 // Validation middleware
 const validateSoilTypeCreation = [

@@ -1,7 +1,9 @@
 const express = require('express');
 const { check } = require('express-validator');
 const dashboardController = require('../controllers/dashboardController');
-const { protect, logAction, authorize } = require('@agrimaan/shared').middleware;
+//const { protect, logAction, authorize } = require('@agrimaan/shared').middleware;
+const { protect, logAction, authorize } = require('../middleware/auth');
+
 
 const router = express.Router();
 
@@ -23,6 +25,11 @@ router.get('/:id', dashboardController.getDashboardById);
 
 // Get dashboard data
 router.get('/:id/data', dashboardController.getDashboardData);
+
+
+
+// SuperAdmin only routes
+router.use(authorize('super-admin'));
 
 // Create a new dashboard
 router.post(

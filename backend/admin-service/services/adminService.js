@@ -128,6 +128,7 @@ exports.loginAdmin = async (email, password, requestData = {}) => {
  */
 exports.getAdminById = async (id) => {
   try {
+    console.log ("get Admin by ID with" & id);
     const admin = await Admin.findById(id);
     
     if (!admin) {

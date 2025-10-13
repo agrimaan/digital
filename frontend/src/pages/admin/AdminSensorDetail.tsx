@@ -142,80 +142,17 @@ const AdminSensorDetail: React.FC = () => {
     const fetchSensorData = async () => {
       setLoading(true);
       try {
-        // In a real implementation, this would be an API call
-        // For now, we'll use mock data
+        // Real API call to fetch details
+        const response = await axios.get(`${API_BASE_URL}/api/iot/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         
-        // Mock sensor data
-        const mockSensor: Sensor = {
-          _id: id || 's1',
-          name: 'Soil Moisture Sensor 1',
-          type: 'soil_moisture',
-          Fields: {
-            _id: 'f1',
-            name: 'North Farm',
-            owner: {
-              _id: 'u1',
-              name: 'Farmer Singh'
-            }
-          },
-          location: {
-            latitude: 28.6139,
-            longitude: 77.2090,
-            description: 'North-east corner'
-          },
-          status: 'active',
-          batteryLevel: 85,
-          lastReading: {
-            value: 42.5,
-            unit: '%',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-          },
-          readings: [
-            { value: 42.5, unit: '%', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() },
-            { value: 43.2, unit: '%', timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString() },
-            { value: 44.1, unit: '%', timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString() },
-            { value: 43.8, unit: '%', timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString() },
-            { value: 42.9, unit: '%', timestamp: new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString() },
-            { value: 41.7, unit: '%', timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString() },
-            { value: 40.5, unit: '%', timestamp: new Date(Date.now() - 14 * 60 * 60 * 1000).toISOString() },
-            { value: 39.8, unit: '%', timestamp: new Date(Date.now() - 16 * 60 * 60 * 1000).toISOString() },
-            { value: 38.6, unit: '%', timestamp: new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString() },
-            { value: 40.2, unit: '%', timestamp: new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString() }
-          ],
-          maintenanceHistory: [
-            {
-              _id: 'm1',
-              date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-              type: 'Battery Replacement',
-              description: 'Replaced battery with new one',
-              performedBy: 'Technician 1'
-            },
-            {
-              _id: 'm2',
-              date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-              type: 'Calibration',
-              description: 'Calibrated sensor for accurate readings',
-              performedBy: 'Technician 2'
-            },
-            {
-              _id: 'm3',
-              date: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
-              type: 'Cleaning',
-              description: 'Cleaned sensor probes',
-              performedBy: 'Farmer Singh'
-            }
-          ],
-          installationDate: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
-          lastMaintenance: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-          manufacturer: 'AgriSense Technologies',
-          model: 'SM-100',
-          serialNumber: 'AST-SM100-12345',
-          firmwareVersion: '2.1.5',
-          createdAt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-        };
+        const data = response.data.data || response.data;
+        setSensor(data);
         
-        setSensor(mockSensor);
+                setSensor(data);
         setLoading(false);
       } catch (err: any) {
         console.error('Error fetching sensor data:', err);
