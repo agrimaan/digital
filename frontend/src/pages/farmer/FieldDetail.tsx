@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+// src/pages/farmer/FieldDetail.tsx
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   Box,
   Typography,
@@ -8,13 +10,12 @@ import {
   Button,
   Tabs,
   Tab,
-  Divider,
   Card,
   CardContent,
   List,
   ListItem,
   ListItemText,
-  ListItemIcon
+  CircularProgress
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
@@ -23,6 +24,48 @@ import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import GrassIcon from '@mui/icons-material/Grass';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import AgricultureIcon from '@mui/icons-material/Agriculture';
+import { AppDispatch, RootState } from '../../store';
+import { getFieldsById } from '../../features/fields/fieldSlice';
+
+// --- Mapping Helpers ---
+const mapSoilType = (type?: string): string => {
+  if (!type) return 'N/A';
+  const normalized = type.toLowerCase();
+  const mapping: Record<string, string> = {
+    clay: 'Clay',
+    sandy: 'Sandy',
+    loam: 'Loam',
+    silty: 'Silty',
+    peaty: 'Peaty',
+    chalky: 'Chalky'
+  };
+  return mapping[normalized] || type.charAt(0).toUpperCase() + type.slice(1);
+};
+
+const mapIrrigationType = (type?: string): string => {
+  if (!type) return 'N/A';
+  const normalized = type.toLowerCase();
+  const mapping: Record<string, string> = {
+    drip: 'Drip Irrigation',
+    sprinkler: 'Sprinkler',
+    flood: 'Surface Irrigation',
+    other: 'Subsurface Irrigation',
+    none: 'None'
+  };
+  return mapping[normalized] || type.charAt(0).toUpperCase() + type.slice(1);
+};
+
+const mapStatus = (status?: string): string => {
+  if (!status) return 'N/A';
+  const normalized = status.toLowerCase();
+  const mapping: Record<string, string> = {
+    active: 'Active',
+    fallow: 'Fallow',
+    preparation: 'In Preparation',
+    harvested: 'Harvested'
+  };
+  return mapping[normalized] || status.charAt(0).toUpperCase() + status.slice(1);
+};
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -45,124 +88,121 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-// Mock field data used for demonstration. Replace this with an API call.
-const mockField = {
-  id: 1,
-  name: 'North Field',
-  area: '12.5 acres',
-  location: '34.0522° N, 118.2437° W',
-  soilType: 'Loamy',
-  cropHistory: [
-    { year: '2024', crop: 'Wheat', yield: '45 bushels/acre' },
-    { year: '2023', crop: 'Soybeans', yield: '50 bushels/acre' },
-    { year: '2022', crop: 'Corn', yield: '160 bushels/acre' },
-  ],
-  currentCrop: 'Wheat',
-  plantingDate: '2024-03-15',
-  expectedHarvestDate: '2024-08-10',
-  soilHealth: {
-    ph: 6.8,
-    nitrogen: 'Medium',
-    phosphorus: 'High',
-    potassium: 'Medium',
-    organicMatter: '3.2%'
-  },
-  irrigation: {
-    system: 'Drip irrigation',
-    schedule: 'Every 3 days',
-    waterUsage: '1.2 inches/week'
-  },
-  sensors: [
-    { id: 101, type: 'Soil Moisture', status: 'Active', lastReading: '28%' },
-    { id: 102, type: 'Temperature', status: 'Active', lastReading: '72°F' },
-    { id: 103, type: 'Humidity', status: 'Inactive', lastReading: '65%' }
-  ],
-  issues: [
-    { id: 1, type: 'Pest', description: 'Aphid infestation detected', severity: 'Medium', reportedDate: '2024-05-10', status: 'In Progress' },
-    { id: 2, type: 'Disease', description: 'Early signs of rust', severity: 'Low', reportedDate: '2024-05-15', status: 'Monitoring' }
-  ]
-};
-
 const FieldDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [field] = useState(mockField);
+  const dispatch = useDispatch<AppDispatch>();
+  const { Fields: field, loading, error } = useSelector((state: RootState) => state.fields);
   const [tabValue, setTabValue] = useState(0);
 
   useEffect(() => {
-    // In a real app, you would fetch the field data based on the ID
-    console.log(`Fetching field with ID: ${id}`);
-  }, [id]);
+    if (id) {
+      dispatch(getFieldsById(id));
+    }
+  }, [dispatch, id]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 5 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
+  }
+
+  if (!field) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography>No field data found.</Typography>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ flexGrow: 1, p: 3 }}>
-      {/* Header with back and edit actions */}
+      {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Button
-          component={Link}
-          // use '..' to navigate back to the fields list relative to `/farmer/fields/:id`
-          to=".."
-          startIcon={<ArrowBackIcon />}
-          sx={{ mb: 2 }}
-        >
+        <Button component={Link} to=".." startIcon={<ArrowBackIcon />}>
           Back to fields
         </Button>
-        <Button
-          variant="contained"
-          startIcon={<EditIcon />}
-          component={Link}
-          // Navigate to the edit page for this field using a relative path
-          to="edit"
-        >
+        <Button variant="contained" startIcon={<EditIcon />} component={Link} to="edit">
           Edit Field
         </Button>
       </Box>
 
-      {/* Basic field information */}
+      {/* Title */}
       <Typography variant="h4" gutterBottom>
-        {field.name}
+        {field.name || 'Unnamed Field'}
       </Typography>
 
+      {/* Field Info */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} md={4}>
           <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>Field Information</Typography>
+            <Typography variant="h6" gutterBottom>
+              Field Information
+            </Typography>
             <List dense>
               <ListItem>
-                <ListItemText primary="Area" secondary={field.area} />
+                <ListItemText primary="Area" secondary={`${field.area} ${field.unit}`} />
               </ListItem>
               <ListItem>
-                <ListItemText primary="Location" secondary={field.location} />
+                <ListItemText primary="Location" secondary={field.locationName || 'N/A'} />
               </ListItem>
               <ListItem>
-                <ListItemText primary="Soil Type" secondary={field.soilType} />
+                <ListItemText
+                  primary="Coordinates"
+                  secondary={
+                    field.location?.coordinates
+                      ? `${field.location.coordinates[1]?.toFixed(4)}° N, ${field.location.coordinates[0]?.toFixed(4)}° E`
+                      : field.locationName || 'N/A'
+                  }
+                />
               </ListItem>
               <ListItem>
-                <ListItemText primary="Current Crop" secondary={field.currentCrop} />
+                <ListItemText primary="Soil Type" secondary={mapSoilType(field.soilType)} />
               </ListItem>
               <ListItem>
-                <ListItemText primary="Planting Date" secondary={field.plantingDate} />
+                <ListItemText primary="Irrigation Type" secondary={mapIrrigationType(field.irrigationType)} />
               </ListItem>
               <ListItem>
-                <ListItemText primary="Expected Harvest" secondary={field.expectedHarvestDate} />
+                <ListItemText primary="Status" secondary={mapStatus(field.status)} />
               </ListItem>
             </List>
           </Paper>
         </Grid>
+
         <Grid item xs={12} md={8}>
           <Paper sx={{ p: 2, height: '100%' }}>
-            <Typography variant="h6" gutterBottom>Field Map</Typography>
-            <Box sx={{ height: 300, bgcolor: 'grey.200', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <Typography variant="h6" gutterBottom>
+              Field Map
+            </Typography>
+            <Box
+              sx={{
+                height: 300,
+                bgcolor: 'grey.200',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}
+            >
               <Typography>Map Visualization Would Go Here</Typography>
             </Box>
           </Paper>
         </Grid>
       </Grid>
 
-      {/* Tabs for detailed sections */}
+      {/* Tabs */}
       <Box sx={{ width: '100%' }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={tabValue} onChange={handleTabChange} aria-label="Field details tabs">
@@ -173,108 +213,49 @@ const FieldDetail: React.FC = () => {
             <Tab label="Crop History" icon={<AgricultureIcon />} iconPosition="start" />
           </Tabs>
         </Box>
+
+        {/* Soil Health */}
         <TabPanel value={tabValue} index={0}>
-          <Grid container spacing={2}>
-            {Object.entries(field.soilHealth).map(([key, value]) => (
-              <Grid item xs={12} sm={6} md={4} key={key}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
-                    </Typography>
-                    <Typography variant="h4">{value}</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+          {field.soilHealth ? (
+            <Grid container spacing={2}>
+              {Object.entries(field.soilHealth).map(([key, value]) => (
+                <Grid item xs={12} sm={6} md={4} key={key}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
+                      </Typography>
+                      <Typography variant="h4">{String(value)}</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <Typography>No soil data available.</Typography>
+          )}
         </TabPanel>
+
+        {/* Irrigation */}
         <TabPanel value={tabValue} index={1}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={4}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6">System Type</Typography>
-                  <Typography variant="body1">{field.irrigation.system}</Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6">Schedule</Typography>
-                  <Typography variant="body1">{field.irrigation.schedule}</Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6">Water Usage</Typography>
-                  <Typography variant="body1">{field.irrigation.waterUsage}</Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
+          <Typography variant="body1">
+            Irrigation System: {mapIrrigationType(field.irrigationType)}
+          </Typography>
         </TabPanel>
+
+        {/* Sensors */}
         <TabPanel value={tabValue} index={2}>
-          <Grid container spacing={2}>
-            {field.sensors.map((sensor) => (
-              <Grid item xs={12} sm={6} md={4} key={sensor.id}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6">{sensor.type}</Typography>
-                    <Typography variant="body1" color={sensor.status === 'Active' ? 'success.main' : 'error.main'}>
-                      {sensor.status}
-                    </Typography>
-                    <Typography variant="body2" sx={{ mt: 1 }}>Last Reading: {sensor.lastReading}</Typography>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      component={Link}
-                      // use a relative path to navigate up two levels then to sensors
-                      to={`../../sensors/${sensor.id}`}
-                      sx={{ mt: 2 }}
-                    >
-                      View Details
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+          <Typography>No sensor data linked yet.</Typography>
         </TabPanel>
+
+        {/* Issues */}
         <TabPanel value={tabValue} index={3}>
-          <List>
-            {field.issues.map((issue) => (
-              <Paper key={issue.id} sx={{ mb: 2, p: 2 }}>
-                <Typography
-                  variant="h6"
-                  color={issue.severity === 'High' ? 'error.main' : issue.severity === 'Medium' ? 'warning.main' : 'info.main'}
-                >
-                  {issue.type}: {issue.description}
-                </Typography>
-                <Typography variant="body2">Severity: {issue.severity}</Typography>
-                <Typography variant="body2">Reported: {issue.reportedDate}</Typography>
-                <Typography variant="body2">Status: {issue.status}</Typography>
-              </Paper>
-            ))}
-          </List>
+          <Typography>No issues reported.</Typography>
         </TabPanel>
+
+        {/* Crop History */}
         <TabPanel value={tabValue} index={4}>
-          <List>
-            {field.cropHistory.map((history, index) => (
-              <React.Fragment key={index}>
-                <ListItem>
-                  <ListItemIcon>
-                    <AgricultureIcon />
-                  </ListItemIcon>
-                  <ListItemText primary={`${history.year}: ${history.crop}`} secondary={`Yield: ${history.yield}`} />
-                </ListItem>
-                {index < field.cropHistory.length - 1 && <Divider />}
-              </React.Fragment>
-            ))}
-          </List>
+          <Typography>No crop history recorded.</Typography>
         </TabPanel>
       </Box>
     </Box>

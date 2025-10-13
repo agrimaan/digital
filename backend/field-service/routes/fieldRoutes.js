@@ -21,7 +21,7 @@ const validateFieldCreation = [
   check('status', 'Status must be one of: active, fallow, preparation, harvested')
     .optional()
     .isIn(['active', 'fallow', 'preparation', 'harvested']),
-  check('irrigationType', 'Irrigation system must be one of: flood, drip, sprinkler, none, other')
+  check('irrigationType', 'Irrigation type must be one of: flood, drip, sprinkler, none, other')
     .optional()
     .isIn(['flood', 'drip', 'sprinkler', 'none', 'other']),
   check('soilType', 'Soil type must be one of: clay, sandy, loamy, silty, peaty, chalky')
@@ -36,7 +36,7 @@ const validateFieldUpdate = [
   check('status', 'Status must be one of: active, fallow, preparation, harvested')
     .optional()
     .isIn(['active', 'fallow', 'preparation', 'harvested']),
-  check('irrigationType', 'Irrigation system must be one of: flood, drip, sprinkler, none, other')
+  check('irrigationType', 'Irrigation type must be one of: flood, drip, sprinkler, none, other')
     .optional()
     .isIn(['flood', 'drip', 'sprinkler', 'none', 'other']),
   check('soilType', 'Soil type must be one of: clay, sandy, loamy, silty, peaty, chalky')

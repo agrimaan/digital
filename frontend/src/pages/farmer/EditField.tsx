@@ -190,6 +190,7 @@ const EditField: React.FC = () => {
     try {
       const updatedField: Partial<Fields> = {
         name: formData.name || '',
+        unit: formData.unit,
         area: parseFloat(formData.area) || 0,
         location: {
           type: 'Point',

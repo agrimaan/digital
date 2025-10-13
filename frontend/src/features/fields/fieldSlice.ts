@@ -62,7 +62,6 @@ export const getFields = createAsyncThunk(
 );
 
 // Get Fields by ID
-// Get Fields by ID
 export const getFieldsById = createAsyncThunk(
   'Fields/getFieldsById',
   async (id: string, { rejectWithValue }) => {
