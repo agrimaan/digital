@@ -32,7 +32,7 @@ import BuyerMarketplace from './pages/buyer/BuyerMarketplace';
 import OrderHistory from './pages/buyer/OrderHistory';
 
 // Admin pages
-import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminDashboard from './pages/admin/AdminDashboardAPI';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminFields from './pages/admin/AdminFields';
 
