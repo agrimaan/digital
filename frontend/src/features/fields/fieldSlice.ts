@@ -30,8 +30,7 @@ export interface Fields {
   description?: string;
   crops: string[];
   status: 'active' | 'fallow' | 'preparation' | 'harvested';
-  irrigationSource: 'rainfed' | 'canal' | 'well' | 'borewell' | 'pond' | 'river' | 'other';
-  irrigationSystem: 'flood' | 'drip' | 'sprinkler' | 'none' | 'other';
+  irrigationType: 'flood' | 'drip' | 'sprinkler' | 'none' | 'other';
   soilHealth?: SoilHealth;
   createdAt: Date;
   updatedAt: Date;

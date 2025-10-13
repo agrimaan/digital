@@ -58,7 +58,7 @@ const FieldSchema = new mongoose.Schema({
     enum: ['active', 'fallow', 'preparation', 'harvested'],
     default: 'active'
   },
-  irrigationSystem: {
+  irrigationType: {
     type: String,
     enum: ['flood', 'drip', 'sprinkler', 'none', 'other'],
     default: 'none'

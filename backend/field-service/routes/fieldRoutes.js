@@ -21,9 +21,9 @@ const validateFieldCreation = [
   check('status', 'Status must be one of: active, fallow, preparation, harvested')
     .optional()
     .isIn(['active', 'fallow', 'preparation', 'harvested']),
-  check('irrigationSource', 'Irrigation source must be one of: rainfed, canal, well, borewell, pond, river, other')
+  check('irrigationType', 'Irrigation system must be one of: flood, drip, sprinkler, none, other')
     .optional()
-    .isIn(['rainfed', 'canal', 'well', 'borewell', 'pond', 'river', 'other']),
+    .isIn(['flood', 'drip', 'sprinkler', 'none', 'other']),
   check('soilType', 'Soil type must be one of: clay, sandy, loamy, silty, peaty, chalky')
     .optional()
     .isIn(['clay', 'sandy', 'loamy', 'silty', 'peaty', 'chalky'])
@@ -36,7 +36,7 @@ const validateFieldUpdate = [
   check('status', 'Status must be one of: active, fallow, preparation, harvested')
     .optional()
     .isIn(['active', 'fallow', 'preparation', 'harvested']),
-  check('irrigationSystem', 'Irrigation system must be one of: flood, drip, sprinkler, none, other')
+  check('irrigationType', 'Irrigation system must be one of: flood, drip, sprinkler, none, other')
     .optional()
     .isIn(['flood', 'drip', 'sprinkler', 'none', 'other']),
   check('soilType', 'Soil type must be one of: clay, sandy, loamy, silty, peaty, chalky')

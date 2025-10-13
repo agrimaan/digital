@@ -13,8 +13,7 @@ export interface ApiFieldData {
   soilType?: string;
   crops: string[];
   status: 'active' | 'fallow' | 'preparation' | 'harvested';
-  irrigationSource: 'rainfed' | 'canal' | 'well' | 'borewell' | 'pond' | 'river' | 'other';
-  irrigationSystem: 'flood' | 'drip' | 'sprinkler' | 'none' | 'other';
+  irrigationType: 'flood' | 'drip' | 'sprinkler' | 'none' | 'other';
 }
 
 // Helper function to map irrigation system types
@@ -50,8 +49,7 @@ export const adaptFieldData = (formData: any): ApiFieldData => {
     soilType: formData.soilType || undefined,
     crops: [],
     status: 'active',
-    irrigationSource: 'rainfed',
-    irrigationSystem: mapIrrigationSystem(formData.irrigationType)
+    irrigationType: mapIrrigationSystem(formData.irrigationType)
   };
 };
 

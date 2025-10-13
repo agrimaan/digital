@@ -71,8 +71,8 @@ const normalizeIrrigationType = (type: string) => {
   const mapping: Record<string, string> = {
     drip: 'Drip Irrigation',
     sprinkler: 'Sprinkler',
-    'surface irrigation': 'Surface Irrigation',
-    'subsurface irrigation': 'Subsurface Irrigation',
+    flood: 'Surface Irrigation',
+    other: 'Subsurface Irrigation',
     none: 'None',
   };
   return mapping[type.toLowerCase()] || type;
@@ -128,7 +128,7 @@ const EditField: React.FC = () => {
             unit: data.unit,
             location: data.locationName || '',
             soilType: normalizeSoilType(data.soilType),
-            irrigationType: normalizeIrrigationType(data.irrigationSystem),
+            irrigationType: normalizeIrrigationType(data.irrigationType),
             description: data.description || '',
             coordinates: {
               latitude: data.location?.coordinates?.[1]?.toString() || '',
@@ -201,8 +201,7 @@ const EditField: React.FC = () => {
         soilType: denormalizeSoilType(formData.soilType || ''),
         crops: [],
         status: 'active',
-        irrigationSource: 'rainfed',
-        irrigationSystem: mapIrrigationSystem(formData.irrigationType || 'none'),
+        irrigationType: mapIrrigationSystem(formData.irrigationType || 'none'),
         locationName: formData.location,
         description: formData.description,
       };

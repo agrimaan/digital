@@ -23,7 +23,9 @@ import { createFields, Fields } from '../../features/fields/fieldSlice';
 function mapIrrigationSystem(
   system: string
 ): 'flood' | 'drip' | 'sprinkler' | 'none' | 'other' {
-  switch (system?.toLowerCase()) {
+  const s = system?.toLowerCase().trim();
+  switch (s) {
+    case 'drip irrigation':
     case 'drip':
       return 'drip';
     case 'sprinkler':
@@ -38,6 +40,7 @@ function mapIrrigationSystem(
       return 'other';
   }
 }
+
 
 const soilTypes = ['Clay', 'Sandy', 'Loam', 'Silty', 'Peaty', 'Chalky'];
 const irrigationTypes = ['Drip Irrigation', 'Sprinkler', 'Surface Irrigation', 'Subsurface Irrigation', 'None'];
@@ -140,9 +143,8 @@ const AddField: React.FC = () => {
         unit: formData.unit,
         crops: [],
         status: 'active',
-        irrigationSource: 'rainfed',
-        irrigationSystem: mapIrrigationSystem(formData.irrigationType),
-        description: formData.description,  // send description
+        irrigationType: mapIrrigationSystem(formData.irrigationType),
+        description: formData.description,
       };
 
       await dispatch(createFields(newField)).unwrap();

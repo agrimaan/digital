@@ -1,4 +1,3 @@
-// Fields.tsx
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -45,7 +44,6 @@ const Fields: React.FC = () => {
 
   const { fields: fieldsState, loading, error } = useSelector((state: RootState) => state.fields);
 
-  // ✅ Ensure safe array even if nested or null
   const safeFields: any[] = Array.isArray(fieldsState)
     ? fieldsState
     : Array.isArray((fieldsState as any)?.data)

@@ -11,7 +11,7 @@ export interface FieldFormData {
   area: number;
   areaUnit: string;
   soilType: string;
-  irrigationSystem: string;
+  irrigationType: string;
   boundaries: string;
   description: string;
 }
@@ -26,9 +26,8 @@ export const fieldDataFormatter = {
       },
       area: formData.area,
       soilType: formData.soilType,
-      irrigationSystem: mapIrrigationSystem(formData.irrigationSystem),
+      irrigationType: mapIrrigationSystem(formData.irrigationType),
       status: 'active',
-      irrigationSource: 'rainfed',
       crops: []
     };
   },
@@ -40,7 +39,7 @@ export const fieldDataFormatter = {
       formData.location.longitude &&
       formData.area > 0 &&
       formData.soilType &&
-      formData.irrigationSystem
+      formData.irrigationType
     );
   }
 };
