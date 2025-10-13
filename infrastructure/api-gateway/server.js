@@ -35,7 +35,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Rate limiting - exclude auth routes
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 1000,
   skip: (req) => req.path.startsWith('/api/auth/'),
   message: { error: 'Too many requests' }
 });

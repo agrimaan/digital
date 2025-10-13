@@ -1,5 +1,5 @@
 // src/types/domain.ts
-export interface Field { _id: string; name: string; crops: string[]; location?: { type?: string } }
+export interface Field { _id: string; name: string; crops: string[]; location?: { type?: string }; status: 'active'|'inactive'|'maintenance'|'error' }
 export interface Crop {
   _id: string;
   name: string;
