@@ -37,7 +37,7 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch(err => logger.error('MongoDB connection error:', { error: err.message }));
 
 // --- Your Service-Specific Routes Would Go Here ---
-// Example: app.use('/api/blockchain', require('./routes/blockchainRoutes'));
+app.use('/api/blockchain', require('./routes/blockchainRoutes'));
 
 
 // Error handling middleware

@@ -226,7 +226,7 @@ exports.getRecentOrders = asyncHandler(async (req, res, next) => {
 });
 
 // @desc    Get system health status
-// @route   GET /api/admin/dashboard/system/health
+// @route   GET /api/admin/dashboard/stats/system/health
 // @access  Private/Admin
 
 exports.getSystemHealth = asyncHandler(async (req, res, next) => {

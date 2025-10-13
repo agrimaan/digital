@@ -30,6 +30,7 @@ router.get('/:id/data', dashboardController.getDashboardData);
 
 // SuperAdmin only routes
 router.use(authorize('super-admin'));
+console.log('Dashboard Routes Loaded', router);
 
 // Create a new dashboard
 router.post(

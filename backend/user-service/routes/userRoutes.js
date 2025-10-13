@@ -39,7 +39,7 @@ router
 
   router
   .route('/recent')
-  .get(protect, authorize('admin','super-user'), getRecentUsers);
+  .get(protect, authorize('admin'), getRecentUsers);
 
 router
   .route('/:id')

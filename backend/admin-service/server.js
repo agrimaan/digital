@@ -13,7 +13,6 @@ const reportRoutes = require('./routes/reportRoutes');
 const auditLogRoutes = require('./routes/auditLogRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
-//const dashboardDataRoutes = require('./routes/dashboardDataRoutes');
 
 // Import logger
 const logger = require('./utils/logger');
@@ -38,13 +37,14 @@ mongoose.connect(process.env.MONGODB_URI, {
 
 // Routes
 app.use('/api/admin', adminRoutes);
-app.use('/api/admin/dashboards', dashboardRoutes);
-app.use('/api/admin/dashboard', dashboardStatsRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/reports', reportRoutes);
-app.use('/api/audit-logs', auditLogRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/analytics', analyticsRoutes);
+app.use('/api/admin/dashboard', dashboardRoutes);
+app.use('/api/admin/dashboard/stats', dashboardStatsRoutes);
+app.use('/api/admin/settings', settingsRoutes);
+app.use('/api/admin/reports', reportRoutes);
+app.use('/api/admin/audit-logs', auditLogRoutes);
+app.use('/api/admin/notifications', notificationRoutes);
+app.use('/api/admin/analytics', analyticsRoutes);
+
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -58,14 +58,14 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: [
       '/api/admins',
+      '/api/admin/dashboard',
       '/api/admin/dashboard/stats',
       '/api/admin/settings',
-      '/api/admin/system',
       '/api/admin/dashboards',
-      '/api/reports',
-      '/api/audit-logs',
-      '/api/notifications',
-      '/api/analytics'
+      '/api/admin/reports',
+      '/api/admin/audit-logs',
+      '/api/admin/notifications',
+      '/api/admin/analytics'
     ]
   });
 });
