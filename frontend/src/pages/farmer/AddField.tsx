@@ -1,4 +1,3 @@
-// src/pages/farmer/AddField.tsx
 import React, { useState } from 'react';
 import {
   Box,
@@ -138,6 +137,7 @@ const AddField: React.FC = () => {
         },
         soilType: formData.soilType.toLowerCase() as Fields['soilType'],
         locationName: formData.location,
+        unit: formData.unit,
         crops: [],
         status: 'active',
         irrigationSource: 'rainfed',
@@ -199,11 +199,14 @@ const AddField: React.FC = () => {
                 <InputLabel id="unit-label">Unit</InputLabel>
                 <Select
                   labelId="unit-label"
+                  label="Unit"
                   value={formData.unit}
                   onChange={(e) => setFormData(prev => ({ ...prev, unit: e.target.value as 'acre' | 'hectare' }))}
                 >
                   {areaUnits.map(unit => (
-                    <MenuItem key={unit} value={unit}>{unit.charAt(0).toUpperCase() + unit.slice(1)}</MenuItem>
+                    <MenuItem key={unit} value={unit}>
+                      {unit.charAt(0).toUpperCase() + unit.slice(1)}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -211,25 +214,49 @@ const AddField: React.FC = () => {
 
             <Grid item xs={12} md={6}>
               <FormControl fullWidth error={!!formErrors.soilType}>
-                <InputLabel>Soil Type</InputLabel>
-                <Select value={formData.soilType} onChange={handleSelectChange('soilType')} required>
+                <InputLabel id="soilType-label">Soil Type</InputLabel>
+                <Select
+                  labelId="soilType-label"
+                  label="Soil Type"
+                  value={formData.soilType}
+                  onChange={handleSelectChange('soilType')}
+                  required
+                >
                   {soilTypes.map(type => (
-                    <MenuItem key={type} value={type}>{type}</MenuItem>
+                    <MenuItem key={type} value={type}>
+                      {type}
+                    </MenuItem>
                   ))}
                 </Select>
-                {formErrors.soilType && <Typography variant="caption" color="error">{formErrors.soilType}</Typography>}
+                {formErrors.soilType && (
+                  <Typography variant="caption" color="error">
+                    {formErrors.soilType}
+                  </Typography>
+                )}
               </FormControl>
             </Grid>
 
             <Grid item xs={12} md={6}>
               <FormControl fullWidth error={!!formErrors.irrigationType}>
-                <InputLabel>Irrigation Type</InputLabel>
-                <Select value={formData.irrigationType} onChange={handleSelectChange('irrigationType')} required>
+                <InputLabel id="irrigationType-label">Irrigation Type</InputLabel>
+                <Select
+                  labelId="irrigationType-label"
+                  label="Irrigation Type"
+                  value={formData.irrigationType}
+                  onChange={handleSelectChange('irrigationType')}
+                  required
+                >
                   {irrigationTypes.map(type => (
-                    <MenuItem key={type} value={type}>{type}</MenuItem>
+                    <MenuItem key={type} value={type}>
+                      {type}
+                    </MenuItem>
                   ))}
                 </Select>
-                {formErrors.irrigationType && <Typography variant="caption" color="error">{formErrors.irrigationType}</Typography>}
+                {formErrors.irrigationType && (
+                  <Typography variant="caption" color="error">
+                    {formErrors.irrigationType}
+                  </Typography>
+                )}
               </FormControl>
             </Grid>
 

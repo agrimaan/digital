@@ -23,6 +23,7 @@ export interface Fields {
   owner: string;
   location: Location;
   area: number;
+  unit: string;
   boundary?: string;
   soilType?: string;
   locationName?: string;

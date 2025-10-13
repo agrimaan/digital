@@ -31,6 +31,11 @@ const FieldSchema = new mongoose.Schema({
     trim: true,
     default: ''
   },
+  unit: {
+    type: String,
+    enum: ['acre', 'hectare'],
+    default: 'acre'
+  },
   area: {
     type: Number, // in hectares
     required: [true, 'Field area is required']
