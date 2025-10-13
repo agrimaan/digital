@@ -45,7 +45,7 @@ export const adminDashboardAPI = {
   // Get dashboard statistics
   getDashboardStats: async () => {
     try {
-      const response = await adminApi.get("/dashboard/stats");
+      const response = await adminApi.get("/admin/dashboard/stats");
       return response.data;
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
@@ -56,7 +56,7 @@ export const adminDashboardAPI = {
   // Get recent users
   getRecentUsers: async (limit = 10) => {
     try {
-      const response = await adminApi.get(`/users/recent?limit=${limit}`);
+      const response = await adminApi.get(`/admin/dashboard/users/recent?limit=${limit}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching recent users:", error);
@@ -67,7 +67,7 @@ export const adminDashboardAPI = {
   // Get recent orders
   getRecentOrders: async (limit = 10) => {
     try {
-      const response = await adminApi.get(`/marketplace/orders/recent?limit=${limit}`);
+      const response = await adminApi.get(`/admin/dashboard/orders/recent?limit=${limit}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching recent orders:", error);
@@ -78,7 +78,7 @@ export const adminDashboardAPI = {
   // Get pending verifications
   getPendingVerifications: async () => {
     try {
-      const response = await adminApi.get("/verification/pending");
+      const response = await adminApi.get("/admin/dashboard/verification/pending");
       return response.data;
     } catch (error) {
       console.error("Error fetching pending verifications:", error);
@@ -89,7 +89,7 @@ export const adminDashboardAPI = {
   // Get system health status
   getSystemHealth: async () => {
     try {
-      const response = await adminApi.get("/system/health");
+      const response = await adminApi.get("/admin/dashboard/system/health");
       return response.data;
     } catch (error) {
       console.error("Error fetching system health:", error);

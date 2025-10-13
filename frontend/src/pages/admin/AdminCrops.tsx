@@ -96,13 +96,32 @@ const AdminCrops: React.FC = () => {
   const [FieldsOwners, setFieldsOwners] = useState<Array<{id: string, name: string}>>([]);
 
   useEffect(() => {
-    // In a real implementation, these would be API calls
-    // For now, we'll use mock data
+    // Real API implementation
     const fetchCrops = async () => {
       setLoading(true);
       try {
-        // Mock data - in real implementation, this would be an API call
-        const mockCrops: Crop[] = [
+        // Real API call to fetch crops
+        const response = await axios.get(`${API_BASE_URL}/api/crops`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        const cropsData = response.data.data || response.data || [];
+        setCrops(cropsData);
+        setFilteredCrops(cropsData);
+        
+        // Extract unique field owners for filter
+        const uniqueOwners = Array.from(new Set(cropsData.map((crop: any) => crop.farmId?.owner?._id || crop.farmerId)))
+          .filter((ownerId): ownerId is string => ownerId)
+          .map((ownerId: string) => {
+            const owner = cropsData.find((crop: any) => (crop.farmId?.owner?._id || crop.farmerId) === ownerId)?.farmId?.owner;
+            return {
+              id: ownerId,
+              name: owner?.name || 'Unknown'
+            };
+          });
+        setFieldsOwners(uniqueOwners);
           {
             _id: 'c1',
             name: 'Wheat',
@@ -225,12 +244,7 @@ const AdminCrops: React.FC = () => {
           }
         ];
 
-        setCrops(mockCrops);
-        setFilteredCrops(mockCrops);
         
-        // Extract unique Fields owners for filter
-        const uniqueOwners = Array.from(new Set(mockCrops.map(crop => crop.Fields.owner._id)))
-          .map(ownerId => {
             const owner = mockCrops.find(crop => crop.Fields.owner._id === ownerId)?.Fields.owner;
             return {
               id: ownerId,

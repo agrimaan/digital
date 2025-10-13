@@ -102,13 +102,37 @@ const Adminfields: React.FC = () => {
   const [soilTypes, setSoilTypes] = useState<string[]>([]);
 
   useEffect(() => {
-    // In a real implementation, these would be API calls
-    // For now, we'll use mock data
+    // Real API implementation
     const fetchfields = async () => {
       setLoading(true);
       try {
-        // Mock data - in real implementation, this would be an API call
-        const mockfields: Fields[] = [
+        // Real API call to fetch fields
+        const response = await axios.get(`${API_BASE_URL}/api/fields`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        const fieldsData = response.data.fields || response.data || [];
+        setfields(fieldsData);
+        setFilteredfields(fieldsData);
+        
+        // Extract unique owners for filter
+        const uniqueOwners = Array.from(new Set(fieldsData.map((field: any) => field.owner?._id)))
+          .filter((ownerId): ownerId is string => ownerId)
+          .map((ownerId: string) => {
+            const owner = fieldsData.find((field: any) => field.owner?._id === ownerId)?.owner;
+            return {
+              id: ownerId,
+              name: owner?.name || 'Unknown'
+            };
+          });
+        setOwners(uniqueOwners);
+        
+        // Extract unique soil types for filter
+        const uniqueSoilTypes = Array.from(new Set(fieldsData.map((field: any) => field.soilType)))
+          .filter((soilType): soilType is string => soilType);
+        setSoilTypes(uniqueSoilTypes);
           {
             _id: 'f1',
             name: 'North Farm',
@@ -241,23 +265,7 @@ const Adminfields: React.FC = () => {
           }
         ];
 
-        setfields(mockfields);
-        setFilteredfields(mockfields);
         
-        // Extract unique owners for filter
-        const uniqueOwners = Array.from(new Set(mockfields.map(Fields => Fields.owner._id)))
-          .map(ownerId => {
-            const owner = mockfields.find(Fields => Fields.owner._id === ownerId)?.owner;
-            return {
-              id: ownerId,
-              name: owner?.name || 'Unknown'
-            };
-          });
-        setOwners(uniqueOwners);
-        
-        // Extract unique soil types for filter
-        const uniqueSoilTypes = Array.from(new Set(mockfields.map(Fields => Fields.soilType)));
-        setSoilTypes(uniqueSoilTypes);
         
         setLoading(false);
       } catch (err: any) {
@@ -314,11 +322,23 @@ const Adminfields: React.FC = () => {
   };
 
   // Confirm delete Fields
-  const confirmDeleteFields = () => {
+  const confirmDeleteFields = async () => {
     if (FieldsToDelete) {
-      // In a real implementation, this would be an API call
-      setfields(prevfields => prevfields.filter(Fields => Fields._id !== FieldsToDelete));
-      setFilteredfields(prevfields => prevfields.filter(Fields => Fields._id !== FieldsToDelete));
+      try {
+        // Real API call to delete field
+        await axios.delete(`${API_BASE_URL}/api/fields/${FieldsToDelete}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        // Update local state after successful deletion
+        setfields(prevfields => prevfields.filter(field => field._id !== FieldsToDelete));
+        setFilteredfields(prevfields => prevfields.filter(field => field._id !== FieldsToDelete));
+      } catch (err: any) {
+        console.error('Error deleting field:', err);
+        setError(err.response?.data?.message || 'Failed to delete field');
+      }
     }
     setDeleteDialogOpen(false);
     setFieldsToDelete(null);

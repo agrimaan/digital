@@ -152,236 +152,45 @@ const AdminOrders: React.FC = () => {
   const [sellers, setSellers] = useState<Array<{id: string, name: string}>>([]);
 
   useEffect(() => {
-    // In a real implementation, these would be API calls
-    // For now, we'll use mock data
+    // Real API implementation
     const fetchOrders = async () => {
       setLoading(true);
       try {
-        // Mock data - in real implementation, this would be an API call
-        const mockOrders: Order[] = [
-          {
-            _id: 'o1',
-            orderNumber: 'ORD-2025-001',
-            buyer: {
-              _id: 'b1',
-              name: 'Buyer Kumar',
-              email: 'buyer.kumar@example.com'
-            },
-            seller: {
-              _id: 's1',
-              name: 'Farmer Singh',
-              email: 'farmer.singh@example.com'
-            },
-            items: [
-              {
-                _id: 'i1',
-                crop: {
-                  _id: 'c1',
-                  name: 'Wheat',
-                  variety: 'HD-2967'
-                },
-                quantity: 500,
-                unit: 'kg',
-                pricePerUnit: 25,
-                totalPrice: 12500
-              },
-              {
-                _id: 'i2',
-                crop: {
-                  _id: 'c2',
-                  name: 'Rice',
-                  variety: 'Basmati-1121'
-                },
-                quantity: 200,
-                unit: 'kg',
-                pricePerUnit: 60,
-                totalPrice: 12000
-              }
-            ],
-            totalAmount: 24500,
-            status: 'confirmed',
-            paymentStatus: 'completed',
-            paymentMethod: 'online',
-            shippingAddress: {
-              street: '123 Market Street',
-              city: 'Mumbai',
-              state: 'Maharashtra',
-              zipCode: '400001',
-              country: 'India'
-            },
-            deliveryDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-            createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            _id: 'o2',
-            orderNumber: 'ORD-2025-002',
-            buyer: {
-              _id: 'b2',
-              name: 'Buyer Sharma',
-              email: 'buyer.sharma@example.com'
-            },
-            seller: {
-              _id: 's2',
-              name: 'Farmer Patel',
-              email: 'farmer.patel@example.com'
-            },
-            items: [
-              {
-                _id: 'i3',
-                crop: {
-                  _id: 'c3',
-                  name: 'Cotton',
-                  variety: 'Bt Cotton'
-                },
-                quantity: 300,
-                unit: 'kg',
-                pricePerUnit: 70,
-                totalPrice: 21000
-              }
-            ],
-            totalAmount: 21000,
-            status: 'shipped',
-            paymentStatus: 'completed',
-            paymentMethod: 'bank_transfer',
-            shippingAddress: {
-              street: '456 Gandhi Road',
-              city: 'Delhi',
-              state: 'Delhi',
-              zipCode: '110001',
-              country: 'India'
-            },
-            deliveryDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-            createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-            updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            _id: 'o3',
-            orderNumber: 'ORD-2025-003',
-            buyer: {
-              _id: 'b1',
-              name: 'Buyer Kumar',
-              email: 'buyer.kumar@example.com'
-            },
-            seller: {
-              _id: 's3',
-              name: 'Farmer Kumar',
-              email: 'farmer.kumar@example.com'
-            },
-            items: [
-              {
-                _id: 'i4',
-                crop: {
-                  _id: 'c4',
-                  name: 'Sugarcane',
-                  variety: 'CO-0238'
-                },
-                quantity: 1000,
-                unit: 'kg',
-                pricePerUnit: 3.5,
-                totalPrice: 3500
-              }
-            ],
-            totalAmount: 3500,
-            status: 'delivered',
-            paymentStatus: 'completed',
-            paymentMethod: 'online',
-            shippingAddress: {
-              street: '789 Nehru Avenue',
-              city: 'Mumbai',
-              state: 'Maharashtra',
-              zipCode: '400002',
-              country: 'India'
-            },
-            deliveryDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-            createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-            updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            _id: 'o4',
-            orderNumber: 'ORD-2025-004',
-            buyer: {
-              _id: 'b3',
-              name: 'Buyer Gupta',
-              email: 'buyer.gupta@example.com'
-            },
-            seller: {
-              _id: 's1',
-              name: 'Farmer Singh',
-              email: 'farmer.singh@example.com'
-            },
-            items: [
-              {
-                _id: 'i5',
-                crop: {
-                  _id: 'c5',
-                  name: 'Tomato',
-                  variety: 'Pusa Ruby'
-                },
-                quantity: 100,
-                unit: 'kg',
-                pricePerUnit: 40,
-                totalPrice: 4000
-              }
-            ],
-            totalAmount: 4000,
-            status: 'pending',
-            paymentStatus: 'pending',
-            paymentMethod: 'cash_on_delivery',
-            shippingAddress: {
-              street: '101 Rajpath',
-              city: 'Bangalore',
-              state: 'Karnataka',
-              zipCode: '560001',
-              country: 'India'
-            },
-            deliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-            updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            _id: 'o5',
-            orderNumber: 'ORD-2025-005',
-            buyer: {
-              _id: 'b2',
-              name: 'Buyer Sharma',
-              email: 'buyer.sharma@example.com'
-            },
-            seller: {
-              _id: 's2',
-              name: 'Farmer Patel',
-              email: 'farmer.patel@example.com'
-            },
-            items: [
-              {
-                _id: 'i6',
-                crop: {
-                  _id: 'c2',
-                  name: 'Rice',
-                  variety: 'Basmati-1121'
-                },
-                quantity: 500,
-                unit: 'kg',
-                pricePerUnit: 60,
-                totalPrice: 30000
-              }
-            ],
-            totalAmount: 30000,
-            status: 'cancelled',
-            paymentStatus: 'refunded',
-            paymentMethod: 'online',
-            shippingAddress: {
-              street: '202 Subhash Road',
-              city: 'Delhi',
-              state: 'Delhi',
-              zipCode: '110002',
-              country: 'India'
-            },
-            deliveryDate: null,
-            createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-            updatedAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString()
+        // Real API call to fetch orders
+        const response = await axios.get(`${API_BASE_URL}/api/marketplace`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
-        ];
+        });
+        
+        const ordersData = response.data.data || response.data || [];
+        setOrders(ordersData);
+        setFilteredOrders(ordersData);
+        
+        // Extract unique buyers for filter
+        const uniqueBuyers = Array.from(new Set(ordersData.map((order: any) => order.buyer?._id || order.buyerId)))
+          .filter((buyerId): buyerId is string => buyerId)
+          .map((buyerId: string) => {
+            const buyer = ordersData.find((order: any) => (order.buyer?._id || order.buyerId) === buyerId)?.buyer;
+            return {
+              id: buyerId,
+              name: buyer?.name || 'Unknown'
+            };
+          });
+        setBuyers(uniqueBuyers);
+        
+        // Extract unique sellers for filter
+        const uniqueSellers = Array.from(new Set(ordersData.map((order: any) => order.seller?._id || order.sellerId)))
+          .filter((sellerId): sellerId is string => sellerId)
+          .map((sellerId: string) => {
+            const seller = ordersData.find((order: any) => (order.seller?._id || order.sellerId) === sellerId)?.seller;
+            return {
+              id: sellerId,
+              name: seller?.name || 'Unknown'
+            };
+          });
+        setSellers(uniqueSellers);
+        
 
         setOrders(mockOrders);
         setFilteredOrders(mockOrders);

@@ -164,8 +164,15 @@ const AdminOrderDetail: React.FC = () => {
     const fetchOrderData = async () => {
       setLoading(true);
       try {
-        // In a real implementation, this would be an API call
-        // For now, we'll use mock data
+        // Real API call to fetch details
+        const response = await axios.get(`${API_BASE_URL}/api/marketplace/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        const data = response.data.data || response.data;
+        setOrder(data);
         
         // Mock order data
         const mockOrder: Order = {

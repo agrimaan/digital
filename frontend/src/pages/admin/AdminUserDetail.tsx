@@ -146,16 +146,26 @@ const AdminUserDetail: React.FC = () => {
     const fetchUserData = async () => {
       setLoading(true);
       try {
-        // In a real implementation, these would be API calls
-        // For now, we'll use mock data
+        // Real API calls to fetch user details
+        const [userResponse, fieldsResponse, ordersResponse] = await Promise.all([
+          axios.get(`${API_BASE_URL}/api/users/${id}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          }),
+          axios.get(`${API_BASE_URL}/api/fields?userId=${id}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          }),
+          axios.get(`${API_BASE_URL}/api/marketplace?userId=${id}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          })
+        ]);
         
-        // Mock user data
-        const mockUser: User = {
-          _id: id || 'u1',
-          name: 'Farmer Singh',
-          email: 'farmer.singh@example.com',
-          role: 'farmer',
-          phone: '+91 9876543210',
+        const userData = userResponse.data.user || userResponse.data;
+        const fieldsData = fieldsResponse.data.fields || fieldsResponse.data || [];
+        const ordersData = ordersResponse.data.data || ordersResponse.data || [];
+        
+        setUser(userData);
+        setfields(fieldsData);
+        setOrders(ordersData);
           address: {
             street: '123 Farm Road',
             city: 'Amritsar',
@@ -232,9 +242,7 @@ const AdminUserDetail: React.FC = () => {
           }
         ];
         
-        setUser(mockUser);
-        setfields(mockfields);
-        setOrders(mockOrders);
+        
         setLoading(false);
       } catch (err: any) {
         console.error('Error fetching user data:', err);

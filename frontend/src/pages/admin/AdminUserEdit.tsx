@@ -85,11 +85,28 @@ const AdminUserEdit: React.FC = () => {
     const fetchUserData = async () => {
       setLoading(true);
       try {
-        // In a real implementation, this would be an API call
-        // For now, we'll use mock data
+        // Real API call to fetch user details
+        const response = await axios.get(`${API_BASE_URL}/api/users/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         
-        // Mock user data
-        const mockUser: User = {
+        const userData = response.data.user || response.data;
+        setUser(userData);
+        
+        // Initialize form data
+        setFormData({
+          name: userData.name,
+          email: userData.email,
+          role: userData.role,
+          phone: userData.phone || '',
+          street: userData.address?.street || '',
+          city: userData.address?.city || '',
+          state: userData.address?.state || '',
+          country: userData.address?.country || '',
+          zipCode: userData.address?.zipCode || ''
+        });
           _id: id || 'u1',
           name: 'Farmer Singh',
           email: 'farmer.singh@example.com',
@@ -102,17 +119,7 @@ const AdminUserEdit: React.FC = () => {
             country: 'India',
             zipCode: '143001'
           },
-          profileImage: null,
-          createdAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-        };
-        
-        setUser(mockUser);
-        
-        // Initialize form data
-        setFormData({
-          name: mockUser.name,
-          email: mockUser.email,
+          
           role: mockUser.role,
           phone: mockUser.phone || '',
           street: mockUser.address?.street || '',

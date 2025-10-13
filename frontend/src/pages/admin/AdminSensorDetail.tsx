@@ -142,8 +142,15 @@ const AdminSensorDetail: React.FC = () => {
     const fetchSensorData = async () => {
       setLoading(true);
       try {
-        // In a real implementation, this would be an API call
-        // For now, we'll use mock data
+        // Real API call to fetch details
+        const response = await axios.get(`${API_BASE_URL}/api/iot/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        const data = response.data.data || response.data;
+        setSensor(data);
         
         // Mock sensor data
         const mockSensor: Sensor = {

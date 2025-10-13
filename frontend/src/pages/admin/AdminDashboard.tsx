@@ -220,17 +220,8 @@ const AdminDashboard: React.FC = () => {
         adminDashboardAPI.dashboard.getSystemHealth()
       ]);
 
-      const mockUsers: User[] = [
-        {
-          _id: 'user1',
-          name: 'John Farmer',
-          email: 'john@example.com',
-          role: 'farmer',
-          verificationStatus: 'pending',
-          createdAt: new Date().toISOString()
-        },
-        {
-          _id: 'user2',
+      // Get real users data from API response
+      const realUsers = recentUsers || [];
           name: 'Jane Buyer',
           email: 'jane@example.com',
           role: 'buyer',
@@ -239,45 +230,41 @@ const AdminDashboard: React.FC = () => {
         }
       ];
 
-      const mockLandTokens: LandToken[] = [
-        {
-          _id: 'token1',
-          landId: 'LAND-001',
-          owner: { name: 'Farmer Singh', email: 'farmer@example.com' },
-          landDetails: {
-            location: { city: 'Barabanki', state: 'UP' },
-            area: { value: 5, unit: 'hectare' }
-          },
-          verification: { status: 'pending' },
-          status: 'pending',
-          createdAt: new Date().toISOString()
-        }
-      ];
+      // Get real land tokens from blockchain service
+      let realLandTokens = [];
+      try {
+        const landTokensResponse = await axios.get(`${API_BASE_URL}/api/blockchain/land-tokens`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        realLandTokens = landTokensResponse.data.data || [];
+      } catch (err) {
+        console.warn('Land tokens service unavailable:', err);
+        realLandTokens = [];
+      }
 
-      const mockBulkUploads: BulkUpload[] = [
-        {
-          _id: 'upload1',
-          filename: 'farmers_batch_001.csv',
-          type: 'users',
-          status: 'completed',
-          records: 150,
-          success: 145,
-          failed: 5,
-          uploadedBy: 'admin@agrimaan.com',
-          uploadedAt: '2025-09-11 10:30:00'
-        }
-      ];
+      // Get real bulk uploads data
+      let realBulkUploads = [];
+      try {
+        const bulkUploadsResponse = await axios.get(`${API_BASE_URL}/api/admin/bulk-uploads`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        realBulkUploads = bulkUploadsResponse.data.data || [];
+      } catch (err) {
+        console.warn('Bulk uploads service unavailable:', err);
+        realBulkUploads = [];
+      }
       
-      const mockResources: Resource[] = [
-        {
-          _id: 'resource1',
-          name: 'Tractor (Model X)',
-          type: 'Machinery',
-          hourlyRate: 1500,
-          location: 'Field A',
-          owner: { name: 'John Farmer', email: 'john@example.com' },
-          createdAt: new Date().toISOString()
-        },
+      // Get real resources data
+      let realResources = [];
+      try {
+        const resourcesResponse = await axios.get(`${API_BASE_URL}/api/admin/resources`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        realResources = resourcesResponse.data.data || [];
+      } catch (err) {
+        console.warn('Resources service unavailable:', err);
+        realResources = [];
+      }
         {
           _id: 'resource2',
           name: 'Harvester (Model Y)',
@@ -298,7 +285,7 @@ const AdminDashboard: React.FC = () => {
           orders: dashboardStats.arguments.orders,
           landTokens: dashboardStats.arguments.landTokens,
           bulkUploads: dashboardStats.arguments.bulkUploads,
-          resources: 42 // Mock count for resources
+          resources: realResources.length
         },
         usersByRole: dashboardStats.arguments.usersByRole,
         recentOrders: recentOrders,
@@ -306,10 +293,10 @@ const AdminDashboard: React.FC = () => {
         verificationStats: dashboardStats.arguments.verificationStats,
         systemHealth: systemHealth
       });
-      setUsers(mockUsers);
-      setLandTokens(mockLandTokens);
-      setBulkUploads(mockBulkUploads);
-      setResources(mockResources); // New: Set resources state
+      setUsers(realUsers);
+      setLandTokens(realLandTokens);
+      setBulkUploads(realBulkUploads);
+      setResources(realResources);
       setLoading(false);
       
     } catch (err: any) {
