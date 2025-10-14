@@ -53,7 +53,7 @@ router.use(authorize('admin', 'super-admin'));
 
 router.get('/', adminController.getAllAdmins);
 
-router.get('/:id', adminController.getAdminById);
+//router.get('/:id', adminController.getAdminById);
 
 router.get('/:id/activity', adminController.getAdminActivityLogs);
 
