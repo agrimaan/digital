@@ -9,7 +9,8 @@ const {
   deleteTelemetry,
   getFieldTelemetry
 } = require('../controllers/telemetryController');
-const { protect, authorize, apiKeyAuth } = require('../middleware/auth');
+const { protect, authorize, apiKeyAuth } = require('@agrimaan/shared').middleware;
+//const { validateTelemetrySubmission } = require('../middleware/validateTelemetry');
 
 // Validation middleware
 const validateTelemetrySubmission = [
@@ -42,6 +43,7 @@ router.get('/field/:fieldId', protect, getFieldTelemetry);
 
 // API key authenticated routes for device data submission
 router.post('/', apiKeyAuth, validateTelemetrySubmission, submitTelemetry);
+
 
 // Admin only routes
 router.delete('/:id', protect, authorize('admin'), deleteTelemetry);

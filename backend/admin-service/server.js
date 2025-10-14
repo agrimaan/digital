@@ -8,15 +8,17 @@ require('dotenv').config();
 const adminRoutes = require('./routes/adminRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
-const dashboardStatsRoutes = require('./routes/dashboardStatsRoutes');
+const statsRoutes = require('./routes/statsRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const auditLogRoutes = require('./routes/auditLogRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const bulkUploadRoutes = require('./routes/bulkUploadRoutes');
+
 
 // Import logger
 const logger = require('./utils/logger');
-const { getSystemHealth } = require('./controllers/dashboardStatsController');
+const { getSystemHealth } = require('./controllers/statsController');
 
 // Initialize express app
 const app = express();
@@ -37,13 +39,15 @@ mongoose.connect(process.env.MONGODB_URI, {
 
 // Routes
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/dashboards', dashboardRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
-app.use('/api/admin/dashboard/stats', dashboardStatsRoutes);
-app.use('/api/admin/settings', settingsRoutes);
 app.use('/api/admin/reports', reportRoutes);
 app.use('/api/admin/audit-logs', auditLogRoutes);
 app.use('/api/admin/notifications', notificationRoutes);
 app.use('/api/admin/analytics', analyticsRoutes);
+app.use('/api/admin/bulk-uploads', bulkUploadRoutes);
+app.use('/api/admin/settings', settingsRoutes);
+app.use('/api/admin/stats', statsRoutes);
 
 
 // Health check endpoint
@@ -65,7 +69,10 @@ app.get('/', (req, res) => {
       '/api/admin/reports',
       '/api/admin/audit-logs',
       '/api/admin/notifications',
-      '/api/admin/analytics'
+      '/api/admin/analytics',
+      '/api/admin/bulk-uploads',
+      '/health',
+      '/'
     ]
   });
 });

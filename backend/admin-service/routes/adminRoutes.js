@@ -57,6 +57,7 @@ router.get('/:id', adminController.getAdminById);
 
 router.get('/:id/activity', adminController.getAdminActivityLogs);
 
+
 // SuperAdmin only routes
 router.use(authorize('super-admin'));
 

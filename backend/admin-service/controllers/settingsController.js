@@ -377,3 +377,4 @@ exports.testSmsConfiguration = async (req, res) => {
     return responseHandler.error(res, 500, error.message);
   }
 };
+

@@ -8,7 +8,7 @@ const {
   getAnomalyDetection,
   getPredictiveAnalytics
 } = require('../controllers/analyticsController');
-const { protect } = require('../middleware/auth');
+const { protect, authorize } = require('@agrimaan/shared').middleware;
 
 // Routes
 router.get('/fields/:fieldId', protect, getFieldAnalytics);

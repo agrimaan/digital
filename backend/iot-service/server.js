@@ -32,6 +32,7 @@ app.use('/api/iot/maintenance', require('./routes/maintenanceRoutes'));
 app.use('/api/iot/readings', require('./routes/readingRoutes'));
 app.use('/api/iot/analytics', require('./routes/analyticsRoutes'));
 
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 

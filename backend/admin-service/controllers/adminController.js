@@ -133,6 +133,7 @@ exports.getAllAdmins = async (req, res) => {
 exports.getAdminById = async (req, res) => {
   try {
     const admin = await adminService.getAdminById(req.params.id);
+    console.log("admin object within getAdminById:" & admin);
 
     return responseHandler.success(
       res,

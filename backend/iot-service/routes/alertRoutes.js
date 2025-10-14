@@ -10,7 +10,7 @@ const {
   getAlertsByDevice,
   getAlertsSummary
 } = require('../controllers/alertController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize } = require('@agrimaan/shared').middleware;
 
 // Validation middleware
 const validateAlertCreation = [

@@ -12,7 +12,7 @@ const {
   getLatestReadings,
   getReadingStats
 } = require('../controllers/readingController');
-const { protect } = require('../middleware/auth');
+const { protect, authorize } = require('@agrimaan/shared').middleware;
 
 // Validation middleware
 const validateReadingCreation = [

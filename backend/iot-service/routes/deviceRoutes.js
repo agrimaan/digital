@@ -11,7 +11,8 @@ const {
   getDeviceStatus,
   regenerateApiKey
 } = require('../controllers/deviceController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize } = require('@agrimaan/shared').middleware;
+
 
 // Validation middleware
 const validateDeviceCreation = [

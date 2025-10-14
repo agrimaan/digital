@@ -214,7 +214,7 @@ const AdminDashboard: React.FC = () => {
         recentOrders,
         systemHealth
       ] = await Promise.all([
-        adminDashboardAPI.dashboard.getDashboardStats,
+        adminDashboardAPI.dashboard.getDashboardStats(),
         adminDashboardAPI.dashboard.getRecentUsers(5),
         adminDashboardAPI.dashboard.getRecentOrders(5),
         adminDashboardAPI.dashboard.getSystemHealth()
@@ -222,15 +222,8 @@ const AdminDashboard: React.FC = () => {
 
       // Get real users data from API response
       const realUsers = recentUsers || [];
-      /*
-          name: 'Jane Buyer',
-          email: 'jane@example.com',
-          role: 'buyer',
-          verificationStatus: 'verified',
-          createdAt: new Date(Date.now() - 86400000).toISOString()
-        }
-      ];
-      */
+     
+      
       // Get real land tokens from blockchain service
       let realLandTokens = [];
       try {
@@ -267,22 +260,23 @@ const AdminDashboard: React.FC = () => {
         realResources = [];
       }
 
+      console.log('dashboardStats:', dashboardStats);
 
       setDashboardData({ 
         counts: {
-          users: dashboardStats.arguments.users,
-          fields: dashboardStats.arguments.fields,
-          crops: dashboardStats.arguments.crops,
-          sensors: dashboardStats.arguments.sensors,
-          orders: dashboardStats.arguments.orders,
-          landTokens: dashboardStats.arguments.landTokens,
-          bulkUploads: dashboardStats.arguments.bulkUploads,
+          users: dashboardStats.users,
+          fields: dashboardStats.fields,
+          crops: dashboardStats.crops,
+          sensors: dashboardStats.sensors,
+          orders: dashboardStats.orders,
+          landTokens: dashboardStats.landTokens,
+          bulkUploads: dashboardStats.bulkUploads,
           resources: realResources.length
         },
-        usersByRole: dashboardStats.arguments.usersByRole,
+        usersByRole: dashboardStats.usersByRole,
         recentOrders: recentOrders,
         recentUsers: recentUsers,
-        verificationStats: dashboardStats.arguments.verificationStats,
+        verificationStats: dashboardStats.verificationStats,
         systemHealth: systemHealth
       });
       setUsers(realUsers);
@@ -383,11 +377,11 @@ const AdminDashboard: React.FC = () => {
       try {
           if (currentResource) {
               // Update existing resource
-              await axios.put(`${API_BASE_URL}/admin/resources/${currentResource._id}`, resourceForm);
+              await axios.put(`${API_BASE_URL}/api/admin/resources/${currentResource._id}`, resourceForm);
               setSuccess('Resource updated successfully');
           } else {
               // Create new resource
-              await axios.post(`${API_BASE_URL}/admin/resources`, resourceForm);
+              await axios.post(`${API_BASE_URL}/api/admin/resources`, resourceForm);
               setSuccess('Resource created successfully');
           }
           setResourceDialog(false);
@@ -400,7 +394,7 @@ const AdminDashboard: React.FC = () => {
   const handleDeleteResource = async (resourceId: string) => {
       if (window.confirm('Are you sure you want to delete this resource?')) {
           try {
-              await axios.delete(`${API_BASE_URL}/admin/resources/${resourceId}`);
+              await axios.delete(`${API_BASE_URL}/api/admin/resources/${resourceId}`);
               setSuccess('Resource deleted successfully');
               fetchDashboardData(); // Refresh data
           } catch (err: any) {
