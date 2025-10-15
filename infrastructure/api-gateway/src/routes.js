@@ -96,8 +96,6 @@ module.exports = (app) => {
     logLevel: 'debug',
     pathRewrite: { '^/api/fields': '/api/fields' },
     onError: handleProxyError,
-
-    // Forward JSON body to the backend
     onProxyReq: (proxyReq, req, res) => {
       if (req.body && Object.keys(req.body).length) {
         const bodyData = JSON.stringify(req.body);
@@ -107,6 +105,27 @@ module.exports = (app) => {
       }
       console.log(`➡️ Proxying request: ${req.method} ${req.originalUrl}`);
     }
+  }));
+
+  // ---------------------------
+  // CROP SERVICE
+  // ---------------------------
+  app.use('/api/crops', createProxyMiddleware({
+    target: process.env.CROP_SERVICE_URL || 'http://localhost:3005',
+    changeOrigin: true,
+    logLevel: 'debug',
+    pathRewrite: { '^/api/crops': '/api/crops' },
+    onError: handleProxyError,
+    onProxyReq: (proxyReq, req, res) => {
+      if (req.body && Object.keys(req.body).length) {
+        const bodyData = JSON.stringify(req.body);
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
+      console.log(`➡️ Proxying request: ${req.method} ${req.originalUrl}`);
+    }
+    
   }));
 
   app.use('/api/soil', createProxyMiddleware({
@@ -149,17 +168,6 @@ module.exports = (app) => {
     changeOrigin: true,
     logLevel: 'debug',
     pathRewrite: { '^/api/alerts': '/alerts' },
-    onError: handleProxyError
-  }));
-
-  // ---------------------------
-  // CROP SERVICE
-  // ---------------------------
-  app.use('/api/crops', createProxyMiddleware({
-    target: process.env.CROP_SERVICE_URL || 'http://localhost:3005',
-    changeOrigin: true,
-    logLevel: 'debug',
-    pathRewrite: { '^/api/crops': '/crops' },
     onError: handleProxyError
   }));
 

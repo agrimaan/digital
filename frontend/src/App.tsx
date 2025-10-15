@@ -20,7 +20,7 @@ import Profile from './pages/common/Profile';
 import FarmerDashboard from './pages/farmer/FarmerDashboard';
 import Fields from './pages/farmer/Fields';
 import FieldDetail from './pages/farmer/FieldDetail';
-import Crops from './pages/farmer/Crops';
+import Crops from './pages/farmer/CropManagement';
 import Weather from './pages/farmer/Weather';
 import FarmerMarketplace from './pages/common/Marketplace';
 import Analytics from './pages/farmer/Analytics';
