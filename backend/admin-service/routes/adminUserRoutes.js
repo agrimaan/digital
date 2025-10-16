@@ -7,7 +7,7 @@
 
 const express = require('express');
 const { check } = require('express-validator');
-const adminUserController = require('../controllers/adminUserController');
+const adminUserController = require('../controllers/adminUserController.js');
 const { protect, authorize } = require('../../user-service/middleware/auth');
 
 const router = express.Router();

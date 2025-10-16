@@ -81,7 +81,7 @@ exports.getAllUsers = asyncHandler(async (req, res) => {
     const search = (req.query.search || '').trim();
     const role = (req.query.role || '').trim();
 
-    console.log('Fetching users for admin...');
+    console.log('Fetching users for admin...', { page, limit, search, role });
     // Prefer server-side filtering/pagination on user-service
     // Expected endpoint (adjust if yours differs):
     //   GET /internal/users?page=&limit=&search=&role=
@@ -90,11 +90,13 @@ exports.getAllUsers = asyncHandler(async (req, res) => {
       params: { page, limit, ...(search ? { search } : {}), ...(role ? { role } : {}) },
     });
 
+    console.log('Received data from user-service:', JSON.stringify(data).substring(0, 200));
     const normalized = normalizeUserListPayload(data, { page, limit });
 
+    // Return in format expected by frontend: { users, pagination }
     return res.status(200).json({
-      success: true,
-      data: normalized,
+      users: normalized.users,
+      pagination: normalized.pagination,
     });
   } catch (error) {
     console.error('Error fetching users for admin:', error?.response?.data || error.message);
@@ -115,7 +117,7 @@ exports.getUserById = asyncHandler(async (req, res) => {
   try {
     // Expected endpoint:
     //   GET /internal/users/:id
-    const { data } = await svcGet(`/internal/users/${req.params.id}`, { req });
+    const { data } = await svcGet(`/api/internal/users/${req.params.id}`, { req });
 
     // Normalize to { user }
     const user = data?.data?.user || data?.user || data;
@@ -161,7 +163,7 @@ exports.deleteUser = asyncHandler(async (req, res) => {
 
     // Expected endpoint:
     //   DELETE /internal/users/:id
-    await svcDelete(`/internal/users/${req.params.id}`, { req });
+    await svcDelete(`/api/internal/users/${req.params.id}`, { req });
 
     return res.status(200).json({
       success: true,
@@ -192,8 +194,8 @@ exports.getRecentUsers = asyncHandler(async (req, res) => {
 
     // Prefer server-side sort/limit:
     //   GET /internal/users?page=1&limit=<n>&sort=-createdAt
-    // If your user-service doesn’t support sort, it should at least return newest first.
-    const { data } = await svcGet('/internal/users', {
+    // If your user-service doesn't support sort, it should at least return newest first.
+    const { data } = await svcGet('/api/internal/users', {
       req,
       params: { page: 1, limit, sort: '-createdAt' },
     });
@@ -234,11 +236,11 @@ exports.searchUsers = asyncHandler(async (req, res) => {
     // Otherwise, you can proxy to /internal/users?search=<q>
     let data;
     try {
-      const r = await svcGet('/internal/users/search', { req, params: { q } });
+      const r = await svcGet('/api/internal/users/search', { req, params: { q } });
       data = r.data;
     } catch (e) {
       // Fallback to generic list with search param
-      const r2 = await svcGet('/internal/users', { req, params: { page: 1, limit: 50, search: q } });
+      const r2 = await svcGet('/api/internal/users', { req, params: { page: 1, limit: 50, search: q } });
       data = r2.data;
     }
 
