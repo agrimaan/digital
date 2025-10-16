@@ -115,6 +115,7 @@ class IndependentUserServiceClient {
   async getAllUsers() {
     try {
       const response = await this.httpClient.get('/api/users');
+      console.log('Response data within -user-service-client:', response.data);
       return response.data;
     } catch (error) {
       console.error('Failed to get all users:', error.message);

@@ -28,7 +28,8 @@ import {
   Pagination,
   Grid,
   Tooltip,
-  CircularProgress
+  CircularProgress,
+  SelectChangeEvent
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -36,13 +37,12 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Visibility as VisibilityIcon,
-  FilterList as FilterListIcon,
   Refresh as RefreshIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 import { API_BASE_URL } from '../../config/apiConfig';
 
-// Define types
+// User type
 interface User {
   _id: string;
   name: string;
@@ -61,6 +61,7 @@ interface User {
   isSystemAdmin?: boolean;
 }
 
+// Pagination type
 interface PaginationData {
   total: number;
   page: number;
@@ -70,46 +71,53 @@ interface PaginationData {
 
 const AdminUsers: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<PaginationData>({
     total: 0,
     page: 1,
     limit: 10,
-    pages: 0
+    pages: 1
   });
-  
+
   // Filters
-  const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
-  
+  const [search, setSearch] = useState<string>('');
+  const [roleFilter, setRoleFilter] = useState<string>('');
+
   // Delete dialog
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   // Fetch users
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = pagination.page, limit = pagination.limit) => {
     setLoading(true);
+    setError(null);
+
     try {
       const params = new URLSearchParams();
-      params.append('page', pagination.page.toString());
-      params.append('limit', pagination.limit.toString());
-      
-      if (search) {
-        params.append('search', search);
+      params.append('page', page.toString());
+      params.append('limit', limit.toString());
+      if (search) params.append('search', search);
+      if (roleFilter) params.append('role', roleFilter);
+
+      const res = await axios.get(`${API_BASE_URL}/api/admin/users?${params.toString()}`);
+      setUsers(res.data.users || []);
+
+      if (res.data.pagination) {
+        setPagination(res.data.pagination);
+      } else {
+        const totalUsers = res.data.users?.length || 0;
+        setPagination({
+          total: totalUsers,
+          page,
+          limit,
+          pages: Math.ceil(totalUsers / limit) || 1
+        });
       }
-      
-      if (roleFilter) {
-        params.append('role', roleFilter);
-      }
-      
-      const res = await axios.get(`${API_BASE_URL}/api/users?${params.toString()}`);
-      setUsers(res.data.users);
-      setPagination(res.data.pagination);
-      setLoading(false);
     } catch (err: any) {
       console.error('Error fetching users:', err);
       setError(err.response?.data?.message || 'Failed to load users');
+    } finally {
       setLoading(false);
     }
   };
@@ -121,39 +129,37 @@ const AdminUsers: React.FC = () => {
   // Handle search
   const handleSearch = () => {
     setPagination(prev => ({ ...prev, page: 1 }));
-    fetchUsers();
+    fetchUsers(1, pagination.limit);
   };
 
-  // Handle role filter change
-  const handleRoleFilterChange = (event: React.ChangeEvent<{ value: unknown }>) => {
-    setRoleFilter(event.target.value as string);
+  // Handle role filter
+  const handleRoleFilterChange = (event: SelectChangeEvent<string>) => {
+    const role = event.target.value;
+    setRoleFilter(role);
     setPagination(prev => ({ ...prev, page: 1 }));
-    fetchUsers();
+    fetchUsers(1, pagination.limit);
   };
 
   // Handle page change
-  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+  const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
     setPagination(prev => ({ ...prev, page: value }));
   };
 
-  // Open delete dialog
+  // Delete dialog
   const openDeleteDialog = (user: User) => {
     setUserToDelete(user);
     setDeleteDialogOpen(true);
   };
 
-  // Close delete dialog
   const closeDeleteDialog = () => {
     setUserToDelete(null);
     setDeleteDialogOpen(false);
   };
 
-  // Delete user
   const deleteUser = async () => {
     if (!userToDelete) return;
-    
     try {
-      await axios.delete(`${API_BASE_URL}/api/users/${userToDelete._id}`);
+      await axios.delete(`${API_BASE_URL}/api/admin/users/${userToDelete._id}`);
       fetchUsers();
       closeDeleteDialog();
     } catch (err: any) {
@@ -162,41 +168,26 @@ const AdminUsers: React.FC = () => {
     }
   };
 
-  // Get role color
+  // Helpers
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'admin':
-        return 'error';
-      case 'farmer':
-        return 'success';
-      case 'buyer':
-        return 'primary';
-      case 'agronomist':
-        return 'info';
-      case 'investor':
-        return 'warning';
-      default:
-        return 'default';
+      case 'admin': return 'error';
+      case 'farmer': return 'success';
+      case 'buyer': return 'primary';
+      case 'agronomist': return 'info';
+      case 'investor': return 'warning';
+      default: return 'default';
     }
   };
 
-  // Format date
-  const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          User Management
-        </Typography>
-        
+        <Typography variant="h4">User Management</Typography>
         <Button
           component={RouterLink}
           to="/admin/users/new"
@@ -224,20 +215,17 @@ const AdminUsers: React.FC = () => {
                   </InputAdornment>
                 ),
               }}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleSearch();
-                }
-              }}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
           </Grid>
+
           <Grid item xs={12} md={3}>
             <FormControl fullWidth variant="outlined">
               <InputLabel id="role-filter-label">Filter by Role</InputLabel>
               <Select
                 labelId="role-filter-label"
                 value={roleFilter}
-                onChange={handleRoleFilterChange as any}
+                onChange={handleRoleFilterChange}
                 label="Filter by Role"
               >
                 <MenuItem value="">All Roles</MenuItem>
@@ -249,16 +237,13 @@ const AdminUsers: React.FC = () => {
               </Select>
             </FormControl>
           </Grid>
+
           <Grid item xs={6} md={1.5}>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<SearchIcon />}
-              onClick={handleSearch}
-            >
+            <Button fullWidth variant="outlined" startIcon={<SearchIcon />} onClick={handleSearch}>
               Search
             </Button>
           </Grid>
+
           <Grid item xs={6} md={1.5}>
             <Button
               fullWidth
@@ -268,7 +253,7 @@ const AdminUsers: React.FC = () => {
                 setSearch('');
                 setRoleFilter('');
                 setPagination(prev => ({ ...prev, page: 1 }));
-                fetchUsers();
+                fetchUsers(1, pagination.limit);
               }}
             >
               Reset
@@ -284,13 +269,9 @@ const AdminUsers: React.FC = () => {
             <CircularProgress />
           </Box>
         ) : error ? (
-          <Typography color="error" align="center">
-            {error}
-          </Typography>
+          <Typography color="error" align="center">{error}</Typography>
         ) : users.length === 0 ? (
-          <Typography align="center" sx={{ p: 3 }}>
-            No users found.
-          </Typography>
+          <Typography align="center" sx={{ p: 3 }}>No users found.</Typography>
         ) : (
           <TableContainer>
             <Table>
@@ -304,52 +285,29 @@ const AdminUsers: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {users.map((user) => (
+                {users.map(user => (
                   <TableRow key={user._id}>
                     <TableCell>{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
-                      <Chip 
-                        label={user.role.charAt(0).toUpperCase() + user.role.slice(1)} 
-                        color={getRoleColor(user.role) as any}
-                        size="small"
-                      />
-                      {user.isSystemAdmin && (
-                        <Chip 
-                          label="System Admin" 
-                          color="secondary"
-                          size="small"
-                          sx={{ ml: 1 }}
-                        />
-                      )}
+                      <Chip label={user.role.charAt(0).toUpperCase() + user.role.slice(1)} color={getRoleColor(user.role) as any} size="small" />
+                      {user.isSystemAdmin && <Chip label="System Admin" color="secondary" size="small" sx={{ ml: 1 }} />}
                     </TableCell>
                     <TableCell>{formatDate(user.createdAt)}</TableCell>
                     <TableCell align="right">
                       <Tooltip title="View">
-                        <IconButton 
-                          component={RouterLink} 
-                          to={`/admin/users/${user._id}`} 
-                          size="small"
-                        >
+                        <IconButton component={RouterLink} to={`/admin/users/${user._id}`} size="small">
                           <VisibilityIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Edit">
-                        <IconButton 
-                          component={RouterLink} 
-                          to={`/admin/users/${user._id}/edit`} 
-                          size="small"
-                        >
+                        <IconButton component={RouterLink} to={`/admin/users/${user._id}/edit`} size="small">
                           <EditIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Delete">
                         <span>
-                          <IconButton 
-                            size="small"
-                            onClick={() => openDeleteDialog(user)}
-                            disabled={user.isSystemAdmin}
-                          >
+                          <IconButton size="small" onClick={() => openDeleteDialog(user)} disabled={user.isSystemAdmin}>
                             <DeleteIcon fontSize="small" />
                           </IconButton>
                         </span>
@@ -365,21 +323,18 @@ const AdminUsers: React.FC = () => {
         {/* Pagination */}
         {pagination.pages > 1 && (
           <Box sx={{ display: 'flex', justifyContent: 'center', pt: 3 }}>
-            <Pagination 
-              count={pagination.pages} 
-              page={pagination.page} 
-              onChange={handlePageChange} 
-              color="primary" 
+            <Pagination
+              count={pagination.pages}
+              page={pagination.page}
+              onChange={handlePageChange}
+              color="primary"
             />
           </Box>
         )}
       </Paper>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={closeDeleteDialog}
-      >
+      {/* Delete Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={closeDeleteDialog}>
         <DialogTitle>Delete User</DialogTitle>
         <DialogContent>
           <DialogContentText>

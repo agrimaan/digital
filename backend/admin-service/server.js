@@ -14,6 +14,8 @@ const auditLogRoutes = require('./routes/auditLogRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const bulkUploadRoutes = require('./routes/bulkUploadRoutes');
+const adminUserRoutes = require('./routes/adminUserRoutes');
+const resourceRoutes = require('./routes/resourceRoutes');
 
 
 // Import logger
@@ -25,7 +27,13 @@ const app = express();
 const PORT = process.env.PORT || 3012;
 
 // Middleware
-app.use(cors());
+//app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173','http://localhost:3000'], // your FE origin(s)
+  credentials: true,
+  methods: ['GET','POST','PATCH','DELETE','PUT','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization']
+}));
 app.use(express.json());
 app.use(morgan('combined', { stream: logger.stream }));
 
@@ -48,6 +56,9 @@ app.use('/api/admin/analytics', analyticsRoutes);
 app.use('/api/admin/bulk-uploads', bulkUploadRoutes);
 app.use('/api/admin/settings', settingsRoutes);
 app.use('/api/admin/stats', statsRoutes);
+app.use('/api/admin/users', adminUserRoutes);
+app.use('/api/admin/resources', resourceRoutes);
+
 
 
 // Health check endpoint
@@ -62,15 +73,29 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: [
       '/api/admins',
-      '/api/admin/dashboard',
-      '/api/admin/dashboard/stats',
-      '/api/admin/settings',
       '/api/admin/dashboards',
+      '/api/admin/dashboard',
       '/api/admin/reports',
       '/api/admin/audit-logs',
       '/api/admin/notifications',
       '/api/admin/analytics',
+      '/api/admin/settings',
+      '/api/admin/stats',
+      '/api/admin/users',
+      '/api/admin/resources',
       '/api/admin/bulk-uploads',
+      '/api/admin/verification/pending',
+      '/api/admin/users/recent',
+      '/api/admin/orders/recent',
+      '/api/admin/system/health',
+      '/api/admin/bulk-uploads/stats',
+      '/api/admin/dashboard/stats',
+      '/api/admin/dashboard/users/stats',
+      '/api/admin/dashboard/fields/stats',
+      '/api/admin/dashboard/crops/stats',
+      '/api/admin/dashboard/sensors/stats',
+
+      
       '/health',
       '/'
     ]

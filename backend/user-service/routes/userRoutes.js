@@ -31,20 +31,22 @@ const validateUserUpdate = [
     .isIn(['farmer', 'buyer', 'logistics', 'investor', 'agronomist', 'admin'])
 ];
 
-// Routes
+  // Routes
 router
-  .route('/')
-  .get(protect, authorize('admin'), getUsers)
-  .post(protect, authorize('admin','super-user'), validateUserCreation, createUser);
-
-  router
-  .route('/recent')
-  .get(protect, authorize('admin'), getRecentUsers);
+.route('/')
+.get(protect, authorize('admin'), getUsers)
+.post(protect, authorize('admin','super-user'), validateUserCreation, createUser);
 
 router
-  .route('/:id')
-  .get(protect, getUser)
-  .put(protect, validateUserUpdate, updateUser)
-  .delete(protect, authorize('admin','super-user'), deleteUser);
+.route('/recent')
+.get(protect, authorize('admin'), getRecentUsers);
+
+router
+.route('/:id')
+.get(protect, getUser)
+.put(protect, validateUserUpdate, updateUser)
+.delete(protect, authorize('admin','super-user'), deleteUser);
+
+
 
 module.exports = router;

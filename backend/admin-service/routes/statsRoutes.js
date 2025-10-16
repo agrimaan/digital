@@ -26,4 +26,8 @@ router.get('/system/health',statsController.getSystemHealth);
 router.get('/bulk-uploads/stats',statsController.getBulkUploadStats);
 router.get('/verification/pending',statsController.getPendingVerifications);
 
+
+// Bulk upload statistics
+router.get('/bulk-uploads/stats', statsController.getBulkUploadStats);
+
 module.exports = router;

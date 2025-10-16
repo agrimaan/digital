@@ -224,18 +224,18 @@ const AdminDashboard: React.FC = () => {
       const realUsers = recentUsers || [];
      
       
-      // Get real land tokens from blockchain service
-      let realLandTokens = [];
-      try {
-        const landTokensResponse = await axios.get(`${API_BASE_URL}/api/blockchain/land-tokens`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        realLandTokens = landTokensResponse.data.data || [];
-      } catch (err) {
-        console.warn('Land tokens service unavailable:', err);
-        realLandTokens = [];
-      }
-
+         // Get real land tokens from blockchain service
+         let realLandTokens = [];
+         try {
+           const landTokensResponse = await axios.get(`${API_BASE_URL}/api/blockchain/tokens?tokenType=Fields`, {
+             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+           });
+           realLandTokens = landTokensResponse.data.data || [];
+           console.log('Land tokens fetched:', realLandTokens.length, 'tokens');
+         } catch (err) {
+           console.warn('Land tokens service unavailable:', err);
+           realLandTokens = [];
+         }
       // Get real bulk uploads data
       let realBulkUploads = [];
       try {

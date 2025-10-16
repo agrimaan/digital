@@ -389,3 +389,42 @@ exports.getAdminActivityLogs = async (req, res) => {
     return responseHandler.error(res, 500, error.message);
   }
 };
+const User = require('../models/User');
+
+exports.listUsers = async (req, res) => {
+  const page = Math.max(parseInt(req.query.page || '1', 10), 1);
+  const limit = Math.min(Math.max(parseInt(req.query.limit || '20', 10), 1), 100);
+  const skip = (page - 1) * limit;
+
+  const [items, total] = await Promise.all([
+    User.find({}, '-passwordHash').sort({ createdAt: -1 }).skip(skip).limit(limit),
+    User.countDocuments()
+  ]);
+
+  res.json({ items, page, limit, total, pages: Math.ceil(total / limit) });
+};
+
+exports.updateUserRole = async (req, res) => {
+  const { id } = req.params;
+  const { role } = req.body; // 'admin' | 'farmer' | 'buyer' etc.
+  if (!role) return res.status(400).json({ message: 'role is required' });
+
+  const user = await User.findByIdAndUpdate(id, { role }, { new: true, select: '-passwordHash' });
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  res.json(user);
+};
+
+exports.toggleUserStatus = async (req, res) => {
+  const { id } = req.params;
+  const { active } = req.body; // boolean
+  const user = await User.findByIdAndUpdate(id, { active }, { new: true, select: '-passwordHash' });
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  res.json(user);
+};
+
+exports.deleteUser = async (req, res) => {
+  const { id } = req.params;
+  const user = await User.findByIdAndDelete(id);
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  res.json({ ok: true });
+};

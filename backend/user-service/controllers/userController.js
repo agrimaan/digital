@@ -7,6 +7,7 @@ const responseHandler = require('../utils/responseHandler');
 // @access  Private/Admin
 exports.getUsers = async (req, res) => {
   try {
+    console.log('Fetching users...');
     const users = await userService.getAllUsers();
     
     return responseHandler.success(res, 200, users, 'Users retrieved successfully');
@@ -21,6 +22,8 @@ exports.getUsers = async (req, res) => {
    * @returns {Promise<Array>} Recent users
    */
 exports.getRecentUsers = async (req, res) => {
+  console.log('Fetching recent users...');
+
   try {
     const users = await userService.getRecentUsers(req.query.limit);
     
@@ -34,6 +37,8 @@ exports.getRecentUsers = async (req, res) => {
 // @route   GET /api/users/:id
 // @access  Private
 exports.getUser = async (req, res) => {
+  console.log('Fetching single user...');
+
   try {
     const user = await userService.getUserById(req.params.id);
     

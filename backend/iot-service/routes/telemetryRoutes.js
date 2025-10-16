@@ -42,7 +42,7 @@ router.get('/device/:deviceId/aggregate', protect, getAggregatedTelemetry);
 router.get('/field/:fieldId', protect, getFieldTelemetry);
 
 // API key authenticated routes for device data submission
-router.post('/', apiKeyAuth, validateTelemetrySubmission, submitTelemetry);
+//router.post('/', apiKeyAuth, validateTelemetrySubmission, submitTelemetry);
 
 
 // Admin only routes
