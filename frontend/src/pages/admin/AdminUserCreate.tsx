@@ -193,12 +193,32 @@ const AdminUserCreate: React.FC = () => {
     setSuccess(null);
     
     try {
-      // In a real implementation, this would be an API call
-      // For now, we'll simulate a successful creation
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+       // Create user via admin API
+       const userData = {
+        firstName: formData.name.split(' ')[0] || formData.name,
+        lastName: formData.name.split(' ').slice(1).join(' ') || '',
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        role: formData.role,
+        phone: formData.phone,
+        address: {
+          street: formData.street,
+          city: formData.city,
+          state: formData.state,
+          country: formData.country,
+          zipCode: formData.zipCode
+        }
+      };
+
+      await axios.post(`${API_BASE_URL}/api/admin/users`, userData, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+        
       // Update success message
       setSuccess('User created successfully');
       setLoading(false);

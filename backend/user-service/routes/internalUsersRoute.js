@@ -47,4 +47,45 @@ router.get('/:id', getInternal);
 // DELETE /api/internal/users/:id
 router.delete('/:id', deleteInternal);
 
+// PUT /api/internal/users/:id
+router.put('/:id', protect, authorize('admin', 'super-admin'), async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const updateData = req.body;
+    
+    // Find user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update user fields
+    if (updateData.name) user.name = updateData.name;
+    if (updateData.email) user.email = updateData.email;
+    if (updateData.role) user.role = updateData.role;
+    if (updateData.phone) user.phone = updateData.phone;
+    if (updateData.address) user.address = updateData.address;
+
+    // Save updated user
+    await user.save();
+
+    // Return updated user (without password)
+    const userResponse = user.toObject();
+    delete userResponse.passwordHash;
+
+    res.json({
+      success: true,
+      message: 'User updated successfully',
+      data: { user: userResponse }
+    });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error updating user',
+      error: error.message 
+    });
+  }
+});
+
 module.exports = router;

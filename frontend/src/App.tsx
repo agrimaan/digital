@@ -34,7 +34,22 @@ import OrderHistory from './pages/buyer/OrderHistory';
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminUserDetail from './pages/admin/AdminUserDetail';
+import AdminUserEdit from './pages/admin/AdminUserEdit';
+import AdminUserCreate from './pages/admin/AdminUserCreate';
 import AdminFields from './pages/admin/AdminFields';
+import AdminFieldDetail from './pages/admin/AdminFieldDetail';
+import AdminCrops from './pages/admin/AdminCrops';
+import AdminCropDetail from './pages/admin/AdminCropDetail';
+import AdminOrders from './pages/admin/AdminOrders';
+import AdminOrderDetail from './pages/admin/AdminOrderDetail';
+import AdminSensors from './pages/admin/AdminSensors';
+import AdminSensorDetail from './pages/admin/AdminSensorDetail';
+import AdminReports from './pages/admin/AdminReports';
+import AdminResources from './pages/admin/AdminResources';
+import AdminSettings from './pages/admin/AdminSettings';
+import AdminVerification from './pages/admin/AdminVerification';
+import AdminBulkUploads from './pages/admin/AdminBulkUploads';
 
 // Agronomist pages
 import AgronomistDashboard from './pages/agronomist/AgronomistDashboard';
@@ -166,9 +181,23 @@ const App: React.FC = () => {
                   <Routes>
                     <Route path="/" element={<AdminDashboard />} />
                     <Route path="users" element={<AdminUsers />} />
+                    <Route path="users/new" element={<AdminUserCreate />} />
+                    <Route path="users/:id" element={<AdminUserDetail />} />
+                    <Route path="users/:id/edit" element={<AdminUserEdit />} />
                     <Route path="fields" element={<AdminFields />} />
+                    <Route path="fields/:id" element={<AdminFieldDetail />} />
+                    <Route path="crops" element={<AdminCrops />} />
+                    <Route path="crops/:id" element={<AdminCropDetail />} />
+                    <Route path="orders" element={<AdminOrders />} />
+                    <Route path="orders/:id" element={<AdminOrderDetail />} />
+                    <Route path="sensors" element={<AdminSensors />} />
+                    <Route path="sensors/:id" element={<AdminSensorDetail />} />
+                    <Route path="reports" element={<AdminReports />} />
+                    <Route path="resources" element={<AdminResources />} />
+                    <Route path="settings" element={<AdminSettings />} />
+                    <Route path="verification" element={<AdminVerification />} />
+                    <Route path="bulk-uploads" element={<AdminBulkUploads />} />
                     <Route path="profile" element={<Profile />} />
-                    <Route path="settings" element={<Settings />} />
                   </Routes>
                 </Layout>
               }

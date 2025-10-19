@@ -7,8 +7,8 @@
 
 const express = require('express');
 const { check } = require('express-validator');
-const adminUserController = require('../controllers/adminUserController.js');
-const { protect, authorize } = require('../../user-service/middleware/auth');
+const adminUserController = require('../controllers/adminUserController');
+const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -59,4 +59,20 @@ router.get('/recent', adminUserController.getRecentUsers);
  */
 router.get('/search', adminUserController.searchUsers);
 
-module.exports = router;
+
+   /**
+    * @route   POST /api/admin/users
+    * @desc    Create new user (admin only)
+    * @access  Private/Admin
+    */
+   router.post('/', adminUserController.createUser);
+
+   /**
+    * @route   PUT /api/admin/users/:id
+    * @desc    Update user (admin only)
+    * @access  Private/Admin
+    */
+   router.put('/:id', adminUserController.updateUser);
+
+
+   module.exports = router;

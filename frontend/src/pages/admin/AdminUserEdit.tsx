@@ -78,13 +78,14 @@ const AdminUserEdit: React.FC = () => {
     const fetchUserData = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/users/${id}`, {
+        const response = await axios.get(`${API_BASE_URL}/api/admin/users/${id}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
         });
         
-        const userData = response.data.data || response.data;
+           const userData = response.data.data?.user || response.data.user || response.data;
+           console.log("User data received for edit:", userData);
         setCurrentUser(userData);
         
         // Initialize form with user data
@@ -149,7 +150,7 @@ const AdminUserEdit: React.FC = () => {
       };
 
       // Make API call to update user
-      await axios.put(`${API_BASE_URL}/api/users/${id}`, updatedUserData, {
+      await axios.put(`${API_BASE_URL}/api/admin/users/${id}`, updatedUserData, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'

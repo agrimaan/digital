@@ -28,6 +28,11 @@ function svcDelete(path, { req } = {}) {
   if (req?.headers?.authorization) headers.authorization = req.headers.authorization;
   return http.delete(path, { headers });
 }
+function svcPost(path, { req, data = {} } = {}) {
+  const headers = {};
+  if (req?.headers?.authorization) headers.authorization = req.headers.authorization;
+  return http.post(path, data, { headers });
+}
 
 // Helper: normalize various user-service shapes into { users, pagination }
 function normalizeUserListPayload(data, { page, limit } = {}) {
@@ -261,5 +266,86 @@ exports.searchUsers = asyncHandler(async (req, res) => {
     });
   }
 });
+
+// @desc    Create new user (admin only)
+// @route   POST /api/admin/users
+// @access  Private/Admin
+exports.createUser = asyncHandler(async (req, res) => {
+  try {
+    const userData = req.body;
+    
+    // Validate required fields
+    if (!userData.email || !userData.role) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and role are required'
+      });
+    }
+
+    // Forward to user service to create user
+    const { data } = await svcPost('/api/users', {
+      req,
+      data: userData
+    });
+
+    // Return success response
+    return res.status(201).json({
+      success: true,
+      message: 'User created successfully',
+      data: data.data || data
+    });
+  } catch (error) {
+    console.error('Error creating user:', error?.response?.data || error.message);
+    const status = error?.response?.status || 500;
+    const message = error?.response?.data?.message || 'Error creating user';
+    
+    return res.status(status).json({
+      success: false,
+      message: message,
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+});
+// @desc    Update user (admin only)
+// @route   PUT /api/admin/users/:id
+// @access  Private/Admin
+exports.updateUser = asyncHandler(async (req, res) => {
+  try {
+    const userData = req.body;
+    
+    // Validate required fields
+    if (!userData.email || !userData.role) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and role are required'
+      });
+    }
+
+    // Forward to user service to update user
+    const { data } = await http.put(`/api/internal/users/${req.params.id}`, userData, {
+      headers: {
+        authorization: req.headers.authorization
+      }
+    });
+
+    // Return success response
+    return res.status(200).json({
+      success: true,
+      message: 'User updated successfully',
+      data: data.data || data
+    });
+  } catch (error) {
+    console.error('Error updating user:', error?.response?.data || error.message);
+    const status = error?.response?.status || 500;
+    const message = error?.response?.data?.message || 'Error updating user';
+    
+    return res.status(status).json({
+      success: false,
+      message: message,
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+});
+
 
 module.exports = exports;

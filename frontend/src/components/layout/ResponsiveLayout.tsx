@@ -70,12 +70,12 @@ interface ResponsiveLayoutProps {
 
 // Define navigation items
 const mainNavItems = [
-  { text: 'Crop Management', icon: <AgricultureIcon />, path: '/admin/AdminCrops' },
-  { text: 'Field Scape', icon: <LandscapeIcon />, path: '/admin/AdminFields' },
-  { text: 'Soil Sensors', icon: <SensorsIcon />, path: '/admin/AdminSensors' },
+  { text: 'Crop Management', icon: <AgricultureIcon />, path: '/admin/Crops' },
+  { text: 'Field Scape', icon: <LandscapeIcon />, path: '/admin/Fields' },
+  { text: 'Soil Sensors', icon: <SensorsIcon />, path: '/admin/Sensors' },
   { text: 'Irrigation', icon: <WaterDropIcon />, path: '/admin/irrigation' },
   { text: 'Analytics', icon: <AnalyticsIcon />, path: '/admin/analytics' },
-  { text: 'Wallet', icon: <AccountBalanceWalletIcon />, path: '/admin/AdminTokens' },
+  { text: 'Wallet', icon: <AccountBalanceWalletIcon />, path: '/admin/Tokens' },
   
 ];
 
@@ -84,7 +84,7 @@ const adminNavItems = [
   { text: 'Admin Dashboard', icon: <AdminPanelSettingsIcon />, path: '/admin/dashboard' },
   { text: 'User Management', icon: <PeopleIcon />, path: '/admin/users' },
   { text: 'Bulk Uploads', icon: <UploadFileIcon />, path: '/admin/bulk-uploads' },
-  { text: 'Token Management', icon: <TokenIcon />, path: '/admin/tokens' },
+  { text: 'Token Management', icon: <TokenIcon />, path: '/admin/blockchain' },
   { text: 'Verification Queue', icon: <VerifiedUserIcon />, path: '/admin/verification' },
   { text: 'Terms & Conditions', icon: <DescriptionIcon />, path: '/admin/terms' },
 ];
@@ -338,7 +338,7 @@ const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
         </Box>
         <ListItemButton
           component={RouterLink}
-          to="/profile"
+          to="/admin/profile"
           sx={{
             borderRadius: 1,
             '&:hover': {
@@ -444,13 +444,13 @@ const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
               transformOrigin={{ horizontal: 'right', vertical: 'top' }}
               anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
             >
-              <MenuItem component={RouterLink} to="/profile" onClick={handleUserMenuClose}>
+              <MenuItem component={RouterLink} to="/admin/profile" onClick={handleUserMenuClose}>
                 <ListItemIcon>
                   <AccountCircleIcon fontSize="small" />
                 </ListItemIcon>
                 Profile
               </MenuItem>
-              <MenuItem component={RouterLink} to="/settings" onClick={handleUserMenuClose}>
+              <MenuItem component={RouterLink} to="/admin/settings" onClick={handleUserMenuClose}>
                 <ListItemIcon>
                   <SettingsIcon fontSize="small" />
                 </ListItemIcon>

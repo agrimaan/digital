@@ -50,6 +50,7 @@ import {
 import axios from 'axios';
 import { API_BASE_URL } from '../../config/apiConfig';
 
+
 // Define types
 interface User {
   _id: string;
@@ -139,33 +140,34 @@ const AdminUserDetail: React.FC = () => {
       setLoading(true);
       try {
         // Fetch user details
-        const userResponse = await axios.get(`${API_BASE_URL}/api/users/${id}`, {
+        const userResponse = await axios.get(`${API_BASE_URL}/api/admin/users/${id}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
         });
         
-        const userData = userResponse.data.data || userResponse.data;
+           const userData = userResponse.data.data?.user || userResponse.data.user || userResponse.data;
         setUser(userData);
-
         // Fetch user's fields
         const fieldsResponse = await axios.get(`${API_BASE_URL}/api/fields?owner=${id}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
         });
+
         
-        const fieldsData = fieldsResponse.data.data || fieldsResponse.data || [];
+        const fieldsData = fieldsResponse.data.data?.field || fieldsResponse.data.field || [];
+        console.log("Fields data received:", fieldsData);
         setFields(fieldsData);
 
         // Fetch user's orders
-        const ordersResponse = await axios.get(`${API_BASE_URL}/api/marketplace?user=${id}`, {
+        const ordersResponse = await axios.get(`${API_BASE_URL}/api/marketplace/orders?user=${id}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
         });
         
-        const ordersData = ordersResponse.data.data || ordersResponse.data || [];
+        const ordersData = ordersResponse.data.data?.orders || ordersResponse.data.orders || [];
         setOrders(ordersData);
 
         setLoading(false);

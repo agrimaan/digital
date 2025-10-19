@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Link as RouterLink } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+import { Link as RouterLink } from "react-router-dom";
 import {
   Box,
   Button,
@@ -35,106 +35,122 @@ import {
   CardActions,
   CardHeader,
   Avatar,
-  Badge,
   ToggleButton,
-  ToggleButtonGroup
-} from '@mui/material';
+  ToggleButtonGroup,
+} from "@mui/material";
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
-  FilterList as FilterIcon,
   ViewModule as ViewModuleIcon,
   ViewList as ViewListIcon,
   Grass as GrassIcon,
-  LocalOffer as LocalOfferIcon,
-  Person as PersonIcon,
-  CalendarMonth as CalendarIcon,
-  TrendingUp as TrendingUpIcon,
-  Warning as WarningIcon
-} from '@mui/icons-material';
-import { RootState } from '../../store';
-import axios from 'axios';
-import { API_BASE_URL } from '../../config/apiConfig';
+} from "@mui/icons-material";
+import { RootState } from "../../store";
+import axios from "axios";
+import { API_BASE_URL } from "../../config/apiConfig";
 
-// Define types
+// Types
+interface CropOwner {
+  _id: string;
+  name: string;
+}
+
+interface CropField {
+  _id: string;
+  name: string;
+  owner?: CropOwner;
+}
+
 interface Crop {
   _id: string;
   name: string;
   variety: string;
-  Fields: {
+  Fields?: CropField;
+  farmId?: {
     _id: string;
     name: string;
-    owner: {
-      _id: string;
-      name: string;
-    }
+    owner?: CropOwner;
   };
+  farmerId?: string;
   plantingDate: string;
-  harvestDate: string | null;
-  status: 'growing' | 'harvested' | 'sold' | 'failed';
+  harvestDate?: string | null;
+  status: "growing" | "harvested" | "sold" | "failed";
   quantity: {
     expected: number;
-    actual: number | null;
+    actual?: number | null;
     unit: string;
   };
-  healthStatus: 'excellent' | 'good' | 'fair' | 'poor';
-  notes: string;
-  createdAt: string;
+  healthStatus: "excellent" | "good" | "fair" | "poor";
+  notes?: string;
+  createdAt?: string;
 }
 
 const AdminCrops: React.FC = () => {
-  const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
-  
+
   const [crops, setCrops] = useState<Crop[]>([]);
   const [filteredCrops, setFilteredCrops] = useState<Crop[]>([]);
+  const [fieldsOwners, setFieldsOwners] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterHealth, setFilterHealth] = useState('all');
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
-  
-  // Delete dialog state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterHealth, setFilterHealth] = useState("all");
+  const [viewMode, setViewMode] = useState<"table" | "grid">("table");
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [cropToDelete, setCropToDelete] = useState<string | null>(null);
 
-  // Fields owners list for filter
-  const [FieldsOwners, setFieldsOwners] = useState<Array<{id: string, name: string}>>([]);
-
+  // Fetch crops
   useEffect(() => {
-    // Real API implementation
     const fetchCrops = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/crops`, {
+        const response = await axios.get(`${API_BASE_URL}/api/admin/crops`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         });
-        
-        const cropsData = response.data.data || response.data || [];
+
+        const cropsData =
+          response.data?.data?.crops || response.data?.crops || [];
+
+        // Extract unique owners safely
+        const uniqueOwners = Array.from(
+          new Set(
+            cropsData
+              .map(
+                (crop: any) =>
+                  crop?.farmId?.owner?._id ?? crop?.Fields?.owner?._id ?? ""
+              )
+              .filter((id: string) => id !== "")
+          )
+        ).map((ownerId: any) => {
+          const owner =
+            cropsData.find(
+              (crop: any) =>
+                crop?.farmId?.owner?._id === ownerId ||
+                crop?.Fields?.owner?._id === ownerId
+            )?.farmId?.owner ||
+            cropsData.find(
+              (crop: any) => crop?.Fields?.owner?._id === ownerId
+            )?.Fields?.owner;
+
+          return { id: ownerId, name: owner?.name || "Unknown" };
+        });
+
         setCrops(cropsData);
         setFilteredCrops(cropsData);
-        
-        // Extract unique field owners for filter
-        const uniqueOwners = Array.from(new Set(cropsData.map((crop: any) => crop.farmId?.owner?._id || crop.farmerId)))
-          .filter((ownerId): ownerId is string => typeof ownerId === 'string' && ownerId !== '')
-          .map((ownerId: string) => {
-            const owner = cropsData.find((crop: any) => (crop.farmId?.owner?._id || crop.farmerId) === ownerId)?.farmId?.owner;
-            return {
-              id: ownerId,
-              name: owner?.name || 'Unknown'
-            };
-          });
         setFieldsOwners(uniqueOwners);
-        
         setLoading(false);
       } catch (err: any) {
-        console.error('Error fetching crops:', err);
-        setError(err.message || 'Failed to load crops');
+        console.error("Error fetching crops:", err);
+        setError(err.response?.data?.message || err.message || "Fetch failed");
         setLoading(false);
       }
     };
@@ -145,101 +161,100 @@ const AdminCrops: React.FC = () => {
   // Apply filters
   useEffect(() => {
     let result = [...crops];
-    
-    // Apply search term
-    if (searchTerm) {
-      result = result.filter(
-        crop => 
-          crop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          crop.variety.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          crop.Fields.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          crop.Fields.owner.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+
+    // Search
+    if (searchTerm.trim()) {
+      result = result.filter((crop) => {
+        const name = crop?.name?.toLowerCase() || "";
+        const variety = crop?.variety?.toLowerCase() || "";
+        const field = crop?.Fields?.name?.toLowerCase() || "";
+        const owner = crop?.Fields?.owner?.name?.toLowerCase() || "";
+        return (
+          name.includes(searchTerm.toLowerCase()) ||
+          variety.includes(searchTerm.toLowerCase()) ||
+          field.includes(searchTerm.toLowerCase()) ||
+          owner.includes(searchTerm.toLowerCase())
+        );
+      });
     }
-    
-    // Apply status filter
-    if (filterStatus !== 'all') {
-      result = result.filter(crop => crop.status === filterStatus);
+
+    if (filterStatus !== "all") {
+      result = result.filter((crop) => crop.status === filterStatus);
     }
-    
-    // Apply health filter
-    if (filterHealth !== 'all') {
-      result = result.filter(crop => crop.healthStatus === filterHealth);
+
+    if (filterHealth !== "all") {
+      result = result.filter((crop) => crop.healthStatus === filterHealth);
     }
-    
+
     setFilteredCrops(result);
   }, [searchTerm, filterStatus, filterHealth, crops]);
 
-  // Format date
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString();
-  };
+  const formatDate = (date: string | null | undefined) =>
+    date ? new Date(date).toLocaleDateString() : "N/A";
 
-  // Get status color
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'growing': return 'success';
-      case 'harvested': return 'info';
-      case 'sold': return 'primary';
-      case 'failed': return 'error';
-      default: return 'default';
-    }
+    const map: Record<string, any> = {
+      growing: "success",
+      harvested: "info",
+      sold: "primary",
+      failed: "error",
+    };
+    return map[status] || "default";
   };
 
-  // Get health color
   const getHealthColor = (health: string) => {
-    switch (health) {
-      case 'excellent': return 'success';
-      case 'good': return 'info';
-      case 'fair': return 'warning';
-      case 'poor': return 'error';
-      default: return 'default';
-    }
+    const map: Record<string, any> = {
+      excellent: "success",
+      good: "info",
+      fair: "warning",
+      poor: "error",
+    };
+    return map[health] || "default";
   };
 
-  // Handle delete crop
-  const handleDeleteCrop = (cropId: string) => {
-    setCropToDelete(cropId);
+  const handleDeleteCrop = (id: string) => {
+    setCropToDelete(id);
     setDeleteDialogOpen(true);
   };
 
-  // Confirm delete crop
   const confirmDeleteCrop = () => {
     if (cropToDelete) {
-      // In a real implementation, this would be an API call
-      setCrops(prevCrops => prevCrops.filter(crop => crop._id !== cropToDelete));
-      setFilteredCrops(prevCrops => prevCrops.filter(crop => crop._id !== cropToDelete));
+      setCrops((prev) => prev.filter((c) => c._id !== cropToDelete));
+      setFilteredCrops((prev) => prev.filter((c) => c._id !== cropToDelete));
     }
     setDeleteDialogOpen(false);
     setCropToDelete(null);
   };
 
-  if (loading) {
+  if (loading)
     return (
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+      <Container maxWidth="lg" sx={{ mt: 4 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
           <CircularProgress />
         </Box>
       </Container>
     );
-  }
 
-  if (error) {
+  if (error)
     return (
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Container maxWidth="lg" sx={{ mt: 4 }}>
         <Alert severity="error">{error}</Alert>
       </Container>
     );
-  }
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Paper sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h4" component="h1">
-            Crop Management
-          </Typography>
+        {/* Header */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 3,
+          }}
+        >
+          <Typography variant="h4">Crop Management</Typography>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -250,12 +265,14 @@ const AdminCrops: React.FC = () => {
           </Button>
         </Box>
 
-        {/* Filters and Search */}
-        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+        {/* Filters */}
+        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
           <TextField
             placeholder="Search crops..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            size="small"
+            sx={{ minWidth: 250 }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -263,10 +280,8 @@ const AdminCrops: React.FC = () => {
                 </InputAdornment>
               ),
             }}
-            size="small"
-            sx={{ minWidth: 250 }}
           />
-          
+
           <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel>Status</InputLabel>
             <Select
@@ -274,7 +289,7 @@ const AdminCrops: React.FC = () => {
               label="Status"
               onChange={(e) => setFilterStatus(e.target.value)}
             >
-              <MenuItem value="all">All Statuses</MenuItem>
+              <MenuItem value="all">All</MenuItem>
               <MenuItem value="growing">Growing</MenuItem>
               <MenuItem value="harvested">Harvested</MenuItem>
               <MenuItem value="sold">Sold</MenuItem>
@@ -289,7 +304,7 @@ const AdminCrops: React.FC = () => {
               label="Health"
               onChange={(e) => setFilterHealth(e.target.value)}
             >
-              <MenuItem value="all">All Health</MenuItem>
+              <MenuItem value="all">All</MenuItem>
               <MenuItem value="excellent">Excellent</MenuItem>
               <MenuItem value="good">Good</MenuItem>
               <MenuItem value="fair">Fair</MenuItem>
@@ -300,7 +315,7 @@ const AdminCrops: React.FC = () => {
           <ToggleButtonGroup
             value={viewMode}
             exclusive
-            onChange={(e, value) => value && setViewMode(value)}
+            onChange={(e, val) => val && setViewMode(val)}
             size="small"
           >
             <ToggleButton value="table">
@@ -312,18 +327,17 @@ const AdminCrops: React.FC = () => {
           </ToggleButtonGroup>
         </Box>
 
-        {/* Results count */}
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Showing {filteredCrops.length} of {crops.length} crops
         </Typography>
 
-        {/* Crops Table */}
-        {viewMode === 'table' && (
+        {/* Table view */}
+        {viewMode === "table" && (
           <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Crop Name</TableCell>
+                  <TableCell>Crop</TableCell>
                   <TableCell>Variety</TableCell>
                   <TableCell>Field</TableCell>
                   <TableCell>Owner</TableCell>
@@ -338,25 +352,25 @@ const AdminCrops: React.FC = () => {
                 {filteredCrops.map((crop) => (
                   <TableRow key={crop._id}>
                     <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                         <GrassIcon color="primary" />
-                        <Typography variant="subtitle2">{crop.name}</Typography>
+                        {crop.name}
                       </Box>
                     </TableCell>
                     <TableCell>{crop.variety}</TableCell>
-                    <TableCell>{crop.Fields.name}</TableCell>
-                    <TableCell>{crop.Fields.owner.name}</TableCell>
+                    <TableCell>{crop.Fields?.name || "N/A"}</TableCell>
+                    <TableCell>{crop.Fields?.owner?.name || "Unknown"}</TableCell>
                     <TableCell>
-                      <Chip 
-                        label={crop.status} 
-                        color={getStatusColor(crop.status) as any}
+                      <Chip
+                        label={crop.status}
+                        color={getStatusColor(crop.status)}
                         size="small"
                       />
                     </TableCell>
                     <TableCell>
-                      <Chip 
-                        label={crop.healthStatus} 
-                        color={getHealthColor(crop.healthStatus) as any}
+                      <Chip
+                        label={crop.healthStatus}
+                        color={getHealthColor(crop.healthStatus)}
                         size="small"
                       />
                     </TableCell>
@@ -366,7 +380,7 @@ const AdminCrops: React.FC = () => {
                     </TableCell>
                     <TableCell align="center">
                       <Tooltip title="Edit">
-                        <IconButton 
+                        <IconButton
                           component={RouterLink}
                           to={`/admin/crops/${crop._id}/edit`}
                           size="small"
@@ -375,7 +389,7 @@ const AdminCrops: React.FC = () => {
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Delete">
-                        <IconButton 
+                        <IconButton
                           onClick={() => handleDeleteCrop(crop._id)}
                           size="small"
                           color="error"
@@ -391,15 +405,15 @@ const AdminCrops: React.FC = () => {
           </TableContainer>
         )}
 
-        {/* Grid View */}
-        {viewMode === 'grid' && (
+        {/* Grid view */}
+        {viewMode === "grid" && (
           <Grid container spacing={3}>
             {filteredCrops.map((crop) => (
               <Grid item xs={12} sm={6} md={4} key={crop._id}>
                 <Card>
                   <CardHeader
                     avatar={
-                      <Avatar sx={{ bgcolor: 'primary.main' }}>
+                      <Avatar sx={{ bgcolor: "primary.main" }}>
                         <GrassIcon />
                       </Avatar>
                     }
@@ -407,21 +421,21 @@ const AdminCrops: React.FC = () => {
                     subheader={crop.variety}
                   />
                   <CardContent>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Field: {crop.Fields.name}
+                    <Typography variant="body2">
+                      Field: {crop.Fields?.name || "N/A"}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Owner: {crop.Fields.owner.name}
+                    <Typography variant="body2">
+                      Owner: {crop.Fields?.owner?.name || "Unknown"}
                     </Typography>
-                    <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                      <Chip 
-                        label={crop.status} 
-                        color={getStatusColor(crop.status) as any}
+                    <Box sx={{ display: "flex", gap: 1, my: 1 }}>
+                      <Chip
+                        label={crop.status}
+                        color={getStatusColor(crop.status)}
                         size="small"
                       />
-                      <Chip 
-                        label={crop.healthStatus} 
-                        color={getHealthColor(crop.healthStatus) as any}
+                      <Chip
+                        label={crop.healthStatus}
+                        color={getHealthColor(crop.healthStatus)}
                         size="small"
                       />
                     </Box>
@@ -433,15 +447,15 @@ const AdminCrops: React.FC = () => {
                     </Typography>
                   </CardContent>
                   <CardActions>
-                    <Button 
-                      size="small" 
+                    <Button
+                      size="small"
                       component={RouterLink}
                       to={`/admin/crops/${crop._id}/edit`}
                     >
                       Edit
                     </Button>
-                    <Button 
-                      size="small" 
+                    <Button
+                      size="small"
                       color="error"
                       onClick={() => handleDeleteCrop(crop._id)}
                     >
@@ -454,34 +468,31 @@ const AdminCrops: React.FC = () => {
           </Grid>
         )}
 
-        {/* Empty state */}
+        {/* Empty */}
         {filteredCrops.length === 0 && (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <GrassIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+          <Box sx={{ textAlign: "center", py: 5 }}>
+            <GrassIcon sx={{ fontSize: 60, color: "text.secondary", mb: 2 }} />
             <Typography variant="h6" color="text.secondary">
               No crops found
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Try adjusting your search or filter criteria
+              Try adjusting your filters or search
             </Typography>
           </Box>
         )}
       </Paper>
 
-      {/* Delete Dialog */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-      >
+      {/* Delete confirmation */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete this crop? This action cannot be undone.
+            This action cannot be undone. Do you really want to delete this crop?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDeleteCrop} color="error" autoFocus>
+          <Button color="error" onClick={confirmDeleteCrop}>
             Delete
           </Button>
         </DialogActions>

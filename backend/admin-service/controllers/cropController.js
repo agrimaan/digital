@@ -1,8 +1,8 @@
 const asyncHandler = require('express-async-handler');
 const axios = require('axios');
 
-const RESOURCE_SVC = process.env.RESOURCE_SERVICE_URL || 'http://localhost:3014';
-const http = axios.create({ baseURL: RESOURCE_SVC, timeout: 8000 });
+const CROP_SVC = process.env.CROP_SERVICE_URL || 'http://localhost:3005';
+const http = axios.create({ baseURL: CROP_SVC, timeout: 8000 });
 
 function svcGet(path, { req, params = {} } = {}) {
   const headers = {};
@@ -28,10 +28,10 @@ function svcDelete(path, { req } = {}) {
   return http.delete(path, { headers });
 }
 
-// @desc    Get all resources (admin view)
-// @route   GET /api/admin/resources
+// @desc    Get all crops (admin view)
+// @route   GET /api/admin/crops
 // @access  Private/Admin
-exports.getAllResources = asyncHandler(async (req, res) => {
+exports.getAllCrops = asyncHandler(async (req, res) => {
   try {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
@@ -39,96 +39,96 @@ exports.getAllResources = asyncHandler(async (req, res) => {
     const type = req.query.type || '';
     const status = req.query.status || '';
 
-    const { data } = await svcGet('/api/resources', {
+    const { data } = await svcGet('/api/crops', {
       req,
       params: { page, limit, ...(search && { search }), ...(type && { type }), ...(status && { status }) }
     });
 
     // Normalize response for admin view
-    const resources = data?.data?.resources || data?.resources || data || [];
-    const pagination = data?.pagination || {
-      total: resources.length,
+    const crops = data?.data?.crops || data?.crops || data || [];
+    const pagination = data?.data?.pagination || data?.pagination || {
+      total: crops.length,
       page,
       limit,
-      pages: Math.ceil(resources.length / limit)
+      pages: Math.ceil(crops.length / limit)
     };
 
     res.status(200).json({
       success: true,
-      resources,
+      crops,
       pagination
     });
   } catch (error) {
-    console.error('Error fetching resources:', error);
+    console.error('Error fetching crops:', error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching resources',
+      message: 'Error fetching crops',
       error: error.message
     });
   }
 });
 
-// @desc    Get resource by ID (admin view)
-// @route   GET /api/admin/resources/:id
+// @desc    Get crop by ID (admin view)
+// @route   GET /api/admin/crops/:id
 // @access  Private/Admin
-exports.getResourceById = asyncHandler(async (req, res) => {
+exports.getCropById = asyncHandler(async (req, res) => {
   try {
-    const { data } = await svcGet(`/api/resources/${req.params.id}`, { req });
+    const { data } = await svcGet(`/api/crops/${req.params.id}`, { req });
 
-    const resource = data?.data?.resource || data?.resource || data;
-    if (!resource) {
+    const crop = data?.data?.crop || data?.crop || data;
+    if (!crop) {
       return res.status(404).json({
         success: false,
-        message: 'Resource not found'
+        message: 'Crop not found'
       });
     }
 
     res.status(200).json({
       success: true,
-      data: { resource }
+      data: { crop }
     });
   } catch (error) {
     const status = error.response?.status || 500;
     if (status === 404) {
       return res.status(404).json({
         success: false,
-        message: 'Resource not found'
+        message: 'Crop not found'
       });
     }
     res.status(status).json({
       success: false,
-      message: 'Error fetching resource',
+      message: 'Error fetching crop',
       error: error.message
     });
   }
 });
 
-// @desc    Create resource (admin operation)
-// @route   POST /api/admin/resources
+// @desc    Create crop (admin operation)
+// @route   POST /api/admin/crops
 // @access  Private/Admin
-exports.createResource = asyncHandler(async (req, res) => {
+exports.createCrop = asyncHandler(async (req, res) => {
   try {
-    const resourceData = req.body;
+    const cropData = req.body;
     
     // Add admin context
-    resourceData.createdByAdmin = true;
-    resourceData.adminId = req.user.id;
+    cropData.createdByAdmin = true;
+    cropData.adminId = req.user.id;
 
-    const { data } = await svcPost('/api/resources', {
+    const { data } = await svcPost('/api/crops', {
       req,
-      data: resourceData
+      data: cropData
     });
 
-    const newResource = data?.data?.resource || data?.resource || data;
+    const newCrop = data?.data?.crop || data?.crop || data;
 
     res.status(201).json({
       success: true,
-      message: 'Resource created successfully',
-      data: { resource: newResource }
+      message: 'Crop created successfully',
+      data: { crop: newCrop }
     });
   } catch (error) {
     const status = error.response?.status || 500;
-    const message = error.response?.data?.message || 'Error creating resource';
+    const message = error.response?.data?.message || 'Error creating crop';
     res.status(status).json({
       success: false,
       message,
@@ -137,30 +137,30 @@ exports.createResource = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Update resource (admin operation)
-// @route   PUT /api/admin/resources/:id
+// @desc    Update crop (admin operation)
+// @route   PUT /api/admin/crops/:id
 // @access  Private/Admin
-exports.updateResource = asyncHandler(async (req, res) => {
+exports.updateCrop = asyncHandler(async (req, res) => {
   try {
     const updateData = req.body;
     updateData.updatedByAdmin = true;
     updateData.adminId = req.user.id;
 
-    const { data } = await svcPut(`/api/resources/${req.params.id}`, {
+    const { data } = await svcPut(`/api/crops/${req.params.id}`, {
       req,
       data: updateData
     });
 
-    const updatedResource = data?.data?.resource || data?.resource || data;
+    const updatedCrop = data?.data?.crop || data?.crop || data;
 
     res.status(200).json({
       success: true,
-      message: 'Resource updated successfully',
-      data: { resource: updatedResource }
+      message: 'Crop updated successfully',
+      data: { crop: updatedCrop }
     });
   } catch (error) {
     const status = error.response?.status || 500;
-    const message = error.response?.data?.message || 'Error updating resource';
+    const message = error.response?.data?.message || 'Error updating crop';
     res.status(status).json({
       success: false,
       message,
@@ -169,20 +169,20 @@ exports.updateResource = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Delete resource (admin operation)
-// @route   DELETE /api/admin/resources/:id
+// @desc    Delete crop (admin operation)
+// @route   DELETE /api/admin/crops/:id
 // @access  Private/Admin
-exports.deleteResource = asyncHandler(async (req, res) => {
+exports.deleteCrop = asyncHandler(async (req, res) => {
   try {
-    await svcDelete(`/api/resources/${req.params.id}`, { req });
+    await svcDelete(`/api/crops/${req.params.id}`, { req });
 
     res.status(200).json({
       success: true,
-      message: 'Resource deleted successfully'
+      message: 'Crop deleted successfully'
     });
   } catch (error) {
     const status = error.response?.status || 500;
-    const message = error.response?.data?.message || 'Error deleting resource';
+    const message = error.response?.data?.message || 'Error deleting crop';
     res.status(status).json({
       success: false,
       message,
@@ -191,12 +191,12 @@ exports.deleteResource = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Get resource analytics
-// @route   GET /api/admin/resources/:id/analytics
+// @desc    Get crop analytics
+// @route   GET /api/admin/crops/:id/analytics
 // @access  Private/Admin
-exports.getResourceAnalytics = asyncHandler(async (req, res) => {
+exports.getCropAnalytics = asyncHandler(async (req, res) => {
   try {
-    const { data } = await svcGet(`/api/resources/${req.params.id}/analytics`, { req });
+    const { data } = await svcGet(`/api/crops/${req.params.id}/analytics`, { req });
 
     res.status(200).json({
       success: true,
@@ -205,37 +205,29 @@ exports.getResourceAnalytics = asyncHandler(async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching resource analytics',
+      message: 'Error fetching crop analytics',
       error: error.message
     });
   }
 });
 
-// @desc    Verify resource
-// @route   PUT /api/admin/resources/:id/verify
+// @desc    Get crop harvests
+// @route   GET /api/admin/crops/:id/harvests
 // @access  Private/Admin
-exports.verifyResource = asyncHandler(async (req, res) => {
+exports.getCropHarvests = asyncHandler(async (req, res) => {
   try {
-    const { data } = await svcPut(`/api/resources/${req.params.id}`, {
-      req,
-      data: {
-        isVerified: true,
-        verifiedAt: new Date(),
-        verifiedBy: req.user.id
-      }
-    });
+    const { data } = await svcGet(`/api/crops/${req.params.id}/harvests`, { req });
 
-    const verifiedResource = data?.data?.resource || data?.resource || data;
-
+    const harvests = data?.data?.harvests || data?.harvests || data || [];
     res.status(200).json({
       success: true,
-      message: 'Resource verified successfully',
-      data: { resource: verifiedResource }
+      harvests,
+      count: harvests.length
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error verifying resource',
+      message: 'Error fetching crop harvests',
       error: error.message
     });
   }

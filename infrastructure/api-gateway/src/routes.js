@@ -332,3 +332,46 @@ module.exports = (app) => {
     }
   }));
 }
+
+  // ---------------------------
+  // RESOURCE SERVICE
+  // ---------------------------
+  app.use('/api/resources', createProxyMiddleware({
+    target: process.env.RESOURCE_SERVICE_URL || 'http://localhost:3014',
+    changeOrigin: true,
+    logLevel: 'debug',
+    pathRewrite: { '^/api/resources': '/api/resources' },
+    onError: handleProxyError,
+
+    // Forward JSON body to the backend
+    onProxyReq: (proxyReq, req, res) => {
+      if (req.body && Object.keys(req.body).length) {
+        const bodyData = JSON.stringify(req.body);
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
+
+      console.log(`➡️ Proxying request: ${req.method} ${req.originalUrl}`);
+    }
+  }));
+
+  app.use('/api/bookings', createProxyMiddleware({
+    target: process.env.RESOURCE_SERVICE_URL || 'http://localhost:3014',
+    changeOrigin: true,
+    logLevel: 'debug',
+    pathRewrite: { '^/api/bookings': '/api/bookings' },
+    onError: handleProxyError,
+
+    // Forward JSON body to the backend
+    onProxyReq: (proxyReq, req, res) => {
+      if (req.body && Object.keys(req.body).length) {
+        const bodyData = JSON.stringify(req.body);
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
+
+      console.log(`➡️ Proxying request: ${req.method} ${req.originalUrl}`);
+    }
+  }));

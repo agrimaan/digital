@@ -157,7 +157,7 @@ const AdminOrders: React.FC = () => {
       setLoading(true);
       try {
         // Real API call to fetch orders
-        const response = await axios.get(`${API_BASE_URL}/api/marketplace`, {
+        const response = await axios.get(`${API_BASE_URL}/api/admin/orders`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }

@@ -1,17 +1,58 @@
-const SystemSettings = require('../models/SystemSettings');
-const AuditLog = require('../models/AuditLog');
+const axios = require('axios');
+
+// Service URLs with fallbacks
+const USER_SVC = process.env.USER_SERVICE_URL || 'http://localhost:3002';
+const ANALYTICS_SVC = process.env.ANALYTICS_SERVICE_URL || 'http://localhost:3009';
+const NOTIFICATION_SVC = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3010';
+
+// Helper function for HTTP requests
+const httpRequest = async (serviceUrl, endpoint, method = 'GET', data = null, headers = {}) => {
+  try {
+    const config = {
+      method,
+      url: `${serviceUrl}${endpoint}`,
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers
+      },
+      timeout: 8000
+    };
+
+    if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+      config.data = data;
+    }
+
+    const response = await axios(config);
+    return response.data;
+  } catch (error) {
+    console.error(`HTTP request failed: ${method} ${serviceUrl}${endpoint}`, error.message);
+    // Return fallback data instead of throwing
+    return { 
+      success: false, 
+      error: error.message,
+      data: null 
+    };
+  }
+};
 
 /**
- * Get system settings
+ * Get system settings from configuration service
  * @returns {Object} System settings
  */
 exports.getSystemSettings = async () => {
   try {
-    const settings = await SystemSettings.getSettings();
-    return settings;
+    // Get settings from user service (which should handle system configuration)
+    const response = await httpRequest(USER_SVC, '/api/admin/settings');
+    
+    if (response.success === false) {
+      // Return default settings if service is unavailable
+      return getDefaultSettings();
+    }
+
+    return response.data || response;
   } catch (error) {
     console.error('Get system settings error:', error);
-    throw new Error(`Failed to get system settings: ${error.message}`);
+    return getDefaultSettings();
   }
 };
 
@@ -23,54 +64,51 @@ exports.getSystemSettings = async () => {
  */
 exports.updateSystemSettings = async (updateData, adminData) => {
   try {
-    // Get current settings for audit log
-    const currentSettings = await SystemSettings.getSettings();
-    
-    // Update settings
-    const settings = await SystemSettings.findByIdAndUpdate(
-      currentSettings._id,
-      {
-        ...updateData,
-        updatedBy: adminData.id,
-        updatedAt: Date.now()
-      },
-      { new: true, runValidators: true }
+    const { token, id: adminId, name: adminName, ipAddress, userAgent } = adminData;
+
+    // Get current settings for comparison
+    const currentSettings = await exports.getSystemSettings();
+
+    // Update settings via user service
+    const updateResponse = await httpRequest(
+      USER_SVC,
+      '/api/admin/settings',
+      'PUT',
+      updateData,
+      { Authorization: `Bearer ${token}` }
     );
-    
-    // Log the action
-    await AuditLog.createLog({
-      adminId: adminData.id,
-      adminName: adminData.name,
-      action: 'update',
-      resourceType: 'settings',
-      resourceId: settings._id.toString(),
-      description: 'Updated system settings',
-      previousState: {
-        siteName: currentSettings.siteName,
-        siteDescription: currentSettings.siteDescription,
-        theme: currentSettings.theme,
-        contact: currentSettings.contact,
-        social: currentSettings.social,
-        systemMaintenance: currentSettings.systemMaintenance,
-        security: currentSettings.security,
-        apiSettings: currentSettings.apiSettings
-      },
-      newState: {
-        siteName: settings.siteName,
-        siteDescription: settings.siteDescription,
-        theme: settings.theme,
-        contact: settings.contact,
-        social: settings.social,
-        systemMaintenance: settings.systemMaintenance,
-        security: settings.security,
-        apiSettings: settings.apiSettings
-      },
-      status: 'success',
-      ipAddress: adminData.ipAddress,
-      userAgent: adminData.userAgent
-    });
-    
-    return settings;
+
+    if (updateResponse.success === false) {
+      throw new Error(updateResponse.error || 'Failed to update settings');
+    }
+
+    const updatedSettings = updateResponse.data || updateResponse;
+
+    // Log the action via admin service
+    try {
+      await httpRequest(
+        USER_SVC,
+        '/api/admin/audit-logs',
+        'POST',
+        {
+          adminId: adminId,
+          adminName: adminName,
+          action: 'update',
+          resourceType: 'settings',
+          resourceId: 'system-settings',
+          description: `Updated system settings: ${Object.keys(updateData).join(', ')}`,
+          status: 'success',
+          ipAddress: ipAddress,
+          userAgent: userAgent
+        },
+        { Authorization: `Bearer ${token}` }
+      );
+    } catch (auditError) {
+      console.error('Audit log creation failed:', auditError);
+      // Continue without audit log if service is unavailable
+    }
+
+    return updatedSettings;
   } catch (error) {
     console.error('Update system settings error:', error);
     throw new Error(`Failed to update system settings: ${error.message}`);
@@ -78,429 +116,273 @@ exports.updateSystemSettings = async (updateData, adminData) => {
 };
 
 /**
- * Update email settings
- * @param {Object} emailSettings - Email settings data
- * @param {Object} adminData - Admin data for audit logging
- * @returns {Object} Updated settings
+ * Get system configuration
+ * @returns {Object} System configuration
  */
-exports.updateEmailSettings = async (emailSettings, adminData) => {
+exports.getSystemConfiguration = async () => {
   try {
-    // Get current settings for audit log
-    const currentSettings = await SystemSettings.getSettings();
-    
-    // Update email settings
-    const settings = await SystemSettings.findByIdAndUpdate(
-      currentSettings._id,
-      {
-        emailSettings,
-        updatedBy: adminData.id,
-        updatedAt: Date.now()
-      },
-      { new: true, runValidators: true }
-    );
-    
-    // Log the action
-    await AuditLog.createLog({
-      adminId: adminData.id,
-      adminName: adminData.name,
-      action: 'update',
-      resourceType: 'settings',
-      resourceId: settings._id.toString(),
-      description: 'Updated email settings',
-      previousState: {
-        emailSettings: {
-          smtpHost: currentSettings.emailSettings.smtpHost,
-          smtpPort: currentSettings.emailSettings.smtpPort,
-          smtpUser: currentSettings.emailSettings.smtpUser,
-          fromEmail: currentSettings.emailSettings.fromEmail,
-          fromName: currentSettings.emailSettings.fromName
-        }
-      },
-      newState: {
-        emailSettings: {
-          smtpHost: settings.emailSettings.smtpHost,
-          smtpPort: settings.emailSettings.smtpPort,
-          smtpUser: settings.emailSettings.smtpUser,
-          fromEmail: settings.emailSettings.fromEmail,
-          fromName: settings.emailSettings.fromName
-        }
-      },
-      status: 'success',
-      ipAddress: adminData.ipAddress,
-      userAgent: adminData.userAgent
-    });
-    
-    return settings;
-  } catch (error) {
-    console.error('Update email settings error:', error);
-    throw new Error(`Failed to update email settings: ${error.message}`);
-  }
-};
+    // Collect configuration from multiple services
+    const [
+      userConfig,
+      notificationConfig,
+      analyticsConfig
+    ] = await Promise.all([
+      httpRequest(USER_SVC, '/api/admin/configuration'),
+      httpRequest(NOTIFICATION_SVC, '/api/admin/configuration'),
+      httpRequest(ANALYTICS_SVC, '/api/admin/configuration')
+    ]);
 
-/**
- * Update SMS settings
- * @param {Object} smsSettings - SMS settings data
- * @param {Object} adminData - Admin data for audit logging
- * @returns {Object} Updated settings
- */
-exports.updateSmsSettings = async (smsSettings, adminData) => {
-  try {
-    // Get current settings for audit log
-    const currentSettings = await SystemSettings.getSettings();
-    
-    // Update SMS settings
-    const settings = await SystemSettings.findByIdAndUpdate(
-      currentSettings._id,
-      {
-        smsSettings,
-        updatedBy: adminData.id,
-        updatedAt: Date.now()
+    // Compile comprehensive configuration
+    const configuration = {
+      system: {
+        name: 'Agrimaan Admin System',
+        version: '1.0.0',
+        environment: process.env.NODE_ENV || 'development'
       },
-      { new: true, runValidators: true }
-    );
-    
-    // Log the action
-    await AuditLog.createLog({
-      adminId: adminData.id,
-      adminName: adminData.name,
-      action: 'update',
-      resourceType: 'settings',
-      resourceId: settings._id.toString(),
-      description: 'Updated SMS settings',
-      previousState: {
-        smsSettings: {
-          provider: currentSettings.smsSettings.provider,
-          fromNumber: currentSettings.smsSettings.fromNumber
-        }
+      user: userConfig.data || userConfig,
+      notifications: notificationConfig.data || notificationConfig,
+      analytics: analyticsConfig.data || analyticsConfig,
+      features: {
+        userManagement: true,
+        fieldManagement: true,
+        cropManagement: true,
+        orderManagement: true,
+        sensorManagement: true,
+        analytics: true,
+        reporting: true,
+        notifications: true
       },
-      newState: {
-        smsSettings: {
-          provider: settings.smsSettings.provider,
-          fromNumber: settings.smsSettings.fromNumber
-        }
-      },
-      status: 'success',
-      ipAddress: adminData.ipAddress,
-      userAgent: adminData.userAgent
-    });
-    
-    return settings;
-  } catch (error) {
-    console.error('Update SMS settings error:', error);
-    throw new Error(`Failed to update SMS settings: ${error.message}`);
-  }
-};
-
-/**
- * Update payment settings
- * @param {Object} paymentSettings - Payment settings data
- * @param {Object} adminData - Admin data for audit logging
- * @returns {Object} Updated settings
- */
-exports.updatePaymentSettings = async (paymentSettings, adminData) => {
-  try {
-    // Get current settings for audit log
-    const currentSettings = await SystemSettings.getSettings();
-    
-    // Update payment settings
-    const settings = await SystemSettings.findByIdAndUpdate(
-      currentSettings._id,
-      {
-        paymentSettings,
-        updatedBy: adminData.id,
-        updatedAt: Date.now()
-      },
-      { new: true, runValidators: true }
-    );
-    
-    // Log the action
-    await AuditLog.createLog({
-      adminId: adminData.id,
-      adminName: adminData.name,
-      action: 'update',
-      resourceType: 'settings',
-      resourceId: settings._id.toString(),
-      description: 'Updated payment settings',
-      previousState: {
-        paymentSettings: {
-          currency: currentSettings.paymentSettings.currency,
-          providers: {
-            stripe: {
-              enabled: currentSettings.paymentSettings.providers.stripe.enabled
-            },
-            paypal: {
-              enabled: currentSettings.paymentSettings.providers.paypal.enabled
-            },
-            razorpay: {
-              enabled: currentSettings.paymentSettings.providers.razorpay.enabled
-            }
-          }
-        }
-      },
-      newState: {
-        paymentSettings: {
-          currency: settings.paymentSettings.currency,
-          providers: {
-            stripe: {
-              enabled: settings.paymentSettings.providers.stripe.enabled
-            },
-            paypal: {
-              enabled: settings.paymentSettings.providers.paypal.enabled
-            },
-            razorpay: {
-              enabled: settings.paymentSettings.providers.razorpay.enabled
-            }
-          }
-        }
-      },
-      status: 'success',
-      ipAddress: adminData.ipAddress,
-      userAgent: adminData.userAgent
-    });
-    
-    return settings;
-  } catch (error) {
-    console.error('Update payment settings error:', error);
-    throw new Error(`Failed to update payment settings: ${error.message}`);
-  }
-};
-
-/**
- * Update security settings
- * @param {Object} securitySettings - Security settings data
- * @param {Object} adminData - Admin data for audit logging
- * @returns {Object} Updated settings
- */
-exports.updateSecuritySettings = async (securitySettings, adminData) => {
-  try {
-    // Get current settings for audit log
-    const currentSettings = await SystemSettings.getSettings();
-    
-    // Update security settings
-    const settings = await SystemSettings.findByIdAndUpdate(
-      currentSettings._id,
-      {
-        security: securitySettings,
-        updatedBy: adminData.id,
-        updatedAt: Date.now()
-      },
-      { new: true, runValidators: true }
-    );
-    
-    // Log the action
-    await AuditLog.createLog({
-      adminId: adminData.id,
-      adminName: adminData.name,
-      action: 'update',
-      resourceType: 'settings',
-      resourceId: settings._id.toString(),
-      description: 'Updated security settings',
-      previousState: {
-        security: currentSettings.security
-      },
-      newState: {
-        security: settings.security
-      },
-      status: 'success',
-      ipAddress: adminData.ipAddress,
-      userAgent: adminData.userAgent
-    });
-    
-    return settings;
-  } catch (error) {
-    console.error('Update security settings error:', error);
-    throw new Error(`Failed to update security settings: ${error.message}`);
-  }
-};
-
-/**
- * Update maintenance mode settings
- * @param {Object} maintenanceSettings - Maintenance settings data
- * @param {Object} adminData - Admin data for audit logging
- * @returns {Object} Updated settings
- */
-exports.updateMaintenanceMode = async (maintenanceSettings, adminData) => {
-  try {
-    // Get current settings for audit log
-    const currentSettings = await SystemSettings.getSettings();
-    
-    // Update maintenance settings
-    const settings = await SystemSettings.findByIdAndUpdate(
-      currentSettings._id,
-      {
-        systemMaintenance: maintenanceSettings,
-        updatedBy: adminData.id,
-        updatedAt: Date.now()
-      },
-      { new: true, runValidators: true }
-    );
-    
-    // Log the action
-    await AuditLog.createLog({
-      adminId: adminData.id,
-      adminName: adminData.name,
-      action: 'update',
-      resourceType: 'settings',
-      resourceId: settings._id.toString(),
-      description: maintenanceSettings.maintenanceMode 
-        ? 'Enabled maintenance mode' 
-        : 'Disabled maintenance mode',
-      previousState: {
-        systemMaintenance: currentSettings.systemMaintenance
-      },
-      newState: {
-        systemMaintenance: settings.systemMaintenance
-      },
-      status: 'success',
-      ipAddress: adminData.ipAddress,
-      userAgent: adminData.userAgent
-    });
-    
-    return settings;
-  } catch (error) {
-    console.error('Update maintenance mode error:', error);
-    throw new Error(`Failed to update maintenance mode: ${error.message}`);
-  }
-};
-
-/**
- * Update API settings
- * @param {Object} apiSettings - API settings data
- * @param {Object} adminData - Admin data for audit logging
- * @returns {Object} Updated settings
- */
-exports.updateApiSettings = async (apiSettings, adminData) => {
-  try {
-    // Get current settings for audit log
-    const currentSettings = await SystemSettings.getSettings();
-    
-    // Update API settings
-    const settings = await SystemSettings.findByIdAndUpdate(
-      currentSettings._id,
-      {
-        apiSettings,
-        updatedBy: adminData.id,
-        updatedAt: Date.now()
-      },
-      { new: true, runValidators: true }
-    );
-    
-    // Log the action
-    await AuditLog.createLog({
-      adminId: adminData.id,
-      adminName: adminData.name,
-      action: 'update',
-      resourceType: 'settings',
-      resourceId: settings._id.toString(),
-      description: 'Updated API settings',
-      previousState: {
-        apiSettings: currentSettings.apiSettings
-      },
-      newState: {
-        apiSettings: settings.apiSettings
-      },
-      status: 'success',
-      ipAddress: adminData.ipAddress,
-      userAgent: adminData.userAgent
-    });
-    
-    return settings;
-  } catch (error) {
-    console.error('Update API settings error:', error);
-    throw new Error(`Failed to update API settings: ${error.message}`);
-  }
-};
-
-/**
- * Test email configuration
- * @param {Object} emailConfig - Email configuration to test
- * @returns {Object} Test result
- */
-exports.testEmailConfiguration = async (emailConfig) => {
-  try {
-    // Implementation would use nodemailer to test the connection
-    // This is a simplified version
-    const nodemailer = require('nodemailer');
-    
-    const transporter = nodemailer.createTransport({
-      host: emailConfig.smtpHost,
-      port: emailConfig.smtpPort,
-      secure: emailConfig.smtpPort === 465,
-      auth: {
-        user: emailConfig.smtpUser,
-        pass: emailConfig.smtpPass
+      limits: {
+        maxUsers: 10000,
+        maxFieldsPerUser: 100,
+        maxCropsPerField: 50,
+        maxOrdersPerUser: 1000,
+        maxSensorsPerField: 20
       }
-    });
-    
-    // Verify connection
-    await transporter.verify();
-    
-    return { success: true, message: 'Email configuration is valid' };
-  } catch (error) {
-    console.error('Test email configuration error:', error);
-    return { 
-      success: false, 
-      message: 'Email configuration test failed', 
-      error: error.message 
     };
+
+    return configuration;
+  } catch (error) {
+    console.error('Get system configuration error:', error);
+    return getDefaultConfiguration();
   }
 };
 
 /**
- * Test SMS configuration
- * @param {Object} smsConfig - SMS configuration to test
- * @returns {Object} Test result
+ * Reset system settings to defaults
+ * @param {Object} adminData - Admin data for audit logging
+ * @returns {Object} Reset result
  */
-exports.testSmsConfiguration = async (smsConfig) => {
+exports.resetSystemSettings = async (adminData) => {
   try {
-    // Implementation would depend on the SMS provider
-    // This is a simplified version
+    const { token, id: adminId, name: adminName, ipAddress, userAgent } = adminData;
+
+    // Reset to default settings
+    const defaultSettings = getDefaultSettings();
     
-    let testResult = { success: false, message: 'SMS provider not supported' };
-    
-    switch (smsConfig.provider) {
-      case 'twilio':
-        // Test Twilio configuration
-        testResult = await testTwilioConfiguration(smsConfig);
-        break;
-        
-      case 'aws-sns':
-        // Test AWS SNS configuration
-        testResult = await testAwsSnsConfiguration(smsConfig);
-        break;
-        
-      case 'nexmo':
-        // Test Nexmo configuration
-        testResult = await testNexmoConfiguration(smsConfig);
-        break;
-        
-      default:
-        break;
+    const resetResponse = await httpRequest(
+      USER_SVC,
+      '/api/admin/settings/reset',
+      'POST',
+      { resetToDefaults: true },
+      { Authorization: `Bearer ${token}` }
+    );
+
+    if (resetResponse.success === false) {
+      throw new Error(resetResponse.error || 'Failed to reset settings');
     }
-    
-    return testResult;
+
+    // Log the action
+    try {
+      await httpRequest(
+        USER_SVC,
+        '/api/admin/audit-logs',
+        'POST',
+        {
+          adminId: adminId,
+          adminName: adminName,
+          action: 'reset',
+          resourceType: 'settings',
+          resourceId: 'system-settings',
+          description: 'Reset system settings to defaults',
+          status: 'success',
+          ipAddress: ipAddress,
+          userAgent: userAgent
+        },
+        { Authorization: `Bearer ${token}` }
+      );
+    } catch (auditError) {
+      console.error('Audit log creation failed:', auditError);
+    }
+
+    return resetResponse.data || resetResponse;
   } catch (error) {
-    console.error('Test SMS configuration error:', error);
-    return { 
-      success: false, 
-      message: 'SMS configuration test failed', 
-      error: error.message 
+    console.error('Reset system settings error:', error);
+    throw new Error(`Failed to reset system settings: ${error.message}`);
+  }
+};
+
+/**
+ * Validate system settings
+ * @param {Object} settings - Settings to validate
+ * @returns {Object} Validation result
+ */
+exports.validateSystemSettings = async (settings) => {
+  try {
+    // Basic validation
+    const errors = [];
+    const warnings = [];
+
+    // Validate site settings
+    if (settings.siteName && settings.siteName.length > 100) {
+      errors.push('Site name must be less than 100 characters');
+    }
+
+    if (settings.siteDescription && settings.siteDescription.length > 500) {
+      warnings.push('Site description is quite long');
+    }
+
+    // Validate email settings
+    if (settings.emailSettings) {
+      if (settings.emailSettings.smtpHost && !settings.emailSettings.smtpHost.includes('.')) {
+        errors.push('SMTP host must be a valid domain');
+      }
+
+      if (settings.emailSettings.smtpPort && (settings.emailSettings.smtpPort < 1 || settings.emailSettings.smtpPort > 65535)) {
+        errors.push('SMTP port must be between 1 and 65535');
+      }
+    }
+
+    // Validate security settings
+    if (settings.securitySettings) {
+      if (settings.securitySettings.sessionTimeout && settings.securitySettings.sessionTimeout < 300) {
+        warnings.push('Session timeout is very short (less than 5 minutes)');
+      }
+
+      if (settings.securitySettings.passwordPolicy) {
+        if (settings.securitySettings.passwordPolicy.minLength < 8) {
+          warnings.push('Minimum password length is less than 8 characters');
+        }
+      }
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings,
+      settings: settings
+    };
+  } catch (error) {
+    console.error('Validate system settings error:', error);
+    throw new Error(`Failed to validate system settings: ${error.message}`);
+  }
+};
+
+/**
+ * Get system health status
+ * @returns {Object} Health status
+ */
+exports.getSystemHealth = async () => {
+  try {
+    // Check health of all configuration-related services
+    const healthChecks = await Promise.all([
+      httpRequest(USER_SVC, '/health'),
+      httpRequest(NOTIFICATION_SVC, '/health'),
+      httpRequest(ANALYTICS_SVC, '/health')
+    ]);
+
+    const services = healthChecks.map((check, index) => ({
+      service: ['user-service', 'notification-service', 'analytics-service'][index],
+      status: check.status === 'UP' ? 'healthy' : 'unhealthy',
+      responseTime: check.responseTime || 'unknown',
+      lastChecked: new Date()
+    }));
+
+    const overallHealth = services.every(service => service.status === 'healthy') ? 'healthy' : 'degraded';
+
+    return {
+      status: overallHealth,
+      services: services,
+      configuration: {
+        totalSettings: Object.keys(await exports.getSystemSettings()).length,
+        lastUpdated: new Date()
+      }
+    };
+  } catch (error) {
+    console.error('Get system health error:', error);
+    return {
+      status: 'unhealthy',
+      error: error.message,
+      services: []
     };
   }
 };
 
-// Helper functions for SMS testing
-async function testTwilioConfiguration(config) {
-  // In a real implementation, this would use the Twilio SDK
-  return { success: true, message: 'Twilio configuration is valid' };
+// Helper functions for default data
+function getDefaultSettings() {
+  return {
+    siteName: 'Agrimaan Admin Dashboard',
+    siteDescription: 'Comprehensive agricultural management system',
+    siteLogo: '/assets/logo.png',
+    contactEmail: 'admin@agrimaan.com',
+    contactPhone: '+1-555-0123',
+    timezone: 'UTC',
+    dateFormat: 'YYYY-MM-DD',
+    timeFormat: 'HH:mm:ss',
+    language: 'en',
+    emailSettings: {
+      smtpHost: 'smtp.example.com',
+      smtpPort: 587,
+      smtpSecure: false,
+      fromEmail: 'noreply@agrimaan.com',
+      fromName: 'Agrimaan System'
+    },
+    securitySettings: {
+      sessionTimeout: 1800, // 30 minutes
+      passwordPolicy: {
+        minLength: 8,
+        requireUppercase: true,
+        requireLowercase: true,
+        requireNumbers: true,
+        requireSpecialChars: true
+      },
+      maxLoginAttempts: 5,
+      lockoutDuration: 900 // 15 minutes
+    },
+    notificationSettings: {
+      emailNotifications: true,
+      smsNotifications: false,
+      pushNotifications: true,
+      digestFrequency: 'daily'
+    },
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
 }
 
-async function testAwsSnsConfiguration(config) {
-  // In a real implementation, this would use the AWS SDK
-  return { success: true, message: 'AWS SNS configuration is valid' };
-}
-
-async function testNexmoConfiguration(config) {
-  // In a real implementation, this would use the Nexmo SDK
-  return { success: true, message: 'Nexmo configuration is valid' };
+function getDefaultConfiguration() {
+  return {
+    system: {
+      name: 'Agrimaan Admin System',
+      version: '1.0.0',
+      environment: process.env.NODE_ENV || 'development'
+    },
+    features: {
+      userManagement: true,
+      fieldManagement: true,
+      cropManagement: true,
+      orderManagement: true,
+      sensorManagement: true,
+      analytics: true,
+      reporting: true,
+      notifications: true
+    },
+    limits: {
+      maxUsers: 10000,
+      maxFieldsPerUser: 100,
+      maxCropsPerField: 50,
+      maxOrdersPerUser: 1000,
+      maxSensorsPerField: 20
+    }
+  };
 }

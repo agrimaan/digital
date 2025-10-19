@@ -7,6 +7,10 @@ require('dotenv').config();
 // Import routes
 const adminRoutes = require('./routes/adminRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const fieldRoutes = require('./routes/fieldRoutes');
+const cropRoutes = require('./routes/cropRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+const sensorRoutes = require('./routes/sensorRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 const reportRoutes = require('./routes/reportRoutes');
@@ -15,7 +19,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const bulkUploadRoutes = require('./routes/bulkUploadRoutes');
 const adminUserRoutes = require('./routes/adminUserRoutes');
-const resourceRoutes = require('./routes/resourceRoutes');
+const resourcesRoutes = require('./routes/resourcesRoutes');
 
 
 // Import logger
@@ -57,7 +61,11 @@ app.use('/api/admin/bulk-uploads', bulkUploadRoutes);
 app.use('/api/admin/settings', settingsRoutes);
 app.use('/api/admin/stats', statsRoutes);
 app.use('/api/admin/users', adminUserRoutes);
-app.use('/api/admin/resources', resourceRoutes);
+app.use('/api/admin/resources', resourcesRoutes);
+app.use('/api/admin/fields', fieldRoutes);
+app.use('/api/admin/crops', cropRoutes);
+app.use('/api/admin/orders', orderRoutes);
+app.use('/api/admin/sensors', sensorRoutes);
 
 
 
