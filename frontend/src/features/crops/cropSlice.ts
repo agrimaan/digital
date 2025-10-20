@@ -1,403 +1,134 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+// src/features/crops/cropSlice.ts
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
-import { API_BASE_URL } from '../../config/apiConfig';
-import { setAlert } from '../alert/alertSlice';
-
-// Types
-interface ExpectedYield {
-  value: number;
-  unit: 'kg/ha' | 'ton/ha' | 'lb/acre' | 'bushel/acre';
-}
-
-interface ActualYield {
-  value: number;
-  unit: 'kg/ha' | 'ton/ha' | 'lb/acre' | 'bushel/acre';
-}
-
-interface PestIssue {
-  _id?: string;
-  type: string;
-  severity: 'low' | 'medium' | 'high';
-  detectedDate: Date;
-  treatedDate?: Date;
-  treatment?: string;
-}
-
-interface DiseaseIssue {
-  _id?: string;
-  type: string;
-  severity: 'low' | 'medium' | 'high';
-  detectedDate: Date;
-  treatedDate?: Date;
-  treatment?: string;
-}
-
-interface Fertilizer {
-  _id?: string;
-  name: string;
-  applicationDate: Date;
-  amount: {
-    value: number;
-    unit: 'kg/ha' | 'lb/acre';
-  };
-  nutrientContent?: {
-    nitrogen: number;
-    phosphorus: number;
-    potassium: number;
-  };
-}
-
-interface IrrigationEvent {
-  _id?: string;
-  date: Date;
-  amount: {
-    value: number;
-    unit: 'mm' | 'inches';
-  };
-  method: 'drip' | 'sprinkler' | 'flood' | 'center pivot' | 'manual';
-  duration?: number;
-}
-
-interface Image {
-  _id?: string;
-  url: string;
-  date: Date;
-  description?: string;
-}
 
 export interface Crop {
-  _id: string;
+  _id?: string;
   name: string;
-  field: string;
-  variety?: string;
-  plantingDate: Date;
-  harvestDate?: Date;
-  status: 'planned' | 'planted' | 'growing' | 'harvested' | 'failed';
-  growthStage: 'germination' | 'vegetative' | 'flowering' | 'ripening' | 'mature';
-  expectedYield?: ExpectedYield;
-  actualYield?: ActualYield;
-  healthStatus: 'excellent' | 'good' | 'fair' | 'poor' | 'critical';
-  pestIssues: PestIssue[];
-  diseaseIssues: DiseaseIssue[];
-  fertilizers: Fertilizer[];
-  irrigationEvents: IrrigationEvent[];
+  scientificName?: string;
+  variety?: 
+  | 'normal'
+  | 'Premium'
+  | 'variety1'
+  | 'variety2'
+  | 'variety3';
+  farmId: string;
+  farmerId?: string;
+  plantedArea: number;
+  plantingDate: string;
+  expectedHarvestDate: string;
+  actualHarvestDate?: string;
+  expectedYield: number;
+  actualYield?: number;
+  unit?: 'kg' | 'ton' | 'quintal';
+  pricePerUnit?: number;
+  totalValue?: number;
+  location: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+  };
+  soilType:
+    | 'loam'
+    | 'clay'
+    | 'sandy'
+    | 'silty'
+    | 'peaty'
+    | 'chalky'
+    | 'alluvial';
+  irrigationMethod:
+    | 'drip'
+    | 'sprinkler'
+    | 'flood'
+    | 'rainfed'
+    | 'center-pivot';
+  seedSource: 'own' | 'market' | 'government' | 'supplier';
+  healthStatus?: 'excellent' | 'good' | 'fair' | 'poor' | 'diseased';
+  growthStage?:
+    | 'seedling'
+    | 'vegetative'
+    | 'flowering'
+    | 'fruiting'
+    | 'maturity'
+    | 'harvested'
+    | 'failed';
   notes?: string;
-  images: Image[];
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 interface CropState {
   crops: Crop[];
-  crop: Crop | null;
   loading: boolean;
   error: string | null;
 }
 
-// Get all crops
-export const getCrops = createAsyncThunk(
-  'crop/getCrops',
-  //this was wrong statement, it async (fieldId?: string, { rejectWithValue }) => {
-  async (fieldId: string | undefined, { rejectWithValue }) => {
-
-    try {
-  const url = fieldId ? `${API_BASE_URL}/api/crops?fieldId=${fieldId}` : `${API_BASE_URL}/api/crops`;
-  const res = await axios.get(url);
-      return res.data;
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to fetch crops');
-    }
-  }
-);
-
-// Get crop by ID
-export const getCropById = createAsyncThunk(
-  'crop/getCropById',
-  async (id: string, { rejectWithValue }) => {
-    try {
-  const res = await axios.get(`${API_BASE_URL}/api/crops/${id}`);
-      return res.data;
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to fetch crop');
-    }
-  }
-);
-
-// Create crop
-export const createCrop = createAsyncThunk(
-  'crop/createCrop',
-  async (formData: Partial<Crop>, { dispatch, rejectWithValue }) => {
-    try {
-  const res = await axios.post(`${API_BASE_URL}/api/crops`, formData);
-      
-      dispatch(setAlert({
-        message: 'Crop created successfully',
-        type: 'success'
-      }) as any);
-      
-      return res.data;
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to create crop');
-    }
-  }
-);
-
-// Update crop
-export const updateCrop = createAsyncThunk(
-  'crop/updateCrop',
-  async ({ id, formData }: { id: string; formData: Partial<Crop> }, { dispatch, rejectWithValue }) => {
-    try {
-  const res = await axios.put(`${API_BASE_URL}/api/crops/${id}`, formData);
-      
-      dispatch(setAlert({
-        message: 'Crop updated successfully',
-        type: 'success'
-      }) as any);
-      
-      return res.data;
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to update crop');
-    }
-  }
-);
-
-// Delete crop
-export const deleteCrop = createAsyncThunk(
-  'crop/deleteCrop',
-  async (id: string, { dispatch, rejectWithValue }) => {
-    try {
-  await axios.delete(`${API_BASE_URL}/api/crops/${id}`);
-      
-      dispatch(setAlert({
-        message: 'Crop deleted successfully',
-        type: 'success'
-      }) as any);
-      
-      return id;
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to delete crop');
-    }
-  }
-);
-
-// TODO: Add pest issue endpoint to backend crop service
-// Add pest issue
-export const addPestIssue = createAsyncThunk(
-  'crop/addPestIssue',
-  async ({ cropId, pestIssue }: { cropId: string; pestIssue: Partial<PestIssue> }, { dispatch, rejectWithValue }) => {
-    try {
-      // TODO: Implement /api/crops/:id/pest-issue endpoint in backend
-      // const res = await axios.post(`${API_BASE_URL}/api/crops/${cropId}/pest-issue`, pestIssue);
-      
-      dispatch(setAlert({
-        message: 'Pest issue functionality not yet implemented',
-        type: 'warning'
-      }) as any);
-      
-      return { cropId, pestIssues: [] };
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to add pest issue');
-    }
-  }
-);
-
-// TODO: Add disease issue endpoint to backend crop service
-// Add disease issue
-export const addDiseaseIssue = createAsyncThunk(
-  'crop/addDiseaseIssue',
-  async ({ cropId, diseaseIssue }: { cropId: string; diseaseIssue: Partial<DiseaseIssue> }, { dispatch, rejectWithValue }) => {
-    try {
-      // TODO: Implement /api/crops/:id/disease-issue endpoint in backend
-      // const res = await axios.post(`${API_BASE_URL}/api/crops/${cropId}/disease-issue`, diseaseIssue);
-      
-      dispatch(setAlert({
-        message: 'Disease issue functionality not yet implemented',
-        type: 'warning'
-      }) as any);
-      
-      return { cropId, diseaseIssues: [] };
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to add disease issue');
-    }
-  }
-);
-
-// TODO: Add fertilizer endpoint to backend crop service
-// Add fertilizer application
-export const addFertilizer = createAsyncThunk(
-  'crop/addFertilizer',
-  async ({ cropId, fertilizer }: { cropId: string; fertilizer: Partial<Fertilizer> }, { dispatch, rejectWithValue }) => {
-    try {
-      // TODO: Implement /api/crops/:id/fertilizer endpoint in backend
-      // const res = await axios.post(`${API_BASE_URL}/api/crops/${cropId}/fertilizer`, fertilizer);
-      
-      dispatch(setAlert({
-        message: 'Fertilizer functionality not yet implemented',
-        type: 'warning'
-      }) as any);
-      
-      return { cropId, fertilizers: [] };
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to add fertilizer application');
-    }
-  }
-);
-
-// TODO: Add irrigation endpoint to backend crop service
-// Add irrigation event
-export const addIrrigationEvent = createAsyncThunk(
-  'crop/addIrrigationEvent',
-  async ({ cropId, irrigation }: { cropId: string; irrigation: Partial<IrrigationEvent> }, { dispatch, rejectWithValue }) => {
-    try {
-      // TODO: Implement /api/crops/:id/irrigation endpoint in backend
-      // const res = await axios.post(`${API_BASE_URL}/api/crops/${cropId}/irrigation`, irrigation);
-      
-      dispatch(setAlert({
-        message: 'Irrigation functionality not yet implemented',
-        type: 'warning'
-      }) as any);
-      
-      return { cropId, irrigationEvents: [] };
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to add irrigation event');
-    }
-  }
-);
-
-// Initial state
 const initialState: CropState = {
   crops: [],
-  crop: null,
   loading: false,
-  error: null
+  error: null,
 };
 
-// Slice
-const cropSlice = createSlice({
-  name: 'crop',
-  initialState,
-  reducers: {
-    clearCrop: (state) => {
-      state.crop = null;
-    },
-    clearError: (state) => {
-      state.error = null;
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000';
+
+// Fetch all crops (for farmer)
+export const getCrops = createAsyncThunk<Crop[]>(
+  'crops/fetchAll',
+  async (_, thunkAPI) => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/crops`);
+      return res.data.data || res.data;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(
+        err.response?.data?.message || err.message
+      );
     }
-  },
+  }
+);
+
+// Add new crop
+export const addCrop = createAsyncThunk<Crop, Crop>(
+  'crops/add',
+  async (cropData, thunkAPI) => {
+    try {
+      const res = await axios.post(`${API_BASE_URL}/api/crops`, cropData);
+      return res.data.data || res.data;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(
+        err.response?.data?.message || err.message
+      );
+    }
+  }
+);
+
+const cropSlice = createSlice({
+  name: 'crops',
+  initialState,
+  reducers: {},
   extraReducers: (builder) => {
     builder
-      // Get all crops
       .addCase(getCrops.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
-      .addCase(getCrops.fulfilled, (state, action) => {
-        state.crops = action.payload;
+      .addCase(getCrops.fulfilled, (state, action: PayloadAction<Crop[]>) => {
         state.loading = false;
+        state.crops = action.payload;
       })
       .addCase(getCrops.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
-      
-      // Get crop by ID
-      .addCase(getCropById.pending, (state) => {
+      .addCase(addCrop.pending, (state) => {
         state.loading = true;
       })
-      .addCase(getCropById.fulfilled, (state, action) => {
-        state.crop = action.payload;
+      .addCase(addCrop.fulfilled, (state, action: PayloadAction<Crop>) => {
         state.loading = false;
-      })
-      .addCase(getCropById.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-      
-      // Create crop
-      .addCase(createCrop.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(createCrop.fulfilled, (state, action) => {
         state.crops.push(action.payload);
-        state.crop = action.payload;
+      })
+      .addCase(addCrop.rejected, (state, action) => {
         state.loading = false;
-      })
-      .addCase(createCrop.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-      
-      // Update crop
-      .addCase(updateCrop.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(updateCrop.fulfilled, (state, action) => {
-        state.crops = state.crops.map(crop =>
-          crop._id === action.payload._id ? action.payload : crop
-        );
-        state.crop = action.payload;
-        state.loading = false;
-      })
-      .addCase(updateCrop.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-      
-      // Delete crop
-      .addCase(deleteCrop.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(deleteCrop.fulfilled, (state, action) => {
-        state.crops = state.crops.filter(crop => crop._id !== action.payload);
-        state.crop = null;
-        state.loading = false;
-      })
-      .addCase(deleteCrop.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-      
-      // Add pest issue
-      .addCase(addPestIssue.fulfilled, (state, action) => {
-        if (state.crop && state.crop._id === action.payload.cropId) {
-          state.crop.pestIssues = action.payload.pestIssues;
-        }
-      })
-      .addCase(addPestIssue.rejected, (state, action) => {
-        state.error = action.payload as string;
-      })
-      
-      // Add disease issue
-      .addCase(addDiseaseIssue.fulfilled, (state, action) => {
-        if (state.crop && state.crop._id === action.payload.cropId) {
-          state.crop.diseaseIssues = action.payload.diseaseIssues;
-        }
-      })
-      .addCase(addDiseaseIssue.rejected, (state, action) => {
-        state.error = action.payload as string;
-      })
-      
-      // Add fertilizer
-      .addCase(addFertilizer.fulfilled, (state, action) => {
-        if (state.crop && state.crop._id === action.payload.cropId) {
-          state.crop.fertilizers = action.payload.fertilizers;
-        }
-      })
-      .addCase(addFertilizer.rejected, (state, action) => {
-        state.error = action.payload as string;
-      })
-      
-      // Add irrigation event
-      .addCase(addIrrigationEvent.fulfilled, (state, action) => {
-        if (state.crop && state.crop._id === action.payload.cropId) {
-          state.crop.irrigationEvents = action.payload.irrigationEvents;
-        }
-      })
-      .addCase(addIrrigationEvent.rejected, (state, action) => {
         state.error = action.payload as string;
       });
-  }
+  },
 });
-
-export const { clearCrop, clearError } = cropSlice.actions;
 
 export default cropSlice.reducer;

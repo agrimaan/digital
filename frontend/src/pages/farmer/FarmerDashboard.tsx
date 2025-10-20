@@ -37,7 +37,7 @@ const FarmerDashboard: React.FC = () => {
   };
 
   const activeFieldsCount = Array.isArray(fields) ? fields.filter((f: Fields) => f.status === 'active').length : 0;
-  const activeCropsCount = Array.isArray(crops) ? crops.filter((c: Crop) => c.status !== 'harvested' && c.status !== 'failed').length : 0;
+  const activeCropsCount = Array.isArray(crops) ? crops.filter((c: Crop) => c.growthStage !== 'harvested' && c.growthStage !== 'failed').length : 0;
   const alertCount = Array.isArray(sensors) ? sensors.filter((s: Sensor) => s.status === 'error').length : 0;
   const activeSensorsCount = Array.isArray(sensors) ? sensors.filter((s: Sensor) => s.status === 'active').length : 0;
 

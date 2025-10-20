@@ -19,7 +19,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const bulkUploadRoutes = require('./routes/bulkUploadRoutes');
 const adminUserRoutes = require('./routes/adminUserRoutes');
-const resourcesRoutes = require('./routes/resourcesRoutes');
+const resourcesRoutes = require('./routes/resourceRoutes');
 
 
 // Import logger

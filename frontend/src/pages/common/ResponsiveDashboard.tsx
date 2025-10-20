@@ -82,11 +82,13 @@ const ResponsiveDashboardPage: React.FC = () => {
 
   // ✅ Fixed: Typed filters
   const cropCounts = [
-    crops.filter(crop => crop.status === 'planned').length,
-    crops.filter(crop => crop.status === 'planted').length,
-    crops.filter(crop => crop.status === 'growing').length,
-    crops.filter(crop => crop.status === 'harvested').length,
-    crops.filter(crop => crop.status === 'failed').length,
+    crops.filter(crop => crop.growthStage === "flowering").length,
+    crops.filter(crop => crop.growthStage === "fruiting").length,
+    crops.filter(crop => crop.growthStage === "maturity").length,
+    crops.filter(crop => crop.growthStage === "harvested").length,
+    crops.filter(crop => crop.growthStage === "failed").length,
+    crops.filter(crop => crop.growthStage === "seedling").length,
+    crops.filter(crop => crop.growthStage === "vegetative").length,
   ];
 
   const sensorCounts = [
@@ -189,7 +191,7 @@ const ResponsiveDashboardPage: React.FC = () => {
           <DashboardWidget title="Active Crops" icon={<GrassIcon color="success" />} loading={cropsLoading} onRefresh={() => handleWidgetRefresh('crops')} id="crops-widget">
             <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
               <Typography variant={isMobile ? "h5" : "h4"} component="div">
-                {cropsLoading || refreshing['crops-widget'] ? <Skeleton width={40} /> : crops.filter(crop => crop.status !== 'harvested' && crop.status !== 'failed').length}
+                {cropsLoading || refreshing['crops-widget'] ? <Skeleton width={40} /> : crops.filter(crop => crop.growthStage !== 'harvested' && crop.growthStage !== 'failed').length}
               </Typography>
               <Box sx={{ mt: 'auto' }}><Link component={RouterLink} to="/crops" color="primary" underline="hover">View all crops</Link></Box>
             </Box>
