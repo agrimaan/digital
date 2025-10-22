@@ -113,6 +113,9 @@ const AddressAutocomplete: React.FC<{
   );
 };
 
+const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
+const lowercaseFirst = (str: string) => str.charAt(0).toLowerCase() + str.slice(1);
+
 /* ============== UI constants from Crop ============== */
 const SOIL_TYPES: Crop['soilType'][] = ['loam','clay','sandy','silty','peaty','chalky','alluvial'];
 const IRRIGATION: Crop['irrigationMethod'][] = ['drip','sprinkler','flood','rainfed','center-pivot'];
@@ -349,11 +352,20 @@ const CropManagement: React.FC = () => {
       if (!formData.fieldId) throw new Error('Please select a Field.');
       const payload: Crop = {
         ...formData,
+        soilType: lowercaseFirst(formData.soilType || '') as Crop['soilType'],
+        irrigationMethod: lowercaseFirst(formData.irrigationMethod || '') as Crop['irrigationMethod'],
+        seedSource: lowercaseFirst(formData.seedSource || '') as Crop['seedSource'],
+        healthStatus: (formData.healthStatus
+          ? (lowercaseFirst(formData.healthStatus) as Crop['healthStatus'])
+          : undefined),
+        growthStage: (formData.growthStage
+          ? (lowercaseFirst(formData.growthStage) as Crop['growthStage'])
+          : undefined),
         plantedArea: Number(formData.plantedArea) || 0,
         expectedYield: Number(formData.expectedYield) || 0,
         actualYield: formData.actualYield != null ? Number(formData.actualYield) : undefined,
         pricePerUnit: formData.pricePerUnit != null ? Number(formData.pricePerUnit) : undefined,
-        totalValue: formData.totalValue != null ? Number(formData.totalValue) : undefined,
+        totalValue: formData.totalValue != null ? Number(formData.totalValue) : undefined
       };
 
       if (editingId) {
@@ -363,13 +375,13 @@ const CropManagement: React.FC = () => {
         await dispatch(addCrop(payload)).unwrap();
         setSuccess('✅ Crop added successfully!');
       }
+
       setDrawerOpen(false);
       dispatch(getCrops());
     } catch (err: any) {
       setListingError(err?.response?.data?.message || err?.message || 'Operation failed');
     }
   };
-
   /* render */
   const anyLoading = loading || fieldsLoading;
 
@@ -539,18 +551,35 @@ const CropManagement: React.FC = () => {
             {/* Planting Date */}
             <Grid item xs={12} sm={6}>
               <TextField
-                label="Planting Date" name="plantingDate" type="date"
-                value={formData.plantingDate} onChange={handleChange}
-                fullWidth required InputLabelProps={{ shrink: true }}
+                label="Planted Date"
+                name="plantedDate"
+                type="date"
+                value={formData.plantingDate || ''}
+                onChange={handleChange}
+                fullWidth
+                required
+                InputLabelProps={{ shrink: true }}
+                inputProps={{
+                  max: new Date().toISOString().split('T')[0]
+                }}
               />
             </Grid>
+
 
             {/* Expected Harvest Date */}
             <Grid item xs={12} sm={6}>
               <TextField
-                label="Expected Harvest Date" name="expectedHarvestDate" type="date"
-                value={formData.expectedHarvestDate} onChange={handleChange}
-                fullWidth required InputLabelProps={{ shrink: true }}
+                label="Expected Harvest Date"
+                name="expectedHarvestDate"
+                type="date"
+                value={formData.expectedHarvestDate || ''}
+                onChange={handleChange}
+                fullWidth
+                required
+                InputLabelProps={{ shrink: true }}
+                inputProps={{
+                  min: new Date().toISOString().split('T')[0]
+                }}
               />
             </Grid>
 
@@ -566,29 +595,49 @@ const CropManagement: React.FC = () => {
             {/* Soil, Irrigation, Seed Source */}
             <Grid item xs={12} sm={6}>
               <TextField select label="Soil Type" name="soilType" value={formData.soilType} onChange={handleChange} fullWidth required>
-                {SOIL_TYPES.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+                {SOIL_TYPES.map(s => (
+                  <MenuItem key={s} value={s}>
+                    {capitalize(s)}
+                  </MenuItem>
+                ))}
               </TextField>
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField select label="Irrigation Method" name="irrigationMethod" value={formData.irrigationMethod} onChange={handleChange} fullWidth required>
-                {IRRIGATION.map(i => <MenuItem key={i} value={i}>{i}</MenuItem>)}
+                {IRRIGATION.map(s => (
+                  <MenuItem key={s} value={s}>
+                    {capitalize(s)}
+                  </MenuItem>
+                ))}
               </TextField>
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField select label="Seed Source" name="seedSource" value={formData.seedSource} onChange={handleChange} fullWidth required>
-                {SEED_SOURCES.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+                {SEED_SOURCES.map(s => (
+                  <MenuItem key={s} value={s}>
+                    {capitalize(s)}
+                  </MenuItem>
+                ))}
               </TextField>
             </Grid>
 
             {/* Health / Stage */}
             <Grid item xs={12} sm={6}>
               <TextField select label="Health Status" name="healthStatus" value={formData.healthStatus || 'good'} onChange={handleChange} fullWidth>
-                {HEALTH.map(h => <MenuItem key={h} value={h}>{h}</MenuItem>)}
+                {HEALTH.map(s => (
+                  <MenuItem key={s} value={s}>
+                    {capitalize(s)}
+                  </MenuItem>
+                ))}
               </TextField>
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField select label="Growth Stage" name="growthStage" value={formData.growthStage || 'seedling'} onChange={handleChange} fullWidth>
-                {STAGES.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+                {STAGES.map(s => (
+                  <MenuItem key={s} value={s}>
+                    {capitalize(s)}
+                  </MenuItem>
+                ))}
               </TextField>
             </Grid>
 
