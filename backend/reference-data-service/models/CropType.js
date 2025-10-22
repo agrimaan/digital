@@ -131,10 +131,10 @@ CropTypeSchema.pre('save', function(next) {
 });
 
 // Indexes for efficient queries
-CropTypeSchema.index({ name: 1 });
-CropTypeSchema.index({ code: 1 });
-CropTypeSchema.index({ category: 1 });
-CropTypeSchema.index({ isActive: 1, displayOrder: 1 });
-CropTypeSchema.index({ 'growthCharacteristics.seasons': 1 });
+//CropTypeSchema.index({ name: 1 });
+//CropTypeSchema.index({ code: 1 });
+//CropTypeSchema.index({ category: 1 });
+//CropTypeSchema.index({ isActive: 1, displayOrder: 1 });
+//CropTypeSchema.index({ 'growthCharacteristics.seasons': 1 });
 
 module.exports = mongoose.model('CropType', CropTypeSchema);

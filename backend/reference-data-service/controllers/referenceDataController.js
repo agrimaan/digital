@@ -2,6 +2,9 @@ const SoilType = require('../models/SoilType');
 const IrrigationType = require('../models/IrrigationType');
 const CropType = require('../models/CropType');
 const { validationResult } = require('express-validator');
+const RefCrop = require('../models/RefCrop');       // <-- make sure file is models/RefCrop.js
+const RefVariety = require('../models/RefVariety'); // <-- models/RefVariety.js
+
 
 // @desc    Get all soil types
 // @route   GET /api/reference/soil-types
@@ -235,4 +238,22 @@ exports.getCategories = async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? error.message : {}
     });
   }
+};
+
+// GET /api/ref/crops?name=rice
+exports.getCrops = async (req, res) => {
+  const q = (req.query.name || '').toString().trim().toLowerCase();
+  const filter = q
+    ? { $or: [{ slug: q }, { commonName: new RegExp(`^${q}$`, 'i') }, { synonyms: q }] }
+    : {};
+  const list = await RefCrop.find(filter).sort({ commonName: 1 }).lean();
+  res.json({ success: true, data: list });
+};
+
+// GET /api/ref/varieties?crop=rice
+exports.getVarieties = async (req, res) => {
+  const crop = (req.query.crop || '').toString().trim().toLowerCase();
+  if (!crop) return res.json({ success: true, data: [] });
+  const list = await RefVariety.find({ cropSlug: crop }).sort({ name: 1 }).lean();
+  res.json({ success: true, data: list });
 };

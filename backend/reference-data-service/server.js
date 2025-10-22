@@ -46,7 +46,7 @@ app.get('/health', (req, res) => {
 });
 
 // Routes
-app.use('/api/reference', require('./routes/referenceDataRoutes'));
+app.use('/api/ref', require('./routes/referenceDataRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

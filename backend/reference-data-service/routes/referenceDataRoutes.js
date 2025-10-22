@@ -8,9 +8,12 @@ const {
   getCropTypes,
   getCropTypeById,
   getCropRecommendations,
-  getCategories
+  getCategories,
+  getCrops,
+  getVarieties
 } = require('../controllers/referenceDataController');
 const { protect } = require('../middleware/auth');
+const { get } = require('http');
 
 // Soil Types Routes
 router.get('/soil-types', protect, getSoilTypes);
@@ -29,5 +32,13 @@ router.get('/crop-recommendations', protect, getCropRecommendations);
 
 // Categories Overview
 router.get('/categories', protect, getCategories);
+
+// GET /api/ref/crops?name=rice
+router.get('/crops', protect, getCrops);
+
+// GET /api/ref/varieties?crop=rice
+router.get('/varieties', protect, getVarieties);
+
+
 
 module.exports = router;

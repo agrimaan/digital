@@ -91,8 +91,8 @@ IrrigationTypeSchema.pre('save', function(next) {
 });
 
 // Index for efficient queries
-IrrigationTypeSchema.index({ name: 1 });
-IrrigationTypeSchema.index({ code: 1 });
-IrrigationTypeSchema.index({ isActive: 1, displayOrder: 1 });
+//IrrigationTypeSchema.index({ name: 1 });
+//IrrigationTypeSchema.index({ code: 1 });
+//IrrigationTypeSchema.index({ isActive: 1, displayOrder: 1 });
 
 module.exports = mongoose.model('IrrigationType', IrrigationTypeSchema);

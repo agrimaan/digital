@@ -17,14 +17,14 @@ const CropSchema = new mongoose.Schema({
     required: [true, 'Crop variety is required'],
     trim: true
   },
-  farmId: {
+  fieldId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Farm',
-    required: [true, 'Farm ID is required']
+//    ref: 'Fields',
+    required: [true, 'field ID is required']
   },
   farmerId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+ //   ref: 'User',
     required: [true, 'Farmer ID is required']
   },
   plantedArea: {

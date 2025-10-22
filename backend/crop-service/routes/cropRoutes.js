@@ -1,229 +1,243 @@
-
 const express = require('express');
+const mongoose = require('mongoose');
 const Crop = require('../models/Crop');
-//const {protect} = require('../middleware/auth');
-const { protect, authorize, logAction } = require('@agrimaan/shared').middleware;
+const { protect, logAction } = require('@agrimaan/shared').middleware;
+// If your authorize('admin') exists and you want admin-only routes, you can still import it.
+// const { authorize } = require('@agrimaan/shared').middleware;
+
 const router = express.Router();
 
+const isAdmin = (req) =>
+  req.user?.role === 'admin' || (Array.isArray(req.user?.roles) && req.user.roles.includes('admin'));
+
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+const basePopulate = [
+  { path: 'fieldId', select: 'name location' },
+  { path: 'farmerId', select: 'name email' }, // assumes Crop schema has a ref to User
+];
+
+/**
+ * Compute a Mongo filter for the current request:
+ * - Farmers are always scoped to their own farmerId
+ * - Admins:
+ *    - if ?farmerId is provided and valid -> filter by that farmer
+ *    - otherwise -> no farmer filter (see everything)
+ */
+const scopeFilter = (req) => {
+  if (isAdmin(req)) {
+    const { farmerId } = req.query || {};
+    if (farmerId && isValidObjectId(farmerId)) {
+      return { farmerId };
+    }
+    // no farmer filter => admin sees all
+    return {};
+  }
+  return { farmerId: req.user.id };
+};
+
 // @route   GET /api/crops
-// @desc    Get all crops for logged in user
+// @desc    List crops (admin: all or by ?farmerId; farmer: own)
 // @access  Private
 router.get('/', protect, async (req, res) => {
   try {
-    const crops = await Crop.find({ farmerId: req.user.id })
-      .populate('farmId', 'name location')
+    const filter = scopeFilter(req);
+
+    const crops = await Crop.find(filter)
+      .populate(basePopulate)
       .sort({ createdAt: -1 });
-    
+
     res.json({
       success: true,
       count: crops.length,
-      data: crops
+      data: crops,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
       message: 'Server error',
-      error: error.message
+      error: error.message,
     });
   }
 });
 
 // @route   GET /api/crops/:id
-// @desc    Get single crop
+// @desc    Get single crop (admin: any; farmer: must own)
 // @access  Private
 router.get('/:id', protect, async (req, res) => {
   try {
-    const crop = await Crop.findOne({ 
-      _id: req.params.id, 
-      farmerId: req.user.id 
-    }).populate('farmId', 'name location');
-
-    if (!crop) {
-      return res.status(404).json({
-        success: false,
-        message: 'Crop not found'
-      });
+    const { id } = req.params;
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid crop id' });
     }
 
-    res.json({
-      success: true,
-      data: crop
-    });
+    // Admin can access any crop; farmer must own it
+    const finder = isAdmin(req) ? { _id: id } : { _id: id, farmerId: req.user.id };
+
+    const crop = await Crop.findOne(finder).populate(basePopulate);
+    if (!crop) {
+      return res.status(404).json({ success: false, message: 'Crop not found' });
+    }
+
+    res.json({ success: true, data: crop });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });
 
 // @route   POST /api/crops
-// @desc    Create new crop
+// @desc    Create new crop (admin: can set body.farmerId; farmer: forced to self)
 // @access  Private
-router.post('/', protect, async (req, res) => {
+router.post('/', protect, logAction('crop:create'), async (req, res) => {
   try {
-    const cropData = {
-      ...req.body,
-      farmerId: req.user.id
-    };
+    const body = { ...req.body };
 
-    const crop = await Crop.create(cropData);
-    
-    res.status(201).json({
-      success: true,
-      data: crop
-    });
+    if (isAdmin(req)) {
+      // Admin can create for any farmer; if not provided, default to self
+      if (body.farmerId && !isValidObjectId(body.farmerId)) {
+        return res.status(400).json({ success: false, message: 'Invalid farmerId' });
+      }
+      body.farmerId = body.farmerId || req.user.id;
+    } else {
+      // Farmers can only create for themselves
+      body.farmerId = req.user.id;
+    }
+
+    const crop = await Crop.create(body);
+
+    const populated = await Crop.findById(crop._id).populate(basePopulate);
+
+    res.status(201).json({ success: true, data: populated });
   } catch (error) {
     if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(err => err.message);
+      const messages = Object.values(error.errors).map((err) => err.message);
       return res.status(400).json({
         success: false,
         message: 'Validation error',
-        errors: messages
+        errors: messages,
       });
     }
-    
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });
 
 // @route   PUT /api/crops/:id
-// @desc    Update crop
+// @desc    Update crop (admin: any; farmer: must own)
 // @access  Private
-router.put('/:id', protect, async (req, res) => {
+router.put('/:id', protect, logAction('crop:update'), async (req, res) => {
   try {
-    let crop = await Crop.findOne({ 
-      _id: req.params.id, 
-      farmerId: req.user.id 
-    });
-
-    if (!crop) {
-      return res.status(404).json({
-        success: false,
-        message: 'Crop not found'
-      });
+    const { id } = req.params;
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid crop id' });
     }
 
-    crop = await Crop.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    // Farmers must only update their own records
+    const finder = isAdmin(req) ? { _id: id } : { _id: id, farmerId: req.user.id };
 
-    res.json({
-      success: true,
-      data: crop
-    });
+    const exists = await Crop.findOne(finder);
+    if (!exists) {
+      return res.status(404).json({ success: false, message: 'Crop not found' });
+    }
+
+    // Prevent non-admins from reassigning farmerId
+    const update = { ...req.body };
+    if (!isAdmin(req)) {
+      delete update.farmerId;
+    } else if (update.farmerId && !isValidObjectId(update.farmerId)) {
+      return res.status(400).json({ success: false, message: 'Invalid farmerId' });
+    }
+
+    const updated = await Crop.findByIdAndUpdate(id, update, { new: true, runValidators: true })
+      .populate(basePopulate);
+
+    res.json({ success: true, data: updated });
   } catch (error) {
     if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(err => err.message);
+      const messages = Object.values(error.errors).map((err) => err.message);
       return res.status(400).json({
         success: false,
         message: 'Validation error',
-        errors: messages
+        errors: messages,
       });
     }
-    
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });
 
 // @route   DELETE /api/crops/:id
-// @desc    Delete crop
+// @desc    Delete crop (admin: any; farmer: must own)
 // @access  Private
-router.delete('/:id', protect, async (req, res) => {
+router.delete('/:id', protect, logAction('crop:delete'), async (req, res) => {
   try {
-    const crop = await Crop.findOne({ 
-      _id: req.params.id, 
-      farmerId: req.user.id 
-    });
+    const { id } = req.params;
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid crop id' });
+    }
+
+    const finder = isAdmin(req) ? { _id: id } : { _id: id, farmerId: req.user.id };
+    const crop = await Crop.findOne(finder);
 
     if (!crop) {
-      return res.status(404).json({
-        success: false,
-        message: 'Crop not found'
-      });
+      return res.status(404).json({ success: false, message: 'Crop not found' });
     }
 
     await crop.remove();
-
-    res.json({
-      success: true,
-      message: 'Crop deleted successfully'
-    });
+    res.json({ success: true, message: 'Crop deleted successfully' });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });
 
-// @route   GET /api/crops/farm/:farmId
-// @desc    Get crops by farm
+// @route   GET /api/crops/field/:fieldId
+// @desc    Get crops by field (admin: all/filtered; farmer: own only)
 // @access  Private
-router.get('/farm/:farmId', protect, async (req, res) => {
+router.get('/field/:fieldId', protect, async (req, res) => {
   try {
-    const crops = await Crop.find({ 
-      farmId: req.params.farmId, 
-      farmerId: req.user.id 
-    }).sort({ plantingDate: -1 });
+    const { fieldId } = req.params;
+    if (!isValidObjectId(fieldId)) {
+      return res.status(400).json({ success: false, message: 'Invalid field id' });
+    }
 
-    res.json({
-      success: true,
-      count: crops.length,
-      data: crops
-    });
+    const farmerScope = scopeFilter(req); // {} for admin (or {farmerId}) / {farmerId: self} for farmer
+    const crops = await Crop.find({ ...farmerScope, fieldId })
+      .populate(basePopulate)
+      .sort({ plantingDate: -1 });
+
+    res.json({ success: true, count: crops.length, data: crops });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });
 
-// @route   GET /api/crops/health-status
-// @desc    Get crops by health status
+// @route   GET /api/crops/health-status/:status
+// @desc    Get crops by health status (admin: all/filtered; farmer: own)
 // @access  Private
 router.get('/health-status/:status', protect, async (req, res) => {
   try {
+    const farmerScope = scopeFilter(req);
     const crops = await Crop.find({
-      farmerId: req.user.id,
-      healthStatus: req.params.status
-    }).sort({ createdAt: -1 });
+      ...farmerScope,
+      healthStatus: req.params.status,
+    })
+      .populate(basePopulate)
+      .sort({ createdAt: -1 });
 
-    res.json({
-      success: true,
-      count: crops.length,
-      data: crops
-    });
+    res.json({ success: true, count: crops.length, data: crops });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });
 
-// @route   GET /api/crops/stats
-// @desc    Get crop statistics for logged in user
+// @route   GET /api/crops/stats/overview
+// @desc    Stats (admin: all/filtered; farmer: own)
 // @access  Private
 router.get('/stats/overview', protect, async (req, res) => {
   try {
+    const farmerScope = scopeFilter(req);
+    const matchStage = Object.keys(farmerScope).length ? { $match: farmerScope } : { $match: {} };
+
     const stats = await Crop.aggregate([
-      { $match: { farmerId: req.user.id } },
+      matchStage,
       {
         $group: {
           _id: null,
@@ -231,7 +245,24 @@ router.get('/stats/overview', protect, async (req, res) => {
           totalArea: { $sum: '$plantedArea' },
           totalExpectedYield: { $sum: '$expectedYield' },
           totalActualYield: { $sum: '$actualYield' },
-          averageHealthStatus: { $avg: { $cond: [{ $eq: ['$healthStatus', 'excellent'] }, 5, { $cond: [{ $eq: ['$healthStatus', 'good'] }, 4, { $cond: [{ $eq: ['$healthStatus', 'fair'] }, 3, { $cond: [{ $eq: ['$healthStatus', 'poor'] }, 2, 1] }] }] }] } }
+          averageHealthStatus: {
+            $avg: {
+              $cond: [
+                { $eq: ['$healthStatus', 'excellent'] }, 5,
+                {
+                  $cond: [
+                    { $eq: ['$healthStatus', 'good'] }, 4,
+                    {
+                      $cond: [
+                        { $eq: ['$healthStatus', 'fair'] }, 3,
+                        { $cond: [{ $eq: ['$healthStatus', 'poor'] }, 2, 1] }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
         }
       },
       {
@@ -247,28 +278,25 @@ router.get('/stats/overview', protect, async (req, res) => {
     ]);
 
     const cropByStatus = await Crop.aggregate([
-      { $match: { farmerId: req.user.id } },
-      {
-        $group: {
-          _id: '$healthStatus',
-          count: { $sum: 1 }
-        }
-      }
+      matchStage,
+      { $group: { _id: '$healthStatus', count: { $sum: 1 } } },
     ]);
 
     res.json({
       success: true,
       data: {
-        overview: stats[0] || { totalCrops: 0, totalArea: 0, totalExpectedYield: 0, totalActualYield: 0, averageHealthStatus: 0 },
+        overview: stats[0] || {
+          totalCrops: 0,
+          totalArea: 0,
+          totalExpectedYield: 0,
+          totalActualYield: 0,
+          averageHealthStatus: 0
+        },
         byStatus: cropByStatus
       }
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });
 

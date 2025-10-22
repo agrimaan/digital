@@ -1,6 +1,6 @@
 {
   "name": "@agrimaan/shared",
-  "version": "1.0.25",
+  "version": "1.0.26",
   "description": "Shared utilities and common code for Agrimaan services",
   "main": "index.js",
   "files": [

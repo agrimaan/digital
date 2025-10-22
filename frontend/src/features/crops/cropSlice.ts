@@ -6,13 +6,8 @@ export interface Crop {
   _id?: string;
   name: string;
   scientificName?: string;
-  variety?: 
-  | 'normal'
-  | 'Premium'
-  | 'variety1'
-  | 'variety2'
-  | 'variety3';
-  farmId: string;
+  variety?:string;
+  fieldId: string;
   farmerId?: string;
   plantedArea: number;
   plantingDate: string;

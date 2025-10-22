@@ -72,8 +72,8 @@ SoilTypeSchema.pre('save', function(next) {
 });
 
 // Index for efficient queries
-SoilTypeSchema.index({ name: 1 });
-SoilTypeSchema.index({ code: 1 });
-SoilTypeSchema.index({ isActive: 1, displayOrder: 1 });
+//SoilTypeSchema.index({ name: 1 });
+//SoilTypeSchema.index({ code: 1 });
+//SoilTypeSchema.index({ isActive: 1, displayOrder: 1 });
 
 module.exports = mongoose.model('SoilType', SoilTypeSchema);

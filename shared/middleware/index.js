@@ -90,7 +90,9 @@ exports.logAction = (action, resourceType) => {
       }
 
       // Call the original send function first
-      const result = originalSend.call(this, data);
+      if (res.headersSent) return
+      else
+      {const result = originalSend.call(this, data);}
 
       // Log the action only if the response is successful (async, doesn't block response)
       if (res.statusCode >= 200 && res.statusCode < 400) {

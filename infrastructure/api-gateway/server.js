@@ -95,6 +95,7 @@ app.use('/api/blockchain', createServiceProxy('blockchain-service', '/api/blockc
 app.use('/api/reference', createServiceProxy('reference-data-service', '/api/reference'));
 app.use('/api/resources', createServiceProxy('resource-service', '/api/resources'));
 app.use('/api/bookings', createServiceProxy('resource-service', '/api/bookings'));
+app.use('/api/ref', createServiceProxy('reference-data-service', '/api/ref'));
 
 
 
