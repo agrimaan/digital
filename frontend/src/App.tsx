@@ -25,6 +25,13 @@ import Weather from './pages/farmer/Weather';
 import FarmerMarketplace from './pages/common/Marketplace';
 import Analytics from './pages/farmer/Analytics';
 import AddField from './pages/farmer/AddField';
+import Sensors from './pages/farmer/Sensors';
+import SensorDetail from './pages/farmer/SensorDetail';
+import EditSensor from './pages/farmer/EditSensor';
+
+
+
+
 
 // Buyer pages
 import BuyerDashboard from './pages/buyer/BuyerDashboard';
@@ -137,6 +144,9 @@ const App: React.FC = () => {
                     <Route path="fields/:id" element={<FieldDetail />} />
                     <Route path="fields/:id/edit" element={<EditField />} />
                     <Route path="crops" element={<Crops />} />
+                    <Route path="sensors" element={<Sensors />} />
+                    <Route path="sensors/:id" element={<SensorDetail />} />
+                    <Route path="sensors/:id/edit" element={<EditSensor />} />
                     <Route path="weather" element={<Weather />} />
                     <Route path="marketplace" element={<FarmerMarketplace />} />
                     <Route path="analytics" element={<Analytics />} />

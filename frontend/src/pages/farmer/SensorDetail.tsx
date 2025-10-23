@@ -178,7 +178,7 @@ const SensorDetail: React.FC = () => {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Button
           component={Link}
-          to="/sensors"
+          to="/farmer/sensors"
           startIcon={<ArrowBackIcon />}
           sx={{ mb: 2 }}
         >

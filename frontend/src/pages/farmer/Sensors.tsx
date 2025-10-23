@@ -298,7 +298,7 @@ const Sensors: React.FC = () => {
               <Box sx={{ p: 2 }}>
                 <Button 
                   component={Link} 
-                  to={`/sensors/${sensor.id}`} 
+                  to={`/farmer/sensors/${sensor.id}`} 
                   variant="outlined" 
                   fullWidth
                 >
