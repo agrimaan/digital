@@ -1,6 +1,7 @@
 // src/features/crops/cropSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { setAlert } from '../alert/alertSlice';
 
 export interface Crop {
   _id?: string;
@@ -64,38 +65,58 @@ const initialState: CropState = {
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000';
 
-// Fetch all crops (for farmer)
-export const getCrops = createAsyncThunk<Crop[]>(
-  'crops/fetchAll',
-  async (_, thunkAPI) => {
+export const getCrops = createAsyncThunk('crops/fetchAll', async (_, { rejectWithValue }) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/crops`);
+    const data: Crop[] = Array.isArray(response.data) ? response.data : response.data?.data || [];
+    return data;
+  } catch (error: any) {
+    return rejectWithValue(error.response?.data?.message || 'Failed to fetch crops');
+  }
+});
+
+export const addCrop = createAsyncThunk('crops/add', async (newCrop: Crop, { dispatch, rejectWithValue }) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/api/crops`, newCrop);
+    dispatch(
+      setAlert({ message: 'Crop added successfully', type: 'success' }) as any
+    );
+    return response.data;
+  } catch (error: any) {
+    return rejectWithValue(error.response?.data?.message || 'Failed to add crop');
+  }
+});
+
+export const updateCrop = createAsyncThunk(
+  'crops/update',
+  async ({ id, data }: { id: string; data: Partial<Crop> }, { dispatch, rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/crops`);
-      return res.data.data || res.data;
-    } catch (err: any) {
-      return thunkAPI.rejectWithValue(
-        err.response?.data?.message || err.message
+      const response = await axios.put(`${API_BASE_URL}/api/crops/${id}`, data);
+      dispatch(
+        setAlert({ message: 'Crop updated successfully', type: 'success' }) as any
       );
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to update crop');
     }
   }
 );
 
-// Add new crop
-export const addCrop = createAsyncThunk<Crop, Crop>(
-  'crops/add',
-  async (cropData, thunkAPI) => {
-    try {
-      const res = await axios.post(`${API_BASE_URL}/api/crops`, cropData);
-      return res.data.data || res.data;
-    } catch (err: any) {
-      return thunkAPI.rejectWithValue(
-        err.response?.data?.message || err.message
-      );
-    }
+export const deleteCrop = createAsyncThunk('crops/delete', async (id: string, { dispatch, rejectWithValue }) => {
+  try {
+    await axios.delete(`${API_BASE_URL}/api/crops/${id}`);
+    dispatch(
+        setAlert({ message: 'Crop deleted successfully', type: 'success' }) as any
+    );
+    return id;
+  } catch (error: any) {
+    return rejectWithValue(error.response?.data?.message || 'Failed to delete crop');
   }
-);
+});
 
+// ========== Slice ==========
 const cropSlice = createSlice({
-  name: 'crops',
+  name: 'crop',
   initialState,
   reducers: {},
   extraReducers: (builder) => {
@@ -112,18 +133,23 @@ const cropSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      .addCase(addCrop.pending, (state) => {
-        state.loading = true;
-      })
+
       .addCase(addCrop.fulfilled, (state, action: PayloadAction<Crop>) => {
         state.loading = false;
         state.crops.push(action.payload);
       })
-      .addCase(addCrop.rejected, (state, action) => {
+      .addCase(updateCrop.fulfilled, (state, action: PayloadAction<Crop>) => {
         state.loading = false;
-        state.error = action.payload as string;
+        state.crops = state.crops.map((crop) =>
+          crop._id === action.payload._id ? action.payload : crop
+        );
+      })
+      .addCase(deleteCrop.fulfilled, (state, action: PayloadAction<string>) => {
+        state.loading = false;
+        state.crops = state.crops.filter((crop) => crop._id !== action.payload);
       });
   },
 });
+
 
 export default cropSlice.reducer;

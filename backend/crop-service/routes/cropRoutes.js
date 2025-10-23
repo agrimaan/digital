@@ -181,7 +181,7 @@ router.delete('/:id', protect, logAction('crop:delete'), async (req, res) => {
       return res.status(404).json({ success: false, message: 'Crop not found' });
     }
 
-    await crop.remove();
+    await crop.deleteOne();
     res.json({ success: true, message: 'Crop deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error', error: error.message });

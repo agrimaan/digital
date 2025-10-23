@@ -1,4 +1,3 @@
-// src/pages/CropManagement.tsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box, Button, TextField, Typography, Grid, MenuItem, CircularProgress, Alert,
@@ -10,7 +9,7 @@ import { Add, Edit, Delete, Visibility } from '@mui/icons-material';
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../store';
-import { addCrop, getCrops, Crop } from '../../features/crops/cropSlice';
+import { getCrops, addCrop, updateCrop, deleteCrop, Crop } from '../../features/crops/cropSlice';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000';
 
@@ -124,7 +123,6 @@ const HEALTH: NonNullable<Crop['healthStatus']>[] = ['excellent','good','fair','
 const STAGES: NonNullable<Crop['growthStage']>[] = ['seedling','vegetative','flowering','fruiting','maturity','harvested','failed'];
 
 type FieldDoc = { _id: string; name?: string; location?: { type?: 'Point'; coordinates?: number[] }; locationName?: string; description?: string; };
-type Coordinates = { lat: number; lon: number };
 const numericKeys = new Set<keyof Crop>(['plantedArea','expectedYield','actualYield','pricePerUnit','totalValue']);
 
 /* ============== Component ============== */
@@ -133,7 +131,7 @@ const CropManagement: React.FC = () => {
   const { crops, loading, error } = useSelector((s: RootState) => s.crop);
 
   /* listing state */
-  const [success, setSuccess] = useState('');
+  const [success, setSuccess] = useState(false);
   const [listingError, setListingError] = useState<string | null>(null);
 
   /* fields */
@@ -146,7 +144,11 @@ const CropManagement: React.FC = () => {
   const [cropOptions, setCropOptions] = useState<RefCrop[]>([]);
   const [cropOptionsLoading, setCropOptionsLoading] = useState(false);
   const [selectedCrop, setSelectedCrop] = useState<RefCrop | null>(null);
+  const [cropDropdownOpen, setCropDropdownOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [cropToDelete, setCropToDelete] = useState<Crop | null>(null);
 
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [varietyOptions, setVarietyOptions] = useState<string[]>([]);
   const [varietiesLoading, setVarietiesLoading] = useState(false);
 
@@ -305,6 +307,8 @@ const CropManagement: React.FC = () => {
     setEditingId(row._id!);
     setFormData({
       ...row,
+      plantingDate: row.plantingDate.split('T')[0],
+      expectedHarvestDate: row.expectedHarvestDate.split('T')[0],
       variety: row.variety || '',
       scientificName: row.scientificName || '',
       fieldId: row.fieldId || '',
@@ -334,20 +338,35 @@ const CropManagement: React.FC = () => {
 
   const openView = (row: Crop) => { setViewingCrop(row); setDialogOpen(true); };
 
-  const doDelete = async (id: string) => {
-    if (!window.confirm('Delete this crop?')) return;
-    try {
-      await axios.delete(`${API_BASE_URL}/api/crops/${id}`, { headers: authHeaders() });
-      setSuccess('✅ Crop deleted');
-      dispatch(getCrops());
-    } catch (err: any) {
-      setListingError(err?.response?.data?.message || err?.message || 'Failed to delete crop');
+  // delete handlers
+  const handleDeleteClick = (crop: Crop) => {
+    setCropToDelete(crop);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setCropToDelete(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (cropToDelete) {
+      try {
+        await dispatch(deleteCrop(cropToDelete._id!)).unwrap();
+        setDeleteSuccess(true);
+        setTimeout(() => setDeleteSuccess(false), 3000);
+        dispatch(getCrops());
+      } catch (err: any) {
+        setListingError(err?.response?.data?.message || err?.message || 'Failed to delete crop');
+      }
     }
+    setDeleteDialogOpen(false);
+    setCropToDelete(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSuccess('');
+    setSuccess(false);
     try {
       if (!formData.fieldId) throw new Error('Please select a Field.');
       const payload: Crop = {
@@ -369,11 +388,9 @@ const CropManagement: React.FC = () => {
       };
 
       if (editingId) {
-        await axios.put(`${API_BASE_URL}/api/crops/${editingId}`, payload, { headers: authHeaders() });
-        setSuccess('✅ Crop updated successfully!');
+        await dispatch(updateCrop({ id: editingId, data: payload })).unwrap();
       } else {
         await dispatch(addCrop(payload)).unwrap();
-        setSuccess('✅ Crop added successfully!');
       }
 
       setDrawerOpen(false);
@@ -428,8 +445,10 @@ const CropManagement: React.FC = () => {
                       <IconButton size="small" onClick={() => openEdit(c)}><Edit fontSize="small" /></IconButton>
                     </Tooltip>
                     <Tooltip title="Delete">
-                      <IconButton size="small" color="error" onClick={() => doDelete(c._id!)}><Delete fontSize="small" /></IconButton>
-                    </Tooltip>
+                    <IconButton size="small" color="error" onClick={() => handleDeleteClick(c)}>
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                   </Stack>
                 </TableCell>
               </TableRow>
@@ -456,11 +475,26 @@ const CropManagement: React.FC = () => {
                 autoHighlight
                 value={selectedCrop}
                 inputValue={cropInput}
-                onInputChange={(_, v) => setCropInput(v)}
-                onChange={(_, v) => commitCrop((v as RefCrop) ?? null)}
+                onInputChange={(_, v) => {
+                  setCropInput(v);
+                  if (v.trim()) {
+                    setCropDropdownOpen(true);
+                  } else {
+                    setCropDropdownOpen(false);
+                  }
+                }}
+                onChange={(_, v) => {
+                  commitCrop((v as RefCrop) ?? null);
+                  setCropDropdownOpen(false);
+                }}
                 onBlur={handleCropBlur}
                 getOptionLabel={(opt) => (opt ? (opt as RefCrop).commonName : '')}
                 isOptionEqualToValue={(a, b) => a.slug === b.slug}
+                open={cropDropdownOpen}
+                onOpen={() => {
+                  if (cropInput.trim()) setCropDropdownOpen(true);
+                }}
+                onClose={() => setCropDropdownOpen(false)}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -552,7 +586,7 @@ const CropManagement: React.FC = () => {
             <Grid item xs={12} sm={6}>
               <TextField
                 label="Planted Date"
-                name="plantedDate"
+                name="plantingDate"
                 type="date"
                 value={formData.plantingDate || ''}
                 onChange={handleChange}
@@ -687,6 +721,21 @@ const CropManagement: React.FC = () => {
           <Button onClick={() => setDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete crop "{cropToDelete?.name}"?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel}>Cancel</Button>
+          <Button onClick={handleDeleteConfirm} color="error">Delete</Button>
+        </DialogActions>
+      </Dialog>
+      {deleteSuccess}
     </Box>
   );
 };
