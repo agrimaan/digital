@@ -1,178 +1,429 @@
-/* eslint-disable no-console */
-require('dotenv').config();
-const mongoose = require('mongoose');
-const RefCrop = require('../models/RefCrop');
-const RefVariety = require('../models/RefVariety');
-const CropType = require('../models/CropType'); // your existing model
+// src/pages/admin/AdminFields.tsx
+import React, { useEffect, useMemo, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { Link as RouterLink } from 'react-router-dom';
+import {
+  Box, Button, Container, Paper, Typography, Grid, Table, TableBody, TableCell, TableContainer,
+  TableHead, TableRow, Chip, IconButton, Tooltip, CircularProgress, Alert, TextField,
+  InputAdornment, MenuItem, Select, FormControl, InputLabel, Dialog, DialogActions, DialogContent,
+  DialogContentText, DialogTitle, Card, CardContent, CardActions, CardHeader, Avatar,
+  ToggleButton, ToggleButtonGroup
+} from '@mui/material';
+import {
+  Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Search as SearchIcon,
+  ViewModule as ViewModuleIcon, ViewList as ViewListIcon, Terrain as TerrainIcon
+} from '@mui/icons-material';
+import axios from 'axios';
+import { RootState } from '../../store';
 
-const slugify = (s) =>
-  s.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+// ==== UI-safe type (post-normalization) ====
+type UIField = {
+  _id: string;
+  name: string;
+  address: string;               // always a string (may be empty '')
+  owner: { id: string; name: string };
+  size: { value: number; unit: string };
+  soilType: string;
+  cropsCount: number;
+  sensorsCount: number;
+  createdAt: string;             // ISO
+};
 
-const CROPS = [
-  { commonName: 'Rice', scientificName: 'Oryza sativa', synonyms: ['paddy'], tags: ['cereal','food-grain'], source: 'AGROVOC/ICAR', category: 'cereal' },
-  { commonName: 'Wheat', scientificName: 'Triticum aestivum', tags: ['cereal','food-grain'], source: 'AGROVOC/ICAR', category: 'cereal' },
-  { commonName: 'Maize', scientificName: 'Zea mays', tags: ['cereal'], source: 'AGROVOC', category: 'cereal' },
-  { commonName: 'Mustard', scientificName: 'Brassica juncea', synonyms: ['rapeseed–mustard'], tags: ['oilseed'], source: 'AGROVOC', category: 'oilseed' },
-  { commonName: 'Chickpea', scientificName: 'Cicer arietinum', synonyms: ['gram'], tags: ['pulse'], source: 'AGROVOC', category: 'pulse' },
-  { commonName: 'Cotton', scientificName: 'Gossypium hirsutum', tags: ['cash_crop','fiber'], source: 'AGROVOC', category: 'cash_crop' },
-  { commonName: 'Sugarcane', scientificName: 'Saccharum officinarum', tags: ['cash_crop'], source: 'AGROVOC', category: 'cash_crop' },
-  { commonName: 'Potato', scientificName: 'Solanum tuberosum', tags: ['vegetable'], source: 'AGROVOC', category: 'vegetable' },
-  { commonName: 'Tomato', scientificName: 'Solanum lycopersicum', tags: ['vegetable'], source: 'AGROVOC', category: 'vegetable' },
-  { commonName: 'Soybean', scientificName: 'Glycine max', tags: ['oilseed'], source: 'AGROVOC', category: 'oilseed' },
-];
+// If your env var name differs, update here:
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
-const VARIETIES = [
-  // Rice
-  { crop: 'rice', name: 'MTU-1010', season: 'Kharif', zone: 'Peninsular', type: 'Non-basmati', releasedBy: 'ANGRAU', notes: 'AP/Telangana', source: 'ICAR/IRRI' },
-  { crop: 'rice', name: 'Swarna (MTU 7029)', season: 'Kharif', zone: 'East', type: 'Non-basmati', releasedBy: 'ANGRAU', source: 'ICAR' },
-  { crop: 'rice', name: 'BPT 5204 (Samba Mahsuri)', season: 'Kharif', zone: 'South', type: 'Non-basmati', source: 'ICAR' },
-  { crop: 'rice', name: 'Pusa Basmati 1121', season: 'Kharif', zone: 'NWPZ', type: 'Basmati', releasedBy: 'ICAR-IARI', source: 'ICAR' },
-  { crop: 'rice', name: 'Pusa 44', season: 'Kharif', zone: 'NWPZ', type: 'Non-basmati', releasedBy: 'ICAR-IARI', source: 'ICAR' },
+// Fallback helpers
+const safeString = (v: any, fallback = ''): string =>
+  typeof v === 'string' ? v : (v == null ? fallback : String(v));
 
-  // Wheat
-  { crop: 'wheat', name: 'HD 2967', season: 'Rabi', zone: 'NWPZ', type: 'Bread wheat', releasedBy: 'ICAR-IARI', source: 'ICAR' },
-  { crop: 'wheat', name: 'HD 3086', season: 'Rabi', zone: 'NWPZ', type: 'Bread wheat', releasedBy: 'ICAR-IARI', source: 'ICAR' },
-  { crop: 'wheat', name: 'PBW 343', season: 'Rabi', zone: 'NWPZ', type: 'Bread wheat', releasedBy: 'PAU', source: 'ICAR' },
-  { crop: 'wheat', name: 'PBW 550', season: 'Rabi', zone: 'NWPZ', type: 'Bread wheat', releasedBy: 'PAU', source: 'ICAR' },
+const safeNumber = (v: any, fallback = 0): number => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+};
 
-  // Maize
-  { crop: 'maize', name: 'HQPM-1', season: 'Kharif', zone: 'North/NE', type: 'Quality protein maize', releasedBy: 'ICAR', source: 'ICAR' },
-  { crop: 'maize', name: 'DHM 117', season: 'Kharif', zone: 'CZ/South', type: 'Hybrid', releasedBy: 'DHM', source: 'ICAR' },
+// Build a human-friendly address if only coordinates are present
+const coordsToText = (coords?: any): string => {
+  // GeoJSON: [lng, lat]
+  if (Array.isArray(coords) && coords.length >= 2) {
+    const [lng, lat] = coords;
+    const f = (x: number) => (Number.isFinite(x) ? x.toFixed(5) : '');
+    if (Number.isFinite(lat) && Number.isFinite(lng)) return `${f(lat)}, ${f(lng)}`;
+  }
+  // Non-GeoJSON object: { latitude, longitude }
+  if (coords && typeof coords === 'object' && 'latitude' in coords && 'longitude' in coords) {
+    const { latitude, longitude } = coords as { latitude?: number; longitude?: number };
+    const f = (x?: number) => (Number.isFinite(x as number) ? (x as number).toFixed(5) : '');
+    if (latitude != null && longitude != null) return `${f(latitude)}, ${f(longitude)}`;
+  }
+  return '';
+};
 
-  // Mustard
-  { crop: 'mustard', name: 'Pusa Bold', season: 'Rabi', zone: 'NWPZ', type: 'Bold seeded', releasedBy: 'ICAR-IARI', source: 'ICAR' },
-  { crop: 'mustard', name: 'Varuna', season: 'Rabi', zone: 'NWPZ', type: 'Popular', releasedBy: 'ICAR', source: 'ICAR' },
+// Normalize any backend field shape into UIField
+function normalizeField(raw: any): UIField {
+  const _id = safeString(raw?._id);
+  const name = safeString(raw?.name, 'Unnamed Field');
 
-  // Chickpea
-  { crop: 'chickpea', name: 'JG 11', season: 'Rabi', zone: 'CZ/South', type: 'Desi', releasedBy: 'ICRISAT/ANGRAU', source: 'ICAR/ICRISAT' },
-  { crop: 'chickpea', name: 'Pusa 372', season: 'Rabi', zone: 'NWPZ', type: 'Desi', releasedBy: 'ICAR-IARI', source: 'ICAR' },
+  // Try common address places: locationName -> location.address -> description -> coordinates
+  const address =
+    safeString(raw?.locationName) ||
+    safeString(raw?.location?.address) ||
+    safeString(raw?.description) ||
+    coordsToText(raw?.location?.coordinates) ||
+    coordsToText(raw?.location?.coords) ||
+    coordsToText(raw?.location?.geo) ||
+    '';
 
-  // Cotton
-  { crop: 'cotton', name: 'RCH 134', zone: 'CZ', type: 'Hybrid', source: 'Public' },
-  { crop: 'cotton', name: 'NHH 44', zone: 'CZ', type: 'Hybrid', source: 'Public' },
+  // Owner
+  const ownerId = safeString(raw?.owner?._id);
+  const ownerName =
+    safeString(raw?.owner?.name) ||
+    safeString(raw?.ownerName) ||
+    'Unknown';
 
-  // Sugarcane
-  { crop: 'sugarcane', name: 'Co 0238', zone: 'North', type: 'Early maturing', source: 'ICAR' },
-  { crop: 'sugarcane', name: 'Co 86032', zone: 'South', type: 'Popular', source: 'ICAR' },
+  // Size
+  const sizeVal = safeNumber(raw?.size?.value ?? raw?.area ?? raw?.size, 0);
+  const sizeUnit = safeString(raw?.size?.unit ?? raw?.unit ?? 'ha');
 
-  // Potato
-  { crop: 'potato', name: 'Kufri Jyoti', season: 'Rabi', zone: 'Hills/Plains', type: 'Table', releasedBy: 'ICAR-CPRI', source: 'ICAR' },
-  { crop: 'potato', name: 'Kufri Bahar', season: 'Rabi', zone: 'Plains', type: 'Table', releasedBy: 'ICAR-CPRI', source: 'ICAR' },
+  // Soil type
+  const soilType = safeString(raw?.soilType || raw?.soil || '');
 
-  // Tomato
-  { crop: 'tomato', name: 'Arka Vikas', season: 'Multi', zone: 'All India', type: 'OPV', releasedBy: 'IIHR', source: 'IIHR' },
-  { crop: 'tomato', name: 'Pusa Ruby', season: 'Multi', zone: 'All India', type: 'OPV', releasedBy: 'ICAR-IARI', source: 'ICAR' },
+  // Crops
+  const cropsCount = Array.isArray(raw?.crops) ? raw.crops.length : safeNumber(raw?.cropsCount, 0);
 
-  // Soybean
-  { crop: 'soybean', name: 'JS 335', season: 'Kharif', zone: 'CZ', type: 'Popular', source: 'ICAR' },
-];
+  // Sensors
+  const sensorsCount = Array.isArray(raw?.sensors) ? raw.sensors.length : safeNumber(raw?.sensors, 0);
 
-function cropTypeDefaults(c) {
-  // CropType has many required fields; provide sensible defaults
+  // Dates
+  const createdAt = safeString(raw?.createdAt) || new Date().toISOString();
+
   return {
-    name: c.commonName,
-    code: slugify(c.commonName).toUpperCase(),        // e.g. RICE
-    scientificName: c.scientificName,
-    category: c.category || 'other',
-    description: `Reference entry for ${c.commonName}.`,
-    growthCharacteristics: {
-      duration: { min: 80, max: 180 },
-      seasons: ['year_round'],
-      temperatureRange: { min: 10, max: 40 },
-      rainfallRequirement: { min: 200, max: 2000 },
-      soilPh: { min: 5.5, max: 8.0 }
-    },
-    suitableSoilTypes: ['loam'],
-    irrigationRequirements: ['drip','sprinkler','flood','rainfed'],
-    yieldEstimate: { min: 1000, max: 7000, unit: 'kg/hectare' },
-    nutritionalValue: {},
-    marketInfo: {},
-    commonDiseases: [],
-    commonPests: [],
-    cultivationPractices: [],
-    isActive: true,
-    displayOrder: 0
+    _id,
+    name,
+    address,
+    owner: { id: ownerId, name: ownerName },
+    size: { value: sizeVal, unit: sizeUnit },
+    soilType,
+    cropsCount,
+    sensorsCount,
+    createdAt
   };
 }
 
-async function run() {
-  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/agrimaan_reference';
-  console.log('[seed] connecting', uri);
-  await mongoose.connect(uri);
+const AdminFields: React.FC = () => {
+  const { user } = useSelector((state: RootState) => state.auth || {});
 
-  // 1) Upsert RefCrop and remember ids by slug
-  const slugToId = {};
-  for (const c of CROPS) {
-    const slug = slugify(c.commonName);
-    const update = {
-      $set: {
-        slug,
-        commonName: c.commonName,
-        scientificName: c.scientificName,
-        synonyms: c.synonyms || [],
-        tags: c.tags || [],
-        source: c.source || 'seed'
+  const [fields, setFields] = useState<UIField[]>([]);
+  const [filteredFields, setFilteredFields] = useState<UIField[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterOwner, setFilterOwner] = useState<string>('all');
+  const [filterSoilType, setFilterSoilType] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+
+  // Delete dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [fieldToDelete, setFieldToDelete] = useState<string | null>(null);
+
+  // Filter options
+  const owners = useMemo(() => {
+    const map = new Map<string, string>();
+    fields.forEach(f => {
+      if (f.owner.id) map.set(f.owner.id, f.owner.name || 'Unknown');
+    });
+    return Array.from(map, ([id, name]) => ({ id, name }));
+  }, [fields]);
+
+  const soilTypes = useMemo(() => {
+    const set = new Set<string>();
+    fields.forEach(f => { if (f.soilType) set.add(f.soilType); });
+    return Array.from(set);
+  }, [fields]);
+
+  useEffect(() => {
+    const fetchFields = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await axios.get(`${API_BASE_URL}/api/admin/fields`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` }
+        });
+
+        const payload = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data?.data)
+          ? res.data.data
+          : [];
+
+        const normalized: UIField[] = payload.map(normalizeField);
+        setFields(normalized);
+        setFilteredFields(normalized);
+      } catch (err: any) {
+        console.error('Error fetching fields:', err);
+        setError(err?.response?.data?.message || err?.message || 'Failed to load fields');
+      } finally {
+        setLoading(false);
       }
     };
-    const doc = await RefCrop.findOneAndUpdate({ slug }, update, {
-      new: true, upsert: true, setDefaultsOnInsert: true
-    });
-    slugToId[slug] = doc._id;
-    console.log('RefCrop upsert:', slug, '->', String(doc._id));
 
-    // 1b) Also ensure a minimal CropType row exists (so older code continues to work)
-    const ctDefaults = cropTypeDefaults(c);
-    // remove fields we also set in $set to avoid conflicts
-    const { scientificName, category, ...onlyInsert } = ctDefaults; 
-    await CropType.findOneAndUpdate(
-        { code: ctDefaults.code },
-        {
-          $setOnInsert: onlyInsert,
-          $set: {
-            scientificName: c.scientificName,
-            category: c.category || 'other',
-          },
-        },
-        { new: true, upsert: true }
+    fetchFields();
+  }, []);
+
+  // Apply filters/search safely
+  useEffect(() => {
+    let result = [...fields];
+
+    const term = searchTerm.trim().toLowerCase();
+    if (term) {
+      result = result.filter(f =>
+        f.name.toLowerCase().includes(term) ||
+        f.address.toLowerCase().includes(term) ||
+        (f.owner.name || '').toLowerCase().includes(term)
+      );
+    }
+
+    if (filterOwner !== 'all') {
+      result = result.filter(f => f.owner.id === filterOwner);
+    }
+
+    if (filterSoilType !== 'all') {
+      result = result.filter(f => f.soilType === filterSoilType);
+    }
+
+    setFilteredFields(result);
+  }, [searchTerm, filterOwner, filterSoilType, fields]);
+
+  const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString();
+  };
+
+  const handleDeleteField = (id: string) => {
+    setFieldToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteField = async () => {
+    if (!fieldToDelete) return;
+    try {
+      await axios.delete(`${API_BASE_URL}/api/fields/${fieldToDelete}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` }
+      });
+
+      setFields(prev => prev.filter(f => f._id !== fieldToDelete));
+      setFilteredFields(prev => prev.filter(f => f._id !== fieldToDelete));
+    } catch (err: any) {
+      console.error('Error deleting field:', err);
+      setError(err?.response?.data?.message || 'Failed to delete field');
+    } finally {
+      setDeleteDialogOpen(false);
+      setFieldToDelete(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+          <CircularProgress />
+        </Box>
+      </Container>
     );
   }
 
-  // 2) Upsert RefVariety (unique per cropSlug+name)
-  for (const v of VARIETIES) {
-    const cropSlug = slugify(v.crop);
-    const cropId = slugToId[cropSlug];
-    if (!cropId) {
-      console.warn(`skip variety ${v.name}: unknown crop ${v.crop}`);
-      continue;
-    }
-    const filter = { cropSlug, name: v.name };
-    const update = {
-      $set: {
-        cropId,
-        cropSlug,
-        name: v.name,
-        season: v.season || undefined,
-        zone: v.zone || undefined,
-        maturityDays: v.maturityDays || undefined,
-        type: v.type || undefined,
-        releasedBy: v.releasedBy || undefined,
-        yearOfRelease: v.yearOfRelease || undefined,
-        notes: v.notes || undefined,
-        source: v.source || 'seed'
-      }
-    };
-    await RefVariety.findOneAndUpdate(filter, update, {
-      new: true, upsert: true, setDefaultsOnInsert: true
-    });
-    console.log('RefVariety upsert:', cropSlug, '::', v.name);
+  if (error) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Alert severity="error">{error}</Alert>
+      </Container>
+    );
   }
 
-  console.log('[seed] done');
-  await mongoose.disconnect();
-}
+  return (
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Paper sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4">Field Management</Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            component={RouterLink}
+            to="/admin/fields/create"
+          >
+            Add New Field
+          </Button>
+        </Box>
 
-run().catch(async (e) => {
-  console.error(e);
-  try { await mongoose.disconnect(); } catch {}
-  process.exit(1);
-});
+        {/* Filters */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+          <TextField
+            placeholder="Search fields..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start"><SearchIcon /></InputAdornment>
+              ),
+            }}
+            size="small"
+            sx={{ minWidth: 250 }}
+          />
+
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel>Owner</InputLabel>
+            <Select value={filterOwner} label="Owner" onChange={(e) => setFilterOwner(e.target.value)}>
+              <MenuItem value="all">All Owners</MenuItem>
+              {owners.map(o => <MenuItem key={o.id} value={o.id}>{o.name}</MenuItem>)}
+            </Select>
+          </FormControl>
+
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel>Soil Type</InputLabel>
+            <Select value={filterSoilType} label="Soil Type" onChange={(e) => setFilterSoilType(e.target.value)}>
+              <MenuItem value="all">All Soil Types</MenuItem>
+              {soilTypes.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+            </Select>
+          </FormControl>
+
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={(_, v) => v && setViewMode(v)}
+            size="small"
+          >
+            <ToggleButton value="table"><ViewListIcon /></ToggleButton>
+            <ToggleButton value="grid"><ViewModuleIcon /></ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Showing {filteredFields.length} of {fields.length} fields
+        </Typography>
+
+        {/* Table view */}
+        {viewMode === 'table' && (
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Field Name</TableCell>
+                  <TableCell>Location</TableCell>
+                  <TableCell>Owner</TableCell>
+                  <TableCell>Size</TableCell>
+                  <TableCell>Soil Type</TableCell>
+                  <TableCell>Crops</TableCell>
+                  <TableCell>Sensors</TableCell>
+                  <TableCell>Created</TableCell>
+                  <TableCell align="center">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredFields.map((f) => (
+                  <TableRow key={f._id}>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <TerrainIcon color="primary" />
+                        <Typography variant="subtitle2">{f.name}</Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>{f.address || '—'}</TableCell>
+                    <TableCell>{f.owner.name || '—'}</TableCell>
+                    <TableCell>{f.size.value} {f.size.unit}</TableCell>
+                    <TableCell>{f.soilType || '—'}</TableCell>
+                    <TableCell>{f.cropsCount}</TableCell>
+                    <TableCell>{f.sensorsCount}</TableCell>
+                    <TableCell>{formatDate(f.createdAt)}</TableCell>
+                    <TableCell align="center">
+                      <Tooltip title="View Details">
+                        <IconButton component={RouterLink} to={`/admin/fields/${f._id}`} size="small">
+                          <TerrainIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Edit">
+                        <IconButton component={RouterLink} to={`/admin/fields/${f._id}/edit`} size="small">
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete">
+                        <IconButton onClick={() => handleDeleteField(f._id)} size="small" color="error">
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filteredFields.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={9}>
+                      <Box sx={{ textAlign: 'center', py: 4 }}>
+                        <TerrainIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                        <Typography variant="h6" color="text.secondary">No fields found</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Try adjusting your search or filters
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+
+        {/* Grid view */}
+        {viewMode === 'grid' && (
+          <Grid container spacing={3}>
+            {filteredFields.map((f) => (
+              <Grid item xs={12} sm={6} md={4} key={f._id}>
+                <Card>
+                  <CardHeader
+                    avatar={<Avatar sx={{ bgcolor: 'primary.main' }}><TerrainIcon /></Avatar>}
+                    title={f.name}
+                    subheader={f.address || '—'}
+                  />
+                  <CardContent>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Owner: {f.owner.name || '—'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Size: {f.size.value} {f.size.unit}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Soil: {f.soilType || '—'}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Chip label={`${f.cropsCount} crops`} size="small" />
+                      <Chip label={`${f.sensorsCount} sensors`} size="small" />
+                    </Box>
+                  </CardContent>
+                  <CardActions>
+                    <Button size="small" component={RouterLink} to={`/admin/fields/${f._id}`}>View</Button>
+                    <Button size="small" component={RouterLink} to={`/admin/fields/${f._id}/edit`}>Edit</Button>
+                    <Button size="small" color="error" onClick={() => handleDeleteField(f._id)}>Delete</Button>
+                  </CardActions>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+      </Paper>
+
+      {/* Delete dialog */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this field? This action cannot be undone and will remove associated data.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={confirmDeleteField} color="error" autoFocus>Delete</Button>
+        </DialogActions>
+      </Dialog>
+    </Container>
+  );
+};
+
+export default AdminFields;

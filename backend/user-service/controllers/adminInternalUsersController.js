@@ -43,10 +43,11 @@ exports.listInternal = async (req, res) => {
   const skip = (page - 1) * limit;
   const [docs, total] = await Promise.all([
     User.find(filter, '-passwordHash').sort(sort).skip(skip).limit(limit),
-    User.countDocuments(filter),
+    User.countDocuments(filter)
   ]);
 
   const items = docs.map(sanitize);
+  console.log("within listInternal of user-service:", items)
 
   res.json({
     items,

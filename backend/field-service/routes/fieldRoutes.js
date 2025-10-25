@@ -49,6 +49,15 @@ router
   .route('/')
   .get(protect, getFields)
   .post(protect, validateFieldCreation, createField);
+/*
+  router.get('/', protect, authorize('admin'), async (req, res) => {
+    const { owner, ownerId, farmer, farmerId, user, userId } = req.query;
+    const id = ownerId || owner || farmerId || farmer || userId || user;
+    const filter = id ? { owner: id } : {};
+    const fields = await Field.find(filter).populate('owner', 'name email');
+    res.json({ data: fields });
+  });
+  */
 
 router
   .route('/:id')

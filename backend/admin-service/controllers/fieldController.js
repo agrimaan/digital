@@ -80,6 +80,7 @@ exports.getFieldById = asyncHandler(async (req, res) => {
     const { data } = await svcGet(`/api/fields/${req.params.id}`, { req });
 
     const field = data?.data?.field || data?.field || data;
+    console.log('Field within getFiledById of admin-service:', field)
     if (!field) {
       return res.status(404).json({
         success: false,
