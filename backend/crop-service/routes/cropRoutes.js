@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Crop = require('../models/Crop');
 const { protect, logAction } = require('@agrimaan/shared').middleware;
+const cropController = require('../controllers/cropController');
 // If your authorize('admin') exists and you want admin-only routes, you can still import it.
 // const { authorize } = require('@agrimaan/shared').middleware;
 
@@ -17,13 +18,6 @@ const basePopulate = [
   { path: 'farmerId', select: 'name email' }, // assumes Crop schema has a ref to User
 ];
 
-/**
- * Compute a Mongo filter for the current request:
- * - Farmers are always scoped to their own farmerId
- * - Admins:
- *    - if ?farmerId is provided and valid -> filter by that farmer
- *    - otherwise -> no farmer filter (see everything)
- */
 const scopeFilter = (req) => {
   if (isAdmin(req)) {
     const { farmerId } = req.query || {};
@@ -36,133 +30,16 @@ const scopeFilter = (req) => {
   return { farmerId: req.user.id };
 };
 
-// @route   GET /api/crops
-// @desc    List crops (admin: all or by ?farmerId; farmer: own)
-// @access  Private
-router.get('/', protect, async (req, res) => {
-  try {
-    const filter = scopeFilter(req);
+router
+  .route('/')
+  .get(protect, cropController.getCrops)
+  .post(protect, cropController.createCrop);
 
-    const crops = await Crop.find(filter)
-      .populate(basePopulate)
-      .sort({ createdAt: -1 });
-
-    res.json({
-      success: true,
-      count: crops.length,
-      data: crops,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message,
-    });
-  }
-});
-
-// @route   GET /api/crops/:id
-// @desc    Get single crop (admin: any; farmer: must own)
-// @access  Private
-router.get('/:id', protect, async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) {
-      return res.status(400).json({ success: false, message: 'Invalid crop id' });
-    }
-
-    // Admin can access any crop; farmer must own it
-    const finder = isAdmin(req) ? { _id: id } : { _id: id, farmerId: req.user.id };
-
-    const crop = await Crop.findOne(finder).populate(basePopulate);
-    if (!crop) {
-      return res.status(404).json({ success: false, message: 'Crop not found' });
-    }
-
-    res.json({ success: true, data: crop });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
-  }
-});
-
-// @route   POST /api/crops
-// @desc    Create new crop (admin: can set body.farmerId; farmer: forced to self)
-// @access  Private
-router.post('/', protect, logAction('crop:create'), async (req, res) => {
-  try {
-    const body = { ...req.body };
-
-    if (isAdmin(req)) {
-      // Admin can create for any farmer; if not provided, default to self
-      if (body.farmerId && !isValidObjectId(body.farmerId)) {
-        return res.status(400).json({ success: false, message: 'Invalid farmerId' });
-      }
-      body.farmerId = body.farmerId || req.user.id;
-    } else {
-      // Farmers can only create for themselves
-      body.farmerId = req.user.id;
-    }
-
-    const crop = await Crop.create(body);
-
-    const populated = await Crop.findById(crop._id).populate(basePopulate);
-
-    res.status(201).json({ success: true, data: populated });
-  } catch (error) {
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map((err) => err.message);
-      return res.status(400).json({
-        success: false,
-        message: 'Validation error',
-        errors: messages,
-      });
-    }
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
-  }
-});
-
-// @route   PUT /api/crops/:id
-// @desc    Update crop (admin: any; farmer: must own)
-// @access  Private
-router.put('/:id', protect, logAction('crop:update'), async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) {
-      return res.status(400).json({ success: false, message: 'Invalid crop id' });
-    }
-
-    // Farmers must only update their own records
-    const finder = isAdmin(req) ? { _id: id } : { _id: id, farmerId: req.user.id };
-
-    const exists = await Crop.findOne(finder);
-    if (!exists) {
-      return res.status(404).json({ success: false, message: 'Crop not found' });
-    }
-
-    // Prevent non-admins from reassigning farmerId
-    const update = { ...req.body };
-    if (!isAdmin(req)) {
-      delete update.farmerId;
-    } else if (update.farmerId && !isValidObjectId(update.farmerId)) {
-      return res.status(400).json({ success: false, message: 'Invalid farmerId' });
-    }
-
-    const updated = await Crop.findByIdAndUpdate(id, update, { new: true, runValidators: true })
-      .populate(basePopulate);
-
-    res.json({ success: true, data: updated });
-  } catch (error) {
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map((err) => err.message);
-      return res.status(400).json({
-        success: false,
-        message: 'Validation error',
-        errors: messages,
-      });
-    }
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
-  }
-});
+router
+  .route('/:id')
+  .get(protect, cropController.getCrop)
+  .put(protect, cropController.updateCrop)
+  // .delete(protect, deleteField);
 
 // @route   DELETE /api/crops/:id
 // @desc    Delete crop (admin: any; farmer: must own)

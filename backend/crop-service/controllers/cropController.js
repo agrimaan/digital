@@ -6,20 +6,8 @@ const responseHandler = require('../utils/responseHandler');
 // @route   GET /api/crops
 // @access  Private
 exports.getCrops = async (req, res) => {
-  try {
-    // Apply filters if provided in query params
-    const filter = {};
-    
-    if (req.query.category) {
-      filter.category = req.query.category;
-    }
-    
-    if (req.query.waterRequirement) {
-      filter.waterRequirement = req.query.waterRequirement;
-    }
-    
-    const crops = await cropService.getAllCrops(filter);
-    
+  try { 
+    const crops = await cropService.getAllCrops(req);
     return responseHandler.success(res, 200, crops, 'Crops retrieved successfully');
   } catch (error) {
     return responseHandler.error(res, 500, 'Error retrieving crops', error);
@@ -31,7 +19,7 @@ exports.getCrops = async (req, res) => {
 // @access  Private
 exports.getCrop = async (req, res) => {
   try {
-    const crop = await cropService.getCropById(req.params.id);
+    const crop = await cropService.getCropById(req);
     
     if (!crop) {
       return responseHandler.notFound(res, 'Crop not found');
@@ -53,14 +41,8 @@ exports.createCrop = async (req, res) => {
   }
 
   try {
-    // Set created by to current user
-    const cropData = {
-      ...req.body,
-      createdBy: req.user.id
-    };
-    
-    const crop = await cropService.createCrop(cropData);
-    
+
+    const crop = await cropService.createCrop(req);
     return responseHandler.success(res, 201, crop, 'Crop created successfully');
   } catch (error) {
     return responseHandler.error(res, 500, 'Error creating crop', error);
@@ -77,19 +59,13 @@ exports.updateCrop = async (req, res) => {
   }
 
   try {
-    let crop = await cropService.getCropById(req.params.id);
+    let crop = await cropService.getCropById(req);
     
     if (!crop) {
       return responseHandler.notFound(res, 'Crop not found');
     }
-
-    // Only admin or agronomist can update crops
-    if (req.user.role !== 'admin' && req.user.role !== 'agronomist') {
-      return responseHandler.forbidden(res, 'Not authorized to update crops');
-    }
-
     // Update crop
-    crop = await cropService.updateCrop(req.params.id, req.body);
+    crop = await cropService.updateCrop(req);
     
     return responseHandler.success(res, 200, crop, 'Crop updated successfully');
   } catch (error) {
