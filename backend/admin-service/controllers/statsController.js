@@ -10,6 +10,7 @@ const IndependentUserServiceClient = require('../utils/user-service-client');
 const IndependentFieldServiceClient = require('../utils/field-service-client');
 const IndependentCropServiceClient = require('../utils/crop-service-client');
 const IndependentSensorServiceClient = require('../utils/sensor-service-client');
+const IndependentOrderServiceClient = require('../utils/order-service-client');
 const bulkUploadService = require('../services/bulkUploadService');
 const Settings = require('../models/SystemSettings');
 
@@ -18,6 +19,7 @@ const userServiceClient = new IndependentUserServiceClient();
 const fieldServiceClient = new IndependentFieldServiceClient();
 const cropServiceClient = new IndependentCropServiceClient();
 const sensorServiceClient = new IndependentSensorServiceClient();
+const orderServiceClient = new IndependentOrderServiceClient();
 
 
 // @desc    Get comprehensive dashboard statistics
@@ -31,23 +33,38 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
       fieldStats,
       cropStats,
       sensorStats,
-      bulkUploadStats,
-      systemSettings
+      orderStats,
+      bulkUploadStats
     ] = await Promise.all([
       getUserStats(),
       getFieldStats(),
       getCropStats(),
       getSensorStats(),
+      getOrderStats(),
       bulkUploadService.getBulkUploadStats()
     ]);
 
     // Combine all statistics
     const dashboardStats = {
-      users: userStats.totalUsers || 0,
-      fields: fieldStats.totalFields || 0,
-      crops: cropStats.totalCrops || 0,
-      sensors: sensorStats.totalSensors || 0,
-      bulkUploads: bulkUploadStats.totalUploads || 0,
+      counts: {
+        users: userStats.totalUsers || 0,
+        fields: fieldStats.totalFields || 0,
+        crops: cropStats.totalCrops || 0,
+        sensors: sensorStats.totalSensors || 0,
+        orders: orderStats.totalOrders || 0,
+        bulkUploads: bulkUploadStats.totalUploads || 0
+      },
+      usersByRole: userStats.usersByRole || {},
+      fieldsByLocation: fieldStats.fieldsByLocation || {},
+      cropsByStatus: cropStats.cropsByStatus || {},
+      sensorsByType: sensorStats.sensorsByType || {},
+      sensorsByStatus: sensorStats.sensorsByStatus || {},
+      ordersByStatus: orderStats.ordersByStatus || {},
+      recentUsers: userStats.recentUsers || [],
+      recentFields: fieldStats.recentFields || [],
+      recentCrops: cropStats.recentCrops || [],
+      recentSensors: sensorStats.recentSensors || [],
+      recentOrders: orderStats.recentOrders || [],
       recentUploads: bulkUploadStats.recentUploads || [],
       systemStatus: 'healthy',
       lastUpdated: new Date()
@@ -70,12 +87,18 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
 // Helper function to get user statistics
 async function getUserStats() {
   try {
-    const users = await userServiceClient.getAllUsers();
+    const response = await userServiceClient.getAllUsers();
+    // Handle different response formats
+    const users = Array.isArray(response) ? response : 
+                  (response.data ? (Array.isArray(response.data) ? response.data : response.data.users || []) : 
+                  (response.users || []));
+    
     const totalUsers = users.length;
     const usersByRole = {};
     
     users.forEach(user => {
-      usersByRole[user.role] = (usersByRole[user.role] || 0) + 1;
+      const role = user.role || 'unknown';
+      usersByRole[role] = (usersByRole[role] || 0) + 1;
     });
 
     return {
@@ -83,7 +106,7 @@ async function getUserStats() {
       usersByRole,
       recentUsers: users.slice(0, 5).map(user => ({
         id: user._id,
-        name: `${user.firstName} ${user.lastName}`,
+        name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown',
         email: user.email,
         role: user.role,
         createdAt: user.createdAt
@@ -98,12 +121,18 @@ async function getUserStats() {
 // Helper function to get field statistics
 async function getFieldStats() {
   try {
-    const fields = await fieldServiceClient.getAllFields();
+    const response = await fieldServiceClient.getAllFields();
+    // Handle different response formats
+    const fields = Array.isArray(response) ? response : 
+                   (response.data ? (Array.isArray(response.data) ? response.data : response.data.fields || []) : 
+                   (response.fields || []));
+    
     const totalFields = fields.length;
     const fieldsByLocation = {};
     
     fields.forEach(field => {
-      fieldsByLocation[field.location] = (fieldsByLocation[field.location] || 0) + 1;
+      const location = field.location || field.address?.city || 'Unknown';
+      fieldsByLocation[location] = (fieldsByLocation[location] || 0) + 1;
     });
 
     return {
@@ -112,7 +141,7 @@ async function getFieldStats() {
       recentFields: fields.slice(0, 5).map(field => ({
         id: field._id,
         name: field.name,
-        location: field.location,
+        location: field.location || field.address?.city || 'Unknown',
         area: field.area,
         createdAt: field.createdAt
       }))
@@ -126,12 +155,18 @@ async function getFieldStats() {
 // Helper function to get crop statistics
 async function getCropStats() {
   try {
-    const crops = await cropServiceClient.getAllCrops();
+    const response = await cropServiceClient.getAllCrops();
+    // Handle different response formats
+    const crops = Array.isArray(response) ? response : 
+                  (response.data ? (Array.isArray(response.data) ? response.data : response.data.crops || []) : 
+                  (response.crops || []));
+    
     const totalCrops = crops.length;
     const cropsByStatus = {};
     
     crops.forEach(crop => {
-      cropsByStatus[crop.status] = (cropsByStatus[crop.status] || 0) + 1;
+      const status = crop.status || 'unknown';
+      cropsByStatus[status] = (cropsByStatus[status] || 0) + 1;
     });
 
     return {
@@ -139,7 +174,7 @@ async function getCropStats() {
       cropsByStatus,
       recentCrops: crops.slice(0, 5).map(crop => ({
         id: crop._id,
-        name: crop.name,
+        name: crop.name || crop.cropType,
         field: crop.field,
         status: crop.status,
         plantingDate: crop.plantingDate
@@ -154,14 +189,21 @@ async function getCropStats() {
 // Helper function to get sensor statistics
 async function getSensorStats() {
   try {
-    const sensors = await sensorServiceClient.getAllSensors();
+    const response = await sensorServiceClient.getAllSensors();
+    // Handle different response formats
+    const sensors = Array.isArray(response) ? response : 
+                    (response.data ? (Array.isArray(response.data) ? response.data : response.data.sensors || []) : 
+                    (response.sensors || []));
+    
     const totalSensors = sensors.length;
     const sensorsByType = {};
     const sensorsByStatus = {};
     
     sensors.forEach(sensor => {
-      sensorsByType[sensor.type] = (sensorsByType[sensor.type] || 0) + 1;
-      sensorsByStatus[sensor.status] = (sensorsByStatus[sensor.status] || 0) + 1;
+      const type = sensor.type || 'unknown';
+      const status = sensor.status || 'unknown';
+      sensorsByType[type] = (sensorsByType[type] || 0) + 1;
+      sensorsByStatus[status] = (sensorsByStatus[status] || 0) + 1;
     });
 
     return {
@@ -170,10 +212,10 @@ async function getSensorStats() {
       sensorsByStatus,
       recentSensors: sensors.slice(0, 5).map(sensor => ({
         id: sensor._id,
-        name: sensor.name,
+        name: sensor.name || sensor.deviceId,
         type: sensor.type,
         status: sensor.status,
-        location: sensor.location
+        location: sensor.location || sensor.field
       }))
     };
   } catch (error) {
@@ -308,14 +350,7 @@ exports.getBulkUploadStats = asyncHandler(async (req, res, next) => {
 // @access  Private/Admin
 exports.getOrderStats = asyncHandler(async (req, res, next) => {
   try {
-    // For now, return mock data since we don't have an order service client
-    // In a real implementation, you would create an IndependentOrderServiceClient
-    const orderStats = {
-      totalOrders: 0,
-      ordersByStatus: {},
-      recentOrders: []
-    };
-
+    const orderStats = await getOrderStats();
     res.status(200).json({
       success: true,
       data: orderStats
@@ -327,6 +362,41 @@ exports.getOrderStats = asyncHandler(async (req, res, next) => {
     });
   }
 });
+
+// Helper function to get order statistics
+async function getOrderStats() {
+  try {
+    const response = await orderServiceClient.getAllOrders();
+    // Handle different response formats
+    const orders = Array.isArray(response) ? response : 
+                   (response.data ? (Array.isArray(response.data) ? response.data : response.data.orders || []) : 
+                   (response.orders || []));
+    
+    const totalOrders = orders.length;
+    const ordersByStatus = {};
+    
+    orders.forEach(order => {
+      const status = order.status || 'unknown';
+      ordersByStatus[status] = (ordersByStatus[status] || 0) + 1;
+    });
+
+    return {
+      totalOrders,
+      ordersByStatus,
+      recentOrders: orders.slice(0, 5).map(order => ({
+        id: order._id,
+        buyer: order.buyer,
+        seller: order.seller,
+        totalAmount: order.totalAmount,
+        status: order.status,
+        createdAt: order.createdAt
+      }))
+    };
+  } catch (error) {
+    console.error('Error fetching order stats:', error);
+    return { totalOrders: 0, ordersByStatus: {}, recentOrders: [] };
+  }
+}
 
 // @desc    Get recent users
 // @route   GET /api/admin/dashboard/users/recent
@@ -351,16 +421,23 @@ exports.getRecentUsers = asyncHandler(async (req, res, next) => {
 // @access  Private/Admin
 exports.getRecentOrders = asyncHandler(async (req, res, next) => {
   try {
-    // For now, return empty array since we don't have an order service client
-    // In a real implementation, you would create an IndependentOrderServiceClient
+    const limit = parseInt(req.query.limit) || 10;
+    const response = await orderServiceClient.getRecentOrders(limit);
+    
+    // Handle different response formats
+    const orders = Array.isArray(response) ? response : 
+                   (response.data ? (Array.isArray(response.data) ? response.data : response.data.orders || []) : 
+                   (response.orders || []));
+    
+    res.status(200).json({
+      success: true,
+      data: orders
+    });
+  } catch (error) {
+    console.error('Error fetching recent orders:', error);
     res.status(200).json({
       success: true,
       data: []
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching recent orders'
     });
   }
 });

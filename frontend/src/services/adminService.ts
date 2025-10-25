@@ -46,45 +46,53 @@ export const adminDashboardAPI = {
   getDashboardStats: async () => {
     try {
       const response = await adminApi.get("/admin/stats");
-      console.log('response.data:', response.data);
+      console.log('Dashboard stats response:', response.data);
       return response.data;
-
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
-      throw error;
+      // Return empty data structure instead of throwing to prevent dashboard from breaking
+      return {
+        success: false,
+        data: {
+          counts: { users: 0, fields: 0, crops: 0, sensors: 0, orders: 0, bulkUploads: 0 },
+          usersByRole: {},
+          recentUsers: [],
+          recentOrders: []
+        }
+      };
     }
   },
 
   // Get recent users
   getRecentUsers: async (limit = 10) => {
     try {
-      const response = await adminApi.get(`/users/recent?limit=${limit}`);
+      const response = await adminApi.get(`/admin/stats/users/recent?limit=${limit}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching recent users:", error);
-      throw error;
+      return { success: false, data: [] };
     }
   },
 
   // Get recent orders
   getRecentOrders: async (limit = 10) => {
     try {
-      const response = await adminApi.get(`/marketplace/orders/recent?limit=${limit}`);
+      const response = await adminApi.get(`/admin/stats/orders/recent?limit=${limit}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching recent orders:", error);
-      throw error;
+      return { success: false, data: [] };
     }
   },
 
   // Get pending verifications
   getPendingVerifications: async () => {
     try {
-      const response = await adminApi.get("/admin/verification/pending");
+      const response = await adminApi.get("/admin/stats/verification/pending");
       return response.data;
     } catch (error) {
       console.error("Error fetching pending verifications:", error);
-      throw error;
+      return { success: false, data: [] };
     }
   },
 
@@ -95,7 +103,14 @@ export const adminDashboardAPI = {
       return response.data;
     } catch (error) {
       console.error("Error fetching system health:", error);
-      throw error;
+      return {
+        success: false,
+        data: {
+          status: 'unknown',
+          services: {},
+          timestamp: new Date()
+        }
+      };
     }
   },
 };
