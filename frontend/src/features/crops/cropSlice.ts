@@ -19,11 +19,6 @@ export interface Crop {
   unit?: 'kg' | 'ton' | 'quintal';
   pricePerUnit?: number;
   totalValue?: number;
-  location: {
-    latitude: number;
-    longitude: number;
-    address?: string;
-  };
   soilType:
     | 'loam'
     | 'clay'

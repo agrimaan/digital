@@ -28,90 +28,6 @@ function useDebouncedValue<T>(value: T, delay = 300) {
   return v;
 }
 
-/* ============== Nominatim (free geocoder) ============== */
-type GeoSuggestion = { display_name: string; lat: string; lon: string; };
-async function searchNominatim(query: string, limit = 5): Promise<GeoSuggestion[]> {
-  if (!query.trim()) return [];
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=${limit}&addressdetails=0`;
-  const res = await fetch(url, { headers: { Accept: 'application/json' } });
-  if (!res.ok) return [];
-  return (await res.json()) as GeoSuggestion[];
-}
-
-/* ============== Address Autocomplete ============== */
-const AddressAutocomplete: React.FC<{
-  value: string;
-  onPicked: (address: string, lat: number, lon: number) => void;
-  label?: string;
-  placeholder?: string;
-}> = ({ value, onPicked, label = 'Field Location', placeholder }) => {
-  const [input, setInput] = React.useState(value || '');
-  const debounced = useDebouncedValue(input, 350);
-  const [options, setOptions] = React.useState<GeoSuggestion[]>([]);
-  const [loading, setLoading] = React.useState(false);
-
-  React.useEffect(() => setInput(value || ''), [value]);
-
-  React.useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!debounced.trim()) { setOptions([]); return; }
-      try {
-        setLoading(true);
-        const results = await searchNominatim(debounced, 7);
-        if (!cancelled) setOptions(results);
-      } catch { if (!cancelled) setOptions([]); }
-      finally { if (!cancelled) setLoading(false); }
-    })();
-    return () => { cancelled = true; };
-  }, [debounced]);
-
-  const commitFreeText = async () => {
-    if (!input.trim()) return;
-    try {
-      const [first] = await searchNominatim(input, 1);
-      if (first) onPicked(first.display_name, Number(first.lat), Number(first.lon));
-      else onPicked(input, 0, 0);
-    } catch { onPicked(input, 0, 0); }
-  };
-
-  return (
-    <Autocomplete
-      freeSolo
-      options={options}
-      loading={loading}
-      getOptionLabel={(o) => (typeof o === 'string' ? o : o.display_name)}
-      filterOptions={(x) => x}
-      inputValue={input}
-      onInputChange={(_, v) => setInput(v)}
-      onChange={(_, v) => {
-        if (!v) return;
-        if (typeof v === 'string') { commitFreeText(); return; }
-        onPicked(v.display_name, Number(v.lat), Number(v.lon));
-        setInput(v.display_name);
-      }}
-      onBlur={commitFreeText}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label={label}
-          placeholder={placeholder || 'Start typing address, village, city…'}
-          fullWidth
-          InputProps={{
-            ...params.InputProps,
-            endAdornment: (
-              <>
-                {loading ? <CircularProgress size={18} /> : null}
-                {params.InputProps.endAdornment}
-              </>
-            ),
-          }}
-        />
-      )}
-    />
-  );
-};
-
 const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 const lowercaseFirst = (str: string) => str.charAt(0).toLowerCase() + str.slice(1);
 
@@ -122,7 +38,7 @@ const SEED_SOURCES: Crop['seedSource'][] = ['own','market','government','supplie
 const HEALTH: NonNullable<Crop['healthStatus']>[] = ['excellent','good','fair','poor','diseased'];
 const STAGES: NonNullable<Crop['growthStage']>[] = ['seedling','vegetative','flowering','fruiting','maturity','harvested','failed'];
 
-type FieldDoc = { _id: string; name?: string; location?: { type?: 'Point'; coordinates?: number[] }; locationName?: string; description?: string; };
+type FieldDoc = { _id: string; name?: string; description?: string; };
 const numericKeys = new Set<keyof Crop>(['plantedArea','expectedYield','actualYield','pricePerUnit','totalValue']);
 
 /* ============== Component ============== */
@@ -147,7 +63,6 @@ const CropManagement: React.FC = () => {
   const [cropDropdownOpen, setCropDropdownOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [cropToDelete, setCropToDelete] = useState<Crop | null>(null);
-
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [varietyOptions, setVarietyOptions] = useState<string[]>([]);
   const [varietiesLoading, setVarietiesLoading] = useState(false);
@@ -163,7 +78,7 @@ const CropManagement: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   /* form state */
-  const [formData, setFormData] = useState<Crop>({
+  const [formData, setFormData] = useState<Omit<Crop, 'location'>>({
     name: '',
     scientificName: '',
     variety: '',
@@ -172,13 +87,12 @@ const CropManagement: React.FC = () => {
     plantingDate: '',
     expectedHarvestDate: '',
     expectedYield: 0,
-    location: { latitude: 0, longitude: 0, address: '' },
     soilType: 'loam',
     irrigationMethod: 'drip',
     seedSource: 'own',
     healthStatus: 'good',
     growthStage: 'seedling',
-  });
+  } as Omit<Crop, 'location'>);
 
   /* load list + fields */
   useEffect(() => {
@@ -256,13 +170,7 @@ const CropManagement: React.FC = () => {
 
   /* field dropdown options */
   const fieldOptions = useMemo(
-    () => fields.map(f => ({
-      id: f._id,
-      label: f.name || 'Unnamed Field',
-      address: f.locationName || f.description || '',
-      latitude: f.location?.coordinates?.[1] ?? 0,
-      longitude: f.location?.coordinates?.[0] ?? 0,
-    })),
+    () => fields.map(f => ({ id: f._id, label: f.name || 'Unnamed Field', description: f.description || '' })),
     [fields]
   );
 
@@ -275,16 +183,7 @@ const CropManagement: React.FC = () => {
   };
   const handleFieldSelect = (e: any) => {
     const selectedId = e.target.value as string;
-    const selected = fieldOptions.find(o => o.id === selectedId);
-    setFormData(prev => ({
-      ...prev,
-      fieldId: selectedId,
-      location: selected ? {
-        address: selected.address || prev.location.address || '',
-        latitude: selected.latitude ?? prev.location.latitude ?? 0,
-        longitude: selected.longitude ?? prev.location.longitude ?? 0,
-      } : prev.location
-    }));
+    setFormData(prev => ({ ...prev, fieldId: selectedId }));
   };
 
   /* CRUD */
@@ -296,7 +195,6 @@ const CropManagement: React.FC = () => {
     setFormData({
       name: '', scientificName: '', variety: '', fieldId: '', plantedArea: 0,
       plantingDate: '', expectedHarvestDate: '', expectedYield: 0,
-      location: { latitude: 0, longitude: 0, address: '' },
       soilType: 'loam', irrigationMethod: 'drip', seedSource: 'own',
       healthStatus: 'good', growthStage: 'seedling',
     });
@@ -312,13 +210,11 @@ const CropManagement: React.FC = () => {
       variety: row.variety || '',
       scientificName: row.scientificName || '',
       fieldId: row.fieldId || '',
-      location: row.location || { latitude: 0, longitude: 0, address: '' },
     });
     setCropInput(row.name || '');
     setSelectedCrop(row.name ? { _id: '', slug: (row.name || '').toLowerCase(), commonName: row.name, scientificName: row.scientificName || '' } : null);
     setDrawerOpen(true);
 
-    // prefetch varieties if a crop slug can be inferred (best effort)
     const slug = (row.name || '').toLowerCase();
     if (slug) {
       const cached = varietiesCache.current.get(slug);
@@ -338,27 +234,12 @@ const CropManagement: React.FC = () => {
 
   const openView = (row: Crop) => { setViewingCrop(row); setDialogOpen(true); };
 
-  // delete handlers
-  const handleDeleteClick = (crop: Crop) => {
-    setCropToDelete(crop);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteCancel = () => {
-    setDeleteDialogOpen(false);
-    setCropToDelete(null);
-  };
-
+  const handleDeleteClick = (crop: Crop) => { setCropToDelete(crop); setDeleteDialogOpen(true); };
+  const handleDeleteCancel = () => { setDeleteDialogOpen(false); setCropToDelete(null); };
   const handleDeleteConfirm = async () => {
     if (cropToDelete) {
-      try {
-        await dispatch(deleteCrop(cropToDelete._id!)).unwrap();
-        setDeleteSuccess(true);
-        setTimeout(() => setDeleteSuccess(false), 3000);
-        dispatch(getCrops());
-      } catch (err: any) {
-        setListingError(err?.response?.data?.message || err?.message || 'Failed to delete crop');
-      }
+      try { await dispatch(deleteCrop(cropToDelete._id!)).unwrap(); setDeleteSuccess(true); setTimeout(() => setDeleteSuccess(false), 3000); dispatch(getCrops()); }
+      catch (err: any) { setListingError(err?.response?.data?.message || err?.message || 'Failed to delete crop'); }
     }
     setDeleteDialogOpen(false);
     setCropToDelete(null);
@@ -374,12 +255,8 @@ const CropManagement: React.FC = () => {
         soilType: lowercaseFirst(formData.soilType || '') as Crop['soilType'],
         irrigationMethod: lowercaseFirst(formData.irrigationMethod || '') as Crop['irrigationMethod'],
         seedSource: lowercaseFirst(formData.seedSource || '') as Crop['seedSource'],
-        healthStatus: (formData.healthStatus
-          ? (lowercaseFirst(formData.healthStatus) as Crop['healthStatus'])
-          : undefined),
-        growthStage: (formData.growthStage
-          ? (lowercaseFirst(formData.growthStage) as Crop['growthStage'])
-          : undefined),
+        healthStatus: (formData.healthStatus ? (lowercaseFirst(formData.healthStatus) as Crop['healthStatus']) : undefined),
+        growthStage: (formData.growthStage ? (lowercaseFirst(formData.growthStage) as Crop['growthStage']) : undefined),
         plantedArea: Number(formData.plantedArea) || 0,
         expectedYield: Number(formData.expectedYield) || 0,
         actualYield: formData.actualYield != null ? Number(formData.actualYield) : undefined,
@@ -387,22 +264,17 @@ const CropManagement: React.FC = () => {
         totalValue: formData.totalValue != null ? Number(formData.totalValue) : undefined
       };
 
-      if (editingId) {
-        await dispatch(updateCrop({ id: editingId, data: payload })).unwrap();
-      } else {
-        await dispatch(addCrop(payload)).unwrap();
-      }
+      if (editingId) await dispatch(updateCrop({ id: editingId, data: payload })).unwrap();
+      else await dispatch(addCrop(payload)).unwrap();
 
       setDrawerOpen(false);
       dispatch(getCrops());
     } catch (err: any) {
       setListingError(err.response?.data?.error?.message || 'Operation failed');
-      setTimeout(() => {
-        setListingError('');
-      }, 5000);
+      setTimeout(() => setListingError(''), 5000);
     }
   };
-  /* render */
+
   const anyLoading = loading || fieldsLoading;
 
   return (
@@ -416,7 +288,6 @@ const CropManagement: React.FC = () => {
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {anyLoading && <CircularProgress />}
 
-      {/* Crops table */}
       <Box sx={{ mt: 2 }}>
         <Table size="small">
           <TableHead>
@@ -441,36 +312,24 @@ const CropManagement: React.FC = () => {
                 <TableCell>{c.expectedHarvestDate ? new Date(c.expectedHarvestDate).toLocaleDateString() : '—'}</TableCell>
                 <TableCell align="right">
                   <Stack direction="row" spacing={1} justifyContent="flex-end">
-                    <Tooltip title="View">
-                      <IconButton size="small" onClick={() => openView(c)}><Visibility fontSize="small" /></IconButton>
-                    </Tooltip>
-                    <Tooltip title="Edit">
-                      <IconButton size="small" onClick={() => openEdit(c)}><Edit fontSize="small" /></IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete">
-                    <IconButton size="small" color="error" onClick={() => handleDeleteClick(c)}>
-                      <Delete fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                    <Tooltip title="View"><IconButton size="small" onClick={() => openView(c)}><Visibility fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title="Edit"><IconButton size="small" onClick={() => openEdit(c)}><Edit fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title="Delete"><IconButton size="small" color="error" onClick={() => handleDeleteClick(c)}><Delete fontSize="small" /></IconButton></Tooltip>
                   </Stack>
                 </TableCell>
               </TableRow>
             ))}
-            {crops.length === 0 && (
-              <TableRow><TableCell colSpan={7}><Typography color="text.secondary">No crops yet. Click “Add Crop”.</Typography></TableCell></TableRow>
-            )}
+            {crops.length === 0 && (<TableRow><TableCell colSpan={7}><Typography color="text.secondary">No crops yet. Click “Add Crop”.</Typography></TableCell></TableRow>)}
           </TableBody>
         </Table>
       </Box>
 
-      {/* Drawer: Add / Edit Form */}
       <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)} PaperProps={{ sx: { width: { xs: '100%', sm: 560 } } }}>
         <Box component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom>{editingId ? 'Edit Crop' : 'Add Crop'}</Typography>
           <Divider sx={{ mb: 2 }} />
 
           <Grid container spacing={2}>
-            {/* Crop Name (async) */}
             <Grid item xs={12} sm={6}>
               <Autocomplete
                 options={cropOptions}
@@ -478,47 +337,22 @@ const CropManagement: React.FC = () => {
                 autoHighlight
                 value={selectedCrop}
                 inputValue={cropInput}
-                onInputChange={(_, v) => {
-                  setCropInput(v);
-                  if (v.trim()) {
-                    setCropDropdownOpen(true);
-                  } else {
-                    setCropDropdownOpen(false);
-                  }
-                }}
-                onChange={(_, v) => {
-                  commitCrop((v as RefCrop) ?? null);
-                  setCropDropdownOpen(false);
-                }}
+                onInputChange={(_, v) => { setCropInput(v); setCropDropdownOpen(!!v.trim()); }}
+                onChange={(_, v) => { commitCrop((v as RefCrop) ?? null); setCropDropdownOpen(false); }}
                 onBlur={handleCropBlur}
                 getOptionLabel={(opt) => (opt ? (opt as RefCrop).commonName : '')}
                 isOptionEqualToValue={(a, b) => a.slug === b.slug}
                 open={cropDropdownOpen}
-                onOpen={() => {
-                  if (cropInput.trim()) setCropDropdownOpen(true);
-                }}
+                onOpen={() => { if (cropInput.trim()) setCropDropdownOpen(true); }}
                 onClose={() => setCropDropdownOpen(false)}
                 renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Crop Name"
-                    fullWidth
-                    required
-                    InputProps={{
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {cropOptionsLoading ? <CircularProgress size={18} /> : null}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    }}
+                  <TextField {...params} label="Crop Name" fullWidth required
+                    InputProps={{ ...params.InputProps, endAdornment: (<>{cropOptionsLoading ? <CircularProgress size={18} /> : null}{params.InputProps.endAdornment}</>) }}
                   />
                 )}
               />
             </Grid>
 
-            {/* Scientific Name */}
             <Grid item xs={12} sm={6}>
               <TextField
                 label="Scientific Name"
@@ -530,7 +364,6 @@ const CropManagement: React.FC = () => {
               />
             </Grid>
 
-            {/* Variety */}
             <Grid item xs={12} sm={6}>
               <Autocomplete
                 disabled={!formData.name}
@@ -541,155 +374,60 @@ const CropManagement: React.FC = () => {
                 onInputChange={(_, v) => setFormData(p => ({ ...p, variety: v || '' }))}
                 onChange={(_, v) => setFormData(p => ({ ...p, variety: (v as string) || '' }))}
                 renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Variety"
-                    fullWidth
-                    placeholder="Select or type variety"
-                    InputProps={{
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {varietiesLoading ? <CircularProgress size={18} /> : null}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    }}
+                  <TextField {...params} label="Variety" fullWidth placeholder="Select or type variety"
+                    InputProps={{ ...params.InputProps, endAdornment: (<>{varietiesLoading ? <CircularProgress size={18} /> : null}{params.InputProps.endAdornment}</>) }}
                   />
                 )}
               />
             </Grid>
 
-            {/* Field */}
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth required>
                 <InputLabel id="field-select-label">Field</InputLabel>
                 <Select labelId="field-select-label" label="Field" value={formData.fieldId || ''} onChange={handleFieldSelect}>
                   {fieldOptions.length === 0 && <MenuItem value="" disabled>No fields found — add a field first</MenuItem>}
-                  {fieldOptions.map(f => (
-                    <MenuItem key={f.id} value={f.id}>{f.label} {f.address ? `— ${f.address}` : ''}</MenuItem>
-                  ))}
+                  {fieldOptions.map(f => (<MenuItem key={f.id} value={f.id}>{f.label}</MenuItem>))}
                 </Select>
               </FormControl>
             </Grid>
 
-            {/* Planted Area */}
             <Grid item xs={12} sm={6}>
-              <TextField
-                label="Planted Area (ha)"
-                name="plantedArea"
-                type="number"
-                value={formData.plantedArea}
-                onChange={handleChange}
-                fullWidth required inputProps={{ step: '0.01', min: '0' }}
-              />
+              <TextField label="Planted Area (ha)" name="plantedArea" type="number" value={formData.plantedArea} onChange={handleChange} fullWidth required inputProps={{ step: '0.01', min: '0' }} />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField label="Planted Date" name="plantingDate" type="date" value={formData.plantingDate || ''} onChange={handleChange} fullWidth required InputLabelProps={{ shrink: true }} inputProps={{ max: new Date().toISOString().split('T')[0] }} />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField label="Expected Harvest Date" name="expectedHarvestDate" type="date" value={formData.expectedHarvestDate || ''} onChange={handleChange} fullWidth required InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField label="Expected Yield" name="expectedYield" type="number" value={formData.expectedYield} onChange={handleChange} fullWidth required inputProps={{ step: '0.01', min: '0' }} />
             </Grid>
 
-            {/* Planting Date */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Planted Date"
-                name="plantingDate"
-                type="date"
-                value={formData.plantingDate || ''}
-                onChange={handleChange}
-                fullWidth
-                required
-                InputLabelProps={{ shrink: true }}
-                inputProps={{
-                  max: new Date().toISOString().split('T')[0]
-                }}
-              />
-            </Grid>
-
-
-            {/* Expected Harvest Date */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Expected Harvest Date"
-                name="expectedHarvestDate"
-                type="date"
-                value={formData.expectedHarvestDate || ''}
-                onChange={handleChange}
-                fullWidth
-                required
-                InputLabelProps={{ shrink: true }}
-                inputProps={{
-                  min: new Date().toISOString().split('T')[0]
-                }}
-              />
-            </Grid>
-
-            {/* Expected Yield */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Expected Yield" name="expectedYield" type="number"
-                value={formData.expectedYield} onChange={handleChange}
-                fullWidth required inputProps={{ step: '0.01', min: '0' }}
-              />
-            </Grid>
-
-            {/* Soil, Irrigation, Seed Source */}
             <Grid item xs={12} sm={6}>
               <TextField select label="Soil Type" name="soilType" value={formData.soilType} onChange={handleChange} fullWidth required>
-                {SOIL_TYPES.map(s => (
-                  <MenuItem key={s} value={s}>
-                    {capitalize(s)}
-                  </MenuItem>
-                ))}
+                {SOIL_TYPES.map(s => (<MenuItem key={s} value={s}>{capitalize(s)}</MenuItem>))}
               </TextField>
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField select label="Irrigation Method" name="irrigationMethod" value={formData.irrigationMethod} onChange={handleChange} fullWidth required>
-                {IRRIGATION.map(s => (
-                  <MenuItem key={s} value={s}>
-                    {capitalize(s)}
-                  </MenuItem>
-                ))}
+                {IRRIGATION.map(s => (<MenuItem key={s} value={s}>{capitalize(s)}</MenuItem>))}
               </TextField>
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField select label="Seed Source" name="seedSource" value={formData.seedSource} onChange={handleChange} fullWidth required>
-                {SEED_SOURCES.map(s => (
-                  <MenuItem key={s} value={s}>
-                    {capitalize(s)}
-                  </MenuItem>
-                ))}
+                {SEED_SOURCES.map(s => (<MenuItem key={s} value={s}>{capitalize(s)}</MenuItem>))}
               </TextField>
             </Grid>
-
-            {/* Health / Stage */}
             <Grid item xs={12} sm={6}>
               <TextField select label="Health Status" name="healthStatus" value={formData.healthStatus || 'good'} onChange={handleChange} fullWidth>
-                {HEALTH.map(s => (
-                  <MenuItem key={s} value={s}>
-                    {capitalize(s)}
-                  </MenuItem>
-                ))}
+                {HEALTH.map(s => (<MenuItem key={s} value={s}>{capitalize(s)}</MenuItem>))}
               </TextField>
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField select label="Growth Stage" name="growthStage" value={formData.growthStage || 'seedling'} onChange={handleChange} fullWidth>
-                {STAGES.map(s => (
-                  <MenuItem key={s} value={s}>
-                    {capitalize(s)}
-                  </MenuItem>
-                ))}
+                {STAGES.map(s => (<MenuItem key={s} value={s}>{capitalize(s)}</MenuItem>))}
               </TextField>
-            </Grid>
-
-            {/* Address (auto lat/lon) */}
-            <Grid item xs={12}>
-              <AddressAutocomplete
-                value={formData.location.address || ''}
-                onPicked={(address, lat, lon) => setFormData(prev => ({ ...prev, location: { address, latitude: lat, longitude: lon } }))}
-                label="Field Location"
-              />
-              {formData.location.address && (
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  📍 {formData.location.address} — ({Number(formData.location.latitude).toFixed(5)}, {Number(formData.location.longitude).toFixed(5)})
-                </Typography>
-              )}
             </Grid>
 
             <Grid item xs={12}>
@@ -702,7 +440,6 @@ const CropManagement: React.FC = () => {
         </Box>
       </Drawer>
 
-      {/* View dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>Crop Details</DialogTitle>
         <DialogContent dividers>
@@ -714,9 +451,7 @@ const CropManagement: React.FC = () => {
               <Typography><b>Field:</b> {viewingCrop.fieldId || '—'}</Typography>
               <Typography><b>Planting:</b> {viewingCrop.plantingDate ? new Date(viewingCrop.plantingDate).toLocaleDateString() : '—'}</Typography>
               <Typography><b>Expected Harvest:</b> {viewingCrop.expectedHarvestDate ? new Date(viewingCrop.expectedHarvestDate).toLocaleDateString() : '—'}</Typography>
-              <Typography><b>Soil:</b> {viewingCrop.soilType} | <b>Irrigation:</b> {viewingCrop.irrigationMethod}</Typography>
-              {viewingCrop.location?.address && <Typography><b>Address:</b> {viewingCrop.location.address}</Typography>}
-              {viewingCrop.location && <Typography><b>Coords:</b> ({Number(viewingCrop.location.latitude).toFixed(5)}, {Number(viewingCrop.location.longitude).toFixed(5)})</Typography>}
+              <Typography><b>Soil:</b> {capitalize(viewingCrop.soilType)} | <b>Irrigation:</b> {capitalize(viewingCrop.irrigationMethod)}</Typography>
             </Stack>
           ) : <Typography>—</Typography>}
         </DialogContent>
@@ -725,13 +460,10 @@ const CropManagement: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Delete Dialog */}
       <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
-          <Typography>
-            Are you sure you want to delete crop "{cropToDelete?.name}"?
-          </Typography>
+          <Typography>Are you sure you want to delete crop "{cropToDelete?.name}"?</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDeleteCancel}>Cancel</Button>

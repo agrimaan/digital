@@ -18,6 +18,7 @@ import {
   CircularProgress,
   Container,
 } from '@mui/material';
+import Autocomplete from '@mui/material/Autocomplete';
 
 // Helper function to map irrigation system types
 function mapIrrigationSystem(
@@ -91,6 +92,116 @@ interface FormDataType {
   description: string;
   coordinates: { latitude: string; longitude: string };
 }
+
+/* --------------------- Debounce Hook --------------------- */
+function useDebouncedValue<T>(value: T, delay = 300) {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return v;
+}
+
+/* --------------------- Geolocation Search --------------------- */
+type GeoSuggestion = { display_name: string; lat: string; lon: string };
+
+async function searchNominatim(query: string, limit = 5): Promise<GeoSuggestion[]> {
+  if (!query.trim()) return [];
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+    query
+  )}&limit=${limit}&addressdetails=0`;
+  const res = await fetch(url, { headers: { Accept: 'application/json' } });
+  if (!res.ok) return [];
+  return (await res.json()) as GeoSuggestion[];
+}
+
+/* --------------------- Address Autocomplete --------------------- */
+const AddressAutocomplete: React.FC<{
+  value: string;
+  onPicked: (address: string, lat: number, lon: number) => void;
+  label?: string;
+  placeholder?: string;
+}> = ({ value, onPicked, label = 'Field Location', placeholder }) => {
+  const [input, setInput] = React.useState(value || '');
+  const debounced = useDebouncedValue(input, 350);
+  const [options, setOptions] = React.useState<GeoSuggestion[]>([]);
+  const [loading, setLoading] = React.useState(false);
+
+  React.useEffect(() => setInput(value || ''), [value]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!debounced.trim()) {
+        setOptions([]);
+        return;
+      }
+      try {
+        setLoading(true);
+        const results = await searchNominatim(debounced, 7);
+        if (!cancelled) setOptions(results);
+      } catch {
+        if (!cancelled) setOptions([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [debounced]);
+
+  const commitFreeText = async () => {
+    if (!input.trim()) return;
+    try {
+      const [first] = await searchNominatim(input, 1);
+      if (first) onPicked(first.display_name, Number(first.lat), Number(first.lon));
+      else onPicked(input, 0, 0);
+    } catch {
+      onPicked(input, 0, 0);
+    }
+  };
+
+  return (
+    <Autocomplete
+      freeSolo
+      options={options}
+      loading={loading}
+      getOptionLabel={(o) => (typeof o === 'string' ? o : o.display_name)}
+      filterOptions={(x) => x}
+      inputValue={input}
+      onInputChange={(_, v) => setInput(v)}
+      onChange={(_, v) => {
+        if (!v) return;
+        if (typeof v === 'string') {
+          commitFreeText();
+          return;
+        }
+        onPicked(v.display_name, Number(v.lat), Number(v.lon));
+        setInput(v.display_name);
+      }}
+      onBlur={commitFreeText}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label={label}
+          placeholder={placeholder || 'Start typing address, village, city…'}
+          fullWidth
+          InputProps={{
+            ...params.InputProps,
+            endAdornment: (
+              <>
+                {loading ? <CircularProgress size={18} /> : null}
+                {params.InputProps.endAdornment}
+              </>
+            )
+          }}
+        />
+      )}
+    />
+  );
+};
 
 const EditField: React.FC = () => {
   const navigate = useNavigate();
@@ -342,18 +453,25 @@ const EditField: React.FC = () => {
               </FormControl>
             </Grid>
 
+            {/* Location */}
             <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Location"
+              <AddressAutocomplete
                 value={formData.location}
-                onChange={handleChange('location')}
-                error={!!formErrors.location}
-                helperText={formErrors.location}
-                required
+                onPicked={(address, lat, lon) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    location: address,
+                    coordinates: {
+                      latitude: lat.toString(),
+                      longitude: lon.toString()
+                    }
+                  }))
+                }
+                label="Field Location"
               />
             </Grid>
 
+            {/* Latitude */}
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -365,6 +483,8 @@ const EditField: React.FC = () => {
                 type="number"
               />
             </Grid>
+
+            {/* Longitude */}
             <Grid item xs={6}>
               <TextField
                 fullWidth

@@ -65,11 +65,6 @@ const CropSchema = new mongoose.Schema({
     type: Number,
     min: [0, 'Total value must be positive']
   },
-  location: {
-    latitude: { type: Number, required: true },
-    longitude: { type: Number, required: true },
-    address: { type: String }
-  },
   soilType: {
     type: String,
     enum: ['loam', 'clay', 'sandy', 'silty', 'peaty', 'chalky', 'alluvial'],

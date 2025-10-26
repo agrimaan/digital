@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -18,8 +18,9 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../store';
 import { createFields, Fields } from '../../features/fields/fieldSlice';
+import Autocomplete from '@mui/material/Autocomplete';
 
-// Helper function to map irrigation system types
+/* --------------------- Helper Functions --------------------- */
 function mapIrrigationSystem(
   system: string
 ): 'flood' | 'drip' | 'sprinkler' | 'none' | 'other' {
@@ -41,11 +42,17 @@ function mapIrrigationSystem(
   }
 }
 
-
-const soilTypes = ['Clay', 'Sandy', 'Loam', 'Silty', 'Peaty', 'Chalky'];
-const irrigationTypes = ['Drip Irrigation', 'Sprinkler', 'Surface Irrigation', 'Subsurface Irrigation', 'None'];
+const soilTypes = ['Clay', 'Sandy', 'Loamy', 'Silty', 'Peaty', 'Chalky'];
+const irrigationTypes = [
+  'Drip Irrigation',
+  'Sprinkler',
+  'Surface Irrigation',
+  'Subsurface Irrigation',
+  'None'
+];
 const areaUnits: ('acre' | 'hectare')[] = ['acre', 'hectare'];
 
+/* --------------------- Types --------------------- */
 interface FormDataType {
   name: string;
   area: string;
@@ -57,10 +64,120 @@ interface FormDataType {
   coordinates: { latitude: string; longitude: string };
 }
 
+/* --------------------- Debounce Hook --------------------- */
+function useDebouncedValue<T>(value: T, delay = 300) {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return v;
+}
+
+/* --------------------- Geolocation Search --------------------- */
+type GeoSuggestion = { display_name: string; lat: string; lon: string };
+
+async function searchNominatim(query: string, limit = 5): Promise<GeoSuggestion[]> {
+  if (!query.trim()) return [];
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+    query
+  )}&limit=${limit}&addressdetails=0`;
+  const res = await fetch(url, { headers: { Accept: 'application/json' } });
+  if (!res.ok) return [];
+  return (await res.json()) as GeoSuggestion[];
+}
+
+/* --------------------- Address Autocomplete --------------------- */
+const AddressAutocomplete: React.FC<{
+  value: string;
+  onPicked: (address: string, lat: number, lon: number) => void;
+  label?: string;
+  placeholder?: string;
+}> = ({ value, onPicked, label = 'Field Location', placeholder }) => {
+  const [input, setInput] = React.useState(value || '');
+  const debounced = useDebouncedValue(input, 350);
+  const [options, setOptions] = React.useState<GeoSuggestion[]>([]);
+  const [loading, setLoading] = React.useState(false);
+
+  React.useEffect(() => setInput(value || ''), [value]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!debounced.trim()) {
+        setOptions([]);
+        return;
+      }
+      try {
+        setLoading(true);
+        const results = await searchNominatim(debounced, 7);
+        if (!cancelled) setOptions(results);
+      } catch {
+        if (!cancelled) setOptions([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [debounced]);
+
+  const commitFreeText = async () => {
+    if (!input.trim()) return;
+    try {
+      const [first] = await searchNominatim(input, 1);
+      if (first) onPicked(first.display_name, Number(first.lat), Number(first.lon));
+      else onPicked(input, 0, 0);
+    } catch {
+      onPicked(input, 0, 0);
+    }
+  };
+
+  return (
+    <Autocomplete
+      freeSolo
+      options={options}
+      loading={loading}
+      getOptionLabel={(o) => (typeof o === 'string' ? o : o.display_name)}
+      filterOptions={(x) => x}
+      inputValue={input}
+      onInputChange={(_, v) => setInput(v)}
+      onChange={(_, v) => {
+        if (!v) return;
+        if (typeof v === 'string') {
+          commitFreeText();
+          return;
+        }
+        onPicked(v.display_name, Number(v.lat), Number(v.lon));
+        setInput(v.display_name);
+      }}
+      onBlur={commitFreeText}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label={label}
+          placeholder={placeholder || 'Start typing address, village, city…'}
+          fullWidth
+          InputProps={{
+            ...params.InputProps,
+            endAdornment: (
+              <>
+                {loading ? <CircularProgress size={18} /> : null}
+                {params.InputProps.endAdornment}
+              </>
+            )
+          }}
+        />
+      )}
+    />
+  );
+};
+
+/* --------------------- Main Component --------------------- */
 const AddField: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { loading, error } = useSelector((state: RootState) => state.fields);
 
   const [formData, setFormData] = useState<FormDataType>({
     name: '',
@@ -70,42 +187,40 @@ const AddField: React.FC = () => {
     soilType: '',
     irrigationType: '',
     description: '',
-    coordinates: { latitude: '', longitude: '' },
+    coordinates: { latitude: '', longitude: '' }
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Input handlers
+  /* --------------------- Handlers --------------------- */
   const handleChange = (key: keyof FormDataType) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | { value: unknown }>
   ) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [key]: e.target.value as string,
+      [key]: e.target.value as string
     }));
   };
 
   const handleCoordChange = (coord: 'latitude' | 'longitude') => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      coordinates: { ...prev.coordinates, [coord]: e.target.value },
+      coordinates: { ...prev.coordinates, [coord]: e.target.value }
     }));
   };
 
-  const handleSelectChange = (key: keyof FormDataType) => (
-    e: { target: { value: unknown } }
-  ) => {
-    setFormData(prev => ({
+  const handleSelectChange = (key: keyof FormDataType) => (e: { target: { value: unknown } }) => {
+    setFormData((prev) => ({
       ...prev,
-      [key]: e.target.value as string,
+      [key]: e.target.value as string
     }));
   };
 
-  // Validate form
+  /* --------------------- Validation --------------------- */
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!formData.name.trim()) newErrors.name = 'Field name required';
@@ -121,10 +236,10 @@ const AddField: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  /* --------------------- Submit --------------------- */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-
     setIsSubmitting(true);
 
     try {
@@ -135,8 +250,8 @@ const AddField: React.FC = () => {
           type: 'Point',
           coordinates: [
             Number(formData.coordinates.longitude) || 0,
-            Number(formData.coordinates.latitude) || 0,
-          ],
+            Number(formData.coordinates.latitude) || 0
+          ]
         },
         soilType: formData.soilType.toLowerCase() as Fields['soilType'],
         locationName: formData.location,
@@ -144,7 +259,7 @@ const AddField: React.FC = () => {
         crops: [],
         status: 'active',
         irrigationType: mapIrrigationSystem(formData.irrigationType),
-        description: formData.description,
+        description: formData.description
       };
 
       await dispatch(createFields(newField)).unwrap();
@@ -158,6 +273,7 @@ const AddField: React.FC = () => {
     }
   };
 
+  /* --------------------- Render --------------------- */
   return (
     <Container component="main" maxWidth="md" sx={{ mt: 4, mb: 4 }}>
       <Paper elevation={3} sx={{ p: { xs: 2, md: 4 }, borderRadius: 2 }}>
@@ -170,6 +286,7 @@ const AddField: React.FC = () => {
 
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
           <Grid container spacing={3}>
+            {/* Field Name */}
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -182,6 +299,7 @@ const AddField: React.FC = () => {
               />
             </Grid>
 
+            {/* Area */}
             <Grid item xs={6} md={3}>
               <TextField
                 fullWidth
@@ -196,6 +314,7 @@ const AddField: React.FC = () => {
               />
             </Grid>
 
+            {/* Unit */}
             <Grid item xs={6} md={3}>
               <FormControl fullWidth>
                 <InputLabel id="unit-label">Unit</InputLabel>
@@ -203,9 +322,14 @@ const AddField: React.FC = () => {
                   labelId="unit-label"
                   label="Unit"
                   value={formData.unit}
-                  onChange={(e) => setFormData(prev => ({ ...prev, unit: e.target.value as 'acre' | 'hectare' }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      unit: e.target.value as 'acre' | 'hectare'
+                    }))
+                  }
                 >
-                  {areaUnits.map(unit => (
+                  {areaUnits.map((unit) => (
                     <MenuItem key={unit} value={unit}>
                       {unit.charAt(0).toUpperCase() + unit.slice(1)}
                     </MenuItem>
@@ -214,6 +338,7 @@ const AddField: React.FC = () => {
               </FormControl>
             </Grid>
 
+            {/* Soil Type */}
             <Grid item xs={12} md={6}>
               <FormControl fullWidth error={!!formErrors.soilType}>
                 <InputLabel id="soilType-label">Soil Type</InputLabel>
@@ -224,7 +349,7 @@ const AddField: React.FC = () => {
                   onChange={handleSelectChange('soilType')}
                   required
                 >
-                  {soilTypes.map(type => (
+                  {soilTypes.map((type) => (
                     <MenuItem key={type} value={type}>
                       {type}
                     </MenuItem>
@@ -238,6 +363,7 @@ const AddField: React.FC = () => {
               </FormControl>
             </Grid>
 
+            {/* Irrigation Type */}
             <Grid item xs={12} md={6}>
               <FormControl fullWidth error={!!formErrors.irrigationType}>
                 <InputLabel id="irrigationType-label">Irrigation Type</InputLabel>
@@ -248,7 +374,7 @@ const AddField: React.FC = () => {
                   onChange={handleSelectChange('irrigationType')}
                   required
                 >
-                  {irrigationTypes.map(type => (
+                  {irrigationTypes.map((type) => (
                     <MenuItem key={type} value={type}>
                       {type}
                     </MenuItem>
@@ -262,18 +388,25 @@ const AddField: React.FC = () => {
               </FormControl>
             </Grid>
 
+            {/* Location */}
             <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Location"
+              <AddressAutocomplete
                 value={formData.location}
-                onChange={handleChange('location')}
-                error={!!formErrors.location}
-                helperText={formErrors.location}
-                required
+                onPicked={(address, lat, lon) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    location: address,
+                    coordinates: {
+                      latitude: lat.toString(),
+                      longitude: lon.toString()
+                    }
+                  }))
+                }
+                label="Field Location"
               />
             </Grid>
 
+            {/* Latitude */}
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -286,6 +419,7 @@ const AddField: React.FC = () => {
               />
             </Grid>
 
+            {/* Longitude */}
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -298,6 +432,7 @@ const AddField: React.FC = () => {
               />
             </Grid>
 
+            {/* Description */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -309,9 +444,14 @@ const AddField: React.FC = () => {
               />
             </Grid>
 
+            {/* Buttons */}
             <Grid item xs={12}>
               <Box sx={{ display: 'flex', gap: 2 }}>
-                <Button variant="outlined" onClick={() => navigate('/farmer/fields')} disabled={isSubmitting}>
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate('/farmer/fields')}
+                  disabled={isSubmitting}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" variant="contained" disabled={isSubmitting}>
