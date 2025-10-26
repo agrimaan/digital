@@ -2,12 +2,28 @@ const { validationResult } = require('express-validator');
 const cropService = require('../services/cropService');
 const responseHandler = require('../utils/responseHandler');
 
+const isAdmin = (req) =>
+  req.user?.role === 'admin' || (Array.isArray(req.user?.roles) && req.user.roles.includes('admin'));
+
+const scopeFilter = (req) => {
+  if (isAdmin(req)) {
+    const { farmerId } = req.query || {};
+    if (farmerId) {
+      return { farmerId };
+    }
+    // no farmer filter => admin sees all
+    return {};
+  }
+  return { farmerId: req.user.id };
+};
+
 // @desc    Get all crops
 // @route   GET /api/crops
 // @access  Private
 exports.getCrops = async (req, res) => {
-  try { 
-    const crops = await cropService.getAllCrops(req);
+  try {
+    const filter = scopeFilter(req);
+    const crops = await cropService.getAllCrops(filter);
     return responseHandler.success(res, 200, crops, 'Crops retrieved successfully');
   } catch (error) {
     return responseHandler.error(res, 500, 'Error retrieving crops', error);
@@ -19,7 +35,8 @@ exports.getCrops = async (req, res) => {
 // @access  Private
 exports.getCrop = async (req, res) => {
   try {
-    const crop = await cropService.getCropById(req);
+    const finder = isAdmin(req) ? { _id: req.params.id } : { _id: req.params.id, farmerId: req.user.id };
+    const crop = await cropService.getCropById(finder);
     
     if (!crop) {
       return responseHandler.notFound(res, 'Crop not found');
@@ -41,8 +58,16 @@ exports.createCrop = async (req, res) => {
   }
 
   try {
+  const body = { ...req.body };
 
-    const crop = await cropService.createCrop(req);
+  if (isAdmin(req)) {
+    // Admin can create for any farmer; if not provided, default to self
+    body.farmerId = body.farmerId || req.user.id;
+  } else {
+    // Farmers can only create for themselves
+    body.farmerId = req.user.id;
+  }
+    const crop = await cropService.createCrop(body);
     return responseHandler.success(res, 201, crop, 'Crop created successfully');
   } catch (error) {
     return responseHandler.error(res, 500, 'Error creating crop', error);
@@ -59,13 +84,19 @@ exports.updateCrop = async (req, res) => {
   }
 
   try {
-    let crop = await cropService.getCropById(req);
+    const { id } = req.params;
+    const finder = isAdmin(req) ? { _id: req.params.id } : { _id: req.params.id, farmerId: req.user.id };
+    let crop = await cropService.getCropById(finder);
     
     if (!crop) {
       return responseHandler.notFound(res, 'Crop not found');
     }
+    const data = { ...req.body };
+    if (!isAdmin(req)) {
+    delete data.farmerId;
+    }
     // Update crop
-    crop = await cropService.updateCrop(req);
+    crop = await cropService.updateCrop(id, data);
     
     return responseHandler.success(res, 200, crop, 'Crop updated successfully');
   } catch (error) {
@@ -78,18 +109,19 @@ exports.updateCrop = async (req, res) => {
 // @access  Private/Admin
 exports.deleteCrop = async (req, res) => {
   try {
-    const crop = await cropService.getCropById(req.params.id);
+    const finder = isAdmin(req) ? { _id: req.params.id } : { _id: req.params.id, farmerId: req.user.id };
+    const crop = await cropService.getCropById(finder);
     
     if (!crop) {
       return responseHandler.notFound(res, 'Crop not found');
     }
-
-    // Only admin can delete crops
-    if (req.user.role !== 'admin') {
+    
+    // Only admin or the farmer who owns the crop can delete crops
+    if (req.user.role !== 'admin' && req.user.id !== crop.farmerId.toString()) {
       return responseHandler.forbidden(res, 'Not authorized to delete crops');
     }
 
-    await cropService.deleteCrop(req.params.id);
+    await cropService.deleteCrop(crop);
     
     return responseHandler.success(res, 200, {}, 'Crop deleted successfully');
   } catch (error) {

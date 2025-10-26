@@ -396,7 +396,10 @@ const CropManagement: React.FC = () => {
       setDrawerOpen(false);
       dispatch(getCrops());
     } catch (err: any) {
-      setListingError(err?.response?.data?.message || err?.message || 'Operation failed');
+      setListingError(err.response?.data?.error?.message || 'Operation failed');
+      setTimeout(() => {
+        setListingError('');
+      }, 5000);
     }
   };
   /* render */

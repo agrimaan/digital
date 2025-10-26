@@ -1,101 +1,60 @@
 const Crop = require('../models/Crop');
 
-const isAdmin = (req) =>
-  req.user?.role === 'admin' || (Array.isArray(req.user?.roles) && req.user.roles.includes('admin'));
-
 const basePopulate = [
   { path: 'fieldId', select: 'name location' },
   { path: 'farmerId', select: 'name email' }, // assumes Crop schema has a ref to User
 ];
-
-const scopeFilter = (req) => {
-  if (isAdmin(req)) {
-    const { farmerId } = req.query || {};
-    if (farmerId) {
-      return { farmerId };
-    }
-    // no farmer filter => admin sees all
-    return {};
-  }
-  return { farmerId: req.user.id };
-};
 
 /**
  * Get all crops
  * @param {Object} filter - Filter criteria
  * @returns {Promise<Array>} Array of crops
  */
-exports.getAllCrops = async (req) => {
 
-  const filter = scopeFilter(req);
+exports.getAllCrops = async (filter) => {
   return await Crop.find(filter)
     .populate(basePopulate)
     .sort({ createdAt: -1 });
-
 };
 
 /**
  * Get crop by ID
- * @param {string} req - Req body
+ * @param {string} data - Req body
  * @returns {Promise<Object>} Crop object
  */
-exports.getCropById = async (req) => {
-
-  const finder = isAdmin(req) ? { _id: req.params.id } : { _id: req.params.id, farmerId: req.user.id };
-  const crop = await Crop.findOne(finder).populate(basePopulate);
+exports.getCropById = async (data) => {
+  const crop = await Crop.findOne(data).populate(basePopulate);
   return crop
 
 };
 
 /**
  * Create a new crop
- * @param {Object} req - Crop data
+ * @param {Object} body - Crop data
  * @returns {Promise<Object>} Created crop
  */
-exports.createCrop = async (req) => {
-  const body = { ...req.body };
-
-  if (isAdmin(req)) {
-    // Admin can create for any farmer; if not provided, default to self
-    body.farmerId = body.farmerId || req.user.id;
-  } else {
-    // Farmers can only create for themselves
-    body.farmerId = req.user.id;
-  }
+exports.createCrop = async (body) => {
   const crop = await Crop.create(body);
   return await Crop.findById(crop._id).populate(basePopulate);
 };
 
 /**
  * Update crop
- * @param {Object} req - Data to update
+ * @param {Object} data - Data to update
  * @returns {Promise<Object>} Updated crop
  */
-exports.updateCrop = async (req) => {
-  const { id } = req.params;
-  const update = { ...req.body };
-  if (!isAdmin(req)) {
-    delete update.farmerId;
-  } else if (update.farmerId && !isValidObjectId(update.farmerId)) {
-    return res.status(400).json({ success: false, message: 'Invalid farmerId' });
-  }
-
-  return await Crop.findByIdAndUpdate(id, update, { new: true, runValidators: true })
+exports.updateCrop = async (id, data) => {
+  return await Crop.findByIdAndUpdate(id, data, { new: true, runValidators: true })
     .populate(basePopulate);
 };
 
 /**
  * Delete crop
- * @param {string} id - Crop ID
+ * @param {object} crop - Crop data
  * @returns {Promise<boolean>} True if deleted
  */
-exports.deleteCrop = async (id) => {
-  const crop = await Crop.findById(id);
-  if (!crop) {
-    return false;
-  }
-  await crop.remove();
-  return true;
+exports.deleteCrop = async (crop) => {
+  return await crop.deleteOne();
 };
 
 /**

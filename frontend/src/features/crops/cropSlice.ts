@@ -83,7 +83,7 @@ export const addCrop = createAsyncThunk('crops/add', async (newCrop: Crop, { dis
     );
     return response.data;
   } catch (error: any) {
-    return rejectWithValue(error.response?.data?.message || 'Failed to add crop');
+    return rejectWithValue(error.response?.data?.error?.message || 'Failed to add crop');
   }
 });
 

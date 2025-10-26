@@ -1,10 +1,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const Crop = require('../models/Crop');
-const { protect, logAction } = require('@agrimaan/shared').middleware;
+const { protect } = require('@agrimaan/shared').middleware;
 const cropController = require('../controllers/cropController');
-// If your authorize('admin') exists and you want admin-only routes, you can still import it.
-// const { authorize } = require('@agrimaan/shared').middleware;
+
 
 const router = express.Router();
 
@@ -12,6 +11,56 @@ const isAdmin = (req) =>
   req.user?.role === 'admin' || (Array.isArray(req.user?.roles) && req.user.roles.includes('admin'));
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+const { check } = require('express-validator');
+
+const cropValidation = [
+  check('name', 'Crop Name is required').not().isEmpty(),
+  check('scientificName', 'Scientific Name is required').not().isEmpty(),
+  check('variety', 'Variety is required').not().isEmpty(),
+  check('fieldId', 'Field is required').not().isEmpty(),
+  check('plantedArea', 'Planted Area must be a positive number')
+    .not()
+    .isEmpty()
+    .isFloat({ min: 0 }),
+  check('plantingDate', 'Planted Date is required and must be a valid date')
+    .not()
+    .isEmpty()
+    .isISO8601(),
+  check('expectedHarvestDate', 'Expected Harvest Date is required and must be a valid date')
+    .not()
+    .isEmpty()
+    .isISO8601(),
+  check('expectedYield', 'Expected Yield must be a positive number')
+    .not()
+    .isEmpty()
+    .isFloat({ min: 0 }),
+  check('soilType', 'Invalid soil type')
+    .not()
+    .isEmpty()
+    .isIn(['loam', 'clay', 'sandy', 'silty', 'peaty', 'chalky', 'alluvial']),
+  check('irrigationMethod', 'Invalid irrigation method')
+    .not()
+    .isEmpty()
+    .isIn(['drip', 'sprinkler', 'flood', 'rainfed', 'center-pivot']),
+  check('seedSource', 'Invalid seed source')
+    .not()
+    .isEmpty()
+    .isIn(['own', 'market', 'government', 'supplier']),
+  check('growthStage', 'Invalid growth stage')
+    .optional()
+    .isIn([
+      'seedling',
+      'vegetative',
+      'flowering',
+      'fruiting',
+      'maturity',
+      'harvested',
+      'failed',
+    ]),
+  check('healthStatus', 'Invalid health status')
+    .isIn(['excellent', 'good', 'fair', 'poor', 'diseased']),
+];
 
 const basePopulate = [
   { path: 'fieldId', select: 'name location' },
@@ -33,37 +82,13 @@ const scopeFilter = (req) => {
 router
   .route('/')
   .get(protect, cropController.getCrops)
-  .post(protect, cropController.createCrop);
+  .post(protect, cropValidation, cropController.createCrop);
 
 router
   .route('/:id')
   .get(protect, cropController.getCrop)
-  .put(protect, cropController.updateCrop)
-  // .delete(protect, deleteField);
-
-// @route   DELETE /api/crops/:id
-// @desc    Delete crop (admin: any; farmer: must own)
-// @access  Private
-router.delete('/:id', protect, logAction('crop:delete'), async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) {
-      return res.status(400).json({ success: false, message: 'Invalid crop id' });
-    }
-
-    const finder = isAdmin(req) ? { _id: id } : { _id: id, farmerId: req.user.id };
-    const crop = await Crop.findOne(finder);
-
-    if (!crop) {
-      return res.status(404).json({ success: false, message: 'Crop not found' });
-    }
-
-    await crop.deleteOne();
-    res.json({ success: true, message: 'Crop deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
-  }
-});
+  .put(protect, cropValidation, cropController.updateCrop)
+  .delete(protect, cropController.deleteCrop);
 
 // @route   GET /api/crops/field/:fieldId
 // @desc    Get crops by field (admin: all/filtered; farmer: own only)
