@@ -29,6 +29,19 @@ class IndependentServiceDiscovery {
       return this.cache[serviceName].url;
     }
 
+    // Try Consul first, then fallback to environment variables
+    try {
+      return await this.getServiceUrlFromConsul(serviceName);
+    } catch (consulError) {
+      console.warn(`Consul unavailable for ${serviceName}, using fallback URL`);
+      return this.getFallbackServiceUrl(serviceName);
+    }
+  }
+
+  /**
+   * Get service URL from Consul
+   */
+  async getServiceUrlFromConsul(serviceName) {
     return new Promise((resolve, reject) => {
       this.consul.catalog.service.nodes(serviceName, (err, result) => {
         if (err) {
@@ -37,7 +50,7 @@ class IndependentServiceDiscovery {
         }
         
         if (!result || result.length === 0) {
-          console.error(`Service ${serviceName} not found`);
+          console.error(`Service ${serviceName} not found in Consul`);
           return reject(new Error(`Service ${serviceName} not found`));
         }
 
@@ -56,6 +69,7 @@ class IndependentServiceDiscovery {
         const serviceUrl = `http://${selectedService.ServiceAddress || selectedService.Address}:${selectedService.ServicePort}`;
         
         // Cache the result
+        const now = Date.now();
         this.cache[serviceName] = {
           url: serviceUrl,
           timestamp: now
@@ -64,6 +78,43 @@ class IndependentServiceDiscovery {
         resolve(serviceUrl);
       });
     });
+  }
+
+  /**
+   * Get fallback service URL from environment variables
+   */
+  getFallbackServiceUrl(serviceName) {
+    const fallbackUrls = {
+      'user-service': process.env.USER_SERVICE_URL || 'http://localhost:3002',
+      'field-service': process.env.FIELD_SERVICE_URL || 'http://localhost:3003',
+      'iot-service': process.env.IOT_SERVICE_URL || 'http://localhost:3004',
+      'crop-service': process.env.CROP_SERVICE_URL || 'http://localhost:3005',
+      'marketplace-service': process.env.MARKETPLACE_SERVICE_URL || 'http://localhost:3006',
+      'logistics-service': process.env.LOGISTICS_SERVICE_URL || 'http://localhost:3007',
+      'weather-service': process.env.WEATHER_SERVICE_URL || 'http://localhost:3008',
+      'analytics-service': process.env.ANALYTICS_SERVICE_URL || 'http://localhost:3009',
+      'notification-service': process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3010',
+      'blockchain-service': process.env.BLOCKCHAIN_SERVICE_URL || 'http://localhost:3011',
+      'admin-service': process.env.ADMIN_SERVICE_URL || 'http://localhost:3012',
+      'reference-data-service': process.env.REFERENCE_SERVICE_URL || 'http://localhost:3013',
+      'resource-service': process.env.RESOURCE_SERVICE_URL || 'http://localhost:3014'
+    };
+
+    const url = fallbackUrls[serviceName];
+    if (!url) {
+      throw new Error(`No fallback URL configured for service: ${serviceName}`);
+    }
+
+    console.log(`Using fallback URL for ${serviceName}: ${url}`);
+    
+    // Cache the fallback URL
+    const now = Date.now();
+    this.cache[serviceName] = {
+      url: url,
+      timestamp: now
+    };
+
+    return url;
   }
 
   /**
