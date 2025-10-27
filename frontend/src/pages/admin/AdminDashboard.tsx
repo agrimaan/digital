@@ -340,7 +340,6 @@ const AdminDashboard: React.FC = () => {
 
   const counts = dashboardData?.counts ?? { users: 0, fields: 0, crops: 0, sensors: 0, orders: 0, landTokens: 0, bulkUploads: 0, resources: 0 };
   const blockchainStats = dashboardData?.blockchainStats ?? { totalTokens: 0, totalTransactions: 0, activeContracts: 0 };
-  console.log(counts);
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
