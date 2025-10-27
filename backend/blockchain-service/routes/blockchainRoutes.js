@@ -100,11 +100,25 @@ router.post('/wallet', blockchainController.createWallet);
  * @desc    Get all tokens owned by user
  * @access  Private
  */
-router.get('/land-tokens', blockchainController.getTokens);
+router.get('/tokens', blockchainController.getTokens);
 
 /**
  * @route   GET /blockchain/tokens/:id
  * @desc    Get token by ID
+ * @access  Private
+ */
+router.get('/tokens/:id', blockchainController.getTokenById);
+
+/**
+ * @route   GET /blockchain/land-tokens
+ * @desc    Get all land tokens owned by user (legacy endpoint)
+ * @access  Private
+ */
+router.get('/land-tokens', blockchainController.getTokens);
+
+/**
+ * @route   GET /blockchain/land-tokens/:id
+ * @desc    Get land token by ID (legacy endpoint)
  * @access  Private
  */
 router.get('/land-tokens/:id', blockchainController.getTokenById);

@@ -4,16 +4,11 @@ const morgan = require('morgan');
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-// const { ServiceRegistry, healthCheck } = require('@agrimaan/shared/service-discovery');
-// const { createLogger } = require('@agrimaan/shared/logging');
+const { ServiceRegistry, healthCheck } = require('@agrimaan/shared/service-discovery');
+const { createLogger } = require('@agrimaan/shared/logging');
 
 const SERVICE_NAME = process.env.SERVICE_NAME || 'user-service';
-// Using console.log for development instead of shared logger
-const logger = {
-  info: (msg, meta = {}) => console.log(`[${SERVICE_NAME}] ${msg}`, meta),
-  error: (msg, meta = {}) => console.error(`[${SERVICE_NAME}] ${msg}`, meta),
-  warn: (msg, meta = {}) => console.warn(`[${SERVICE_NAME}] ${msg}`, meta)
-};
+const logger = createLogger({ serviceName: SERVICE_NAME });
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -48,22 +43,21 @@ app.use((err, req, res, next) => {
 const server = app.listen(PORT, () => {
   logger.info(`User service running on port ${PORT}`);
 
-  // ServiceRegistry disabled for development
-  // const serviceRegistry = new ServiceRegistry({
-  //   serviceName: SERVICE_NAME,
-  //   servicePort: PORT,
-  //   healthCheckUrl: '/health',
-  // });
+  const serviceRegistry = new ServiceRegistry({
+    serviceName: SERVICE_NAME,
+    servicePort: PORT,
+    healthCheckUrl: '/health',
+  });
 
-  // serviceRegistry.register()
-  //   .then(() => {
-  //     logger.info('Service registered with Consul');
-  //     serviceRegistry.setupGracefulShutdown(server);
-  //   })
-  //   .catch(err => {
-  //     logger.error('Failed to register service with Consul:', { error: err.message });
-  //     process.exit(1);
-  //   });
+  serviceRegistry.register()
+    .then(() => {
+      logger.info('Service registered with Consul');
+      serviceRegistry.setupGracefulShutdown(server);
+    })
+    .catch(err => {
+      logger.error('Failed to register service with Consul:', { error: err.message });
+      process.exit(1);
+    });
 });
 
 module.exports = app;

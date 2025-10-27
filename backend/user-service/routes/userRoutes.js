@@ -9,7 +9,8 @@ const {
   updateUser, 
   deleteUser 
 } = require('../controllers/userController');
-const { protect, authorize } = require('../middleware/auth');
+//const { protect, authorize } = require('../middleware/auth')
+const { protect, authorize } = require('@agrimaan/shared').middleware;
 
 // Validation middleware
 const validateUserCreation = [
@@ -17,7 +18,7 @@ const validateUserCreation = [
   check('lastName', 'Last name is required').not().isEmpty(),
   check('email', 'Please include a valid email').isEmail(),
   check('password', 'Please enter a password with 6 or more characters').isLength({ min: 6 }),
-  check('role', 'Role must be one of: farmer, buyer, logistics, investor, agronomist, admin')
+  check('role', 'Role must be one of: farmer, buyer, logistics, investor, agronomist, admin, supplier')
     .optional()
     .isIn(['farmer', 'buyer', 'logistics', 'investor', 'agronomist', 'admin'])
 ];
@@ -26,9 +27,9 @@ const validateUserUpdate = [
   check('firstName', 'First name must not be empty if provided').optional().not().isEmpty(),
   check('lastName', 'Last name must not be empty if provided').optional().not().isEmpty(),
   check('email', 'Please include a valid email if provided').optional().isEmail(),
-  check('role', 'Role must be one of: farmer, buyer, logistics, investor, agronomist, admin')
+  check('role', 'Role must be one of: farmer, buyer, logistics, investor, agronomist, admin, supplier')
     .optional()
-    .isIn(['farmer', 'buyer', 'logistics', 'investor', 'agronomist', 'admin'])
+    .isIn(['farmer', 'buyer', 'logistics', 'investor', 'agronomist', 'admin', 'supplier'])
 ];
 
   // Routes

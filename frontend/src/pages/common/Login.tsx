@@ -19,10 +19,10 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem,
+  MenuItem
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LooksOutlined';
 import { setAlert } from '../../features/alert/alertSlice';
 
 import { login } from '../../features/auth/authSlice';
@@ -43,7 +43,9 @@ const homeForRole = (role?: string) => {
       return '/agronomist';
     case 'investor':
       return '/investor';
-    default:
+      case 'supplier':
+        return '/supplier';
+      default:
       return '/';
   }
 };

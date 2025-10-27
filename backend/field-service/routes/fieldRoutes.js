@@ -10,7 +10,9 @@ const {
   getNearbyFields
 } = require('../controllers/fieldController');
 //const { protect, authorize } = require('../middleware/auth');
-const { protect, authorize, logAction } = require('@agrimaan/shared').middleware;
+// const { protect, authorize, logAction } = require('@agrimaan/shared').middleware;
+// Using local middleware for development
+const { protect } = require('../middleware/auth');
 
 // Validation middleware
 const validateFieldCreation = [

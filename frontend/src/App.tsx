@@ -57,6 +57,8 @@ import AdminResources from './pages/admin/AdminResources';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminVerification from './pages/admin/AdminVerification';
 import AdminBulkUploads from './pages/admin/AdminBulkUploads';
+import AdminBlockchainDashboard from './pages/admin/AdminBlockchainDashboard';
+import AdminLandTokenization from './pages/admin/AdminLandTokenization';
 
 // Agronomist pages
 import AgronomistDashboard from './pages/agronomist/AgronomistDashboard';
@@ -67,8 +69,15 @@ import InvestorDashboard from './pages/investor/InvestorDashboard';
 // Logistics pages
 import LogisticsDashboard from './pages/logistics/LogisticsDashboard';
 
+// Supplier pages
+import SupplierRegister from './pages/supplier/SupplierRegister';
+import SupplierLogin from './pages/supplier/SupplierLogin';
+import SupplierDashboard from './pages/supplier/SupplierDashboard';
+import SupplierProducts from './pages/supplier/SupplierProducts';
+
 // Layout
 import Layout from './components/layout/Layout';
+import SupplierLayout from './components/layout/SupplierLayout';
 import EditField from 'pages/farmer/EditField';
 
 // HOC for protected routes
@@ -108,6 +117,8 @@ const App: React.FC = () => {
         return '/investor';
       case 'logistics':
         return '/logistics';
+         case 'supplier':
+           return '/supplier/dashboard';
       default:
         return '/login';
     }
@@ -207,6 +218,8 @@ const App: React.FC = () => {
                     <Route path="settings" element={<AdminSettings />} />
                     <Route path="verification" element={<AdminVerification />} />
                     <Route path="bulk-uploads" element={<AdminBulkUploads />} />
+<Route path="blockchain" element={<AdminBlockchainDashboard />} />
+<Route path="land-tokenization" element={<AdminLandTokenization />} />
                     <Route path="profile" element={<Profile />} />
                   </Routes>
                 </Layout>
@@ -272,6 +285,31 @@ const App: React.FC = () => {
           }
         />
         
+
+          {/* Supplier Routes */}
+          {/* Public Supplier Routes */}
+          <Route path="/supplier/register" element={<SupplierRegister />} />
+          <Route path="/supplier/login" element={<SupplierLogin />} />
+
+          {/* Protected Supplier Routes */}
+          <Route
+            path="/supplier/*"
+            element={
+              <PrivateRoute
+                roles={["supplier"]}
+                element={
+                  <SupplierLayout>
+                    <Routes>
+                      <Route path="dashboard" element={<SupplierDashboard />} />
+                      <Route path="products" element={<SupplierProducts />} />
+                      <Route path="profile" element={<Profile />} />
+                      <Route path="settings" element={<Settings />} />
+                    </Routes>
+                  </SupplierLayout>
+                }
+              />
+            }
+          />
         {/* Root Redirect Logic */}
         <Route path="/" element={<Navigate to={getHomeRoute()} replace />} />
         

@@ -66,6 +66,9 @@ const Register: React.FC = () => {
         case 'investor':
           navigate('/investor');
           break;
+        case 'supplier':
+          navigate('/supplier');
+          break;
         default:
           navigate('/');
       }
@@ -261,6 +264,8 @@ const Register: React.FC = () => {
               type="password"
               id="confirmPassword"
               value={confirmPassword}
+
+              
               onChange={handleChange}
               error={!!formErrors.confirmPassword}
               helperText={formErrors.confirmPassword}
@@ -280,6 +285,8 @@ const Register: React.FC = () => {
                 <MenuItem value="logistics">Logistics Provider</MenuItem>
                 <MenuItem value="agronomist">Agronomist</MenuItem>
                 <MenuItem value="investor">Investor</MenuItem>
+                <MenuItem value="supplier">Supplier</MenuItem>
+                
               </Select>
               {formErrors.role && (
                 <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 2 }}>

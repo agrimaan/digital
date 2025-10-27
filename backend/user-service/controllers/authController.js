@@ -32,9 +32,9 @@ exports.register = async (req, res) => {
       role: role || 'farmer',
       phoneNumber
     };
-
+    console.log('userData:', userData);
     const result = await authService.registerUser(userData);
-    
+    console.log('result:', result);
     return responseHandler.success(res, 201, {
       token: result.token,
       user: result.user

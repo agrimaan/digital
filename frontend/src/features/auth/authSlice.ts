@@ -10,6 +10,9 @@ interface User {
   email: string;
   role: string;
   profileImage?: string;
+  // Supplier specific fields
+  supplierId?: string;
+  businessName?: string;
 }
 
 interface AuthState {
@@ -101,6 +104,15 @@ const authSlice = createSlice({
       state.loading = false;
       state.user = null;
     },
+    // Add setCredentials reducer to match SupplierLogin.tsx usage
+    setCredentials: (state, action) => {
+      const { user, token } = action.payload;
+      state.user = user;
+      state.token = token;
+      state.isAuthenticated = true;
+      state.loading = false;
+      setAuthToken(token);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -124,10 +136,10 @@ const authSlice = createSlice({
       })
       .addCase(loadUser.rejected, (state) => {
         setAuthToken(null);
-        state.token = null;
-        state.isAuthenticated = false;
         state.loading = false;
+        state.isAuthenticated = false;
         state.user = null;
+        state.token = null;
       })
       .addCase(register.pending, (state) => {
         state.loading = true;
@@ -135,27 +147,24 @@ const authSlice = createSlice({
       .addCase(register.fulfilled, (state) => {
         state.loading = false;
       })
-      .addCase(register.rejected, (state, action) => {
+      .addCase(register.rejected, (state) => {
         state.loading = false;
-        state.error = action.payload as string;
+      })
+      .addCase(login.pending, (state) => {
+        state.loading = true;
       })
       .addCase(login.fulfilled, (state, action) => {
-        state.token = action.payload.token;
         state.isAuthenticated = true;
-        state.loading = false;
         state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.loading = false;
       })
       .addCase(login.rejected, (state, action) => {
-        setAuthToken(null);
-        state.token = null;
-        state.isAuthenticated = false;
         state.loading = false;
-        state.user = null;
         state.error = action.payload as string;
       });
   },
 });
 
-export const { logout } = authSlice.actions;
-
+export const { logout, setCredentials } = authSlice.actions;
 export default authSlice.reducer;

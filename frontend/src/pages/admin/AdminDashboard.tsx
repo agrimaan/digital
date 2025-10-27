@@ -22,8 +22,10 @@ import { useTheme } from '@mui/material/styles';
 
 import { RootState } from '../../store';
 import axios from 'axios';
-import { API_BASE_URL } from '../../config/apiConfig';
+//import { API_BASE_URL } from '../../config/apiConfig';
+
 import adminDashboardAPI from '../../services/adminService';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
 // ---------------- Types ----------------
 interface DashboardData {
@@ -31,8 +33,13 @@ interface DashboardData {
     users: number; fields: number; crops: number; sensors: number;
     orders: number; landTokens: number; bulkUploads: number; resources?: number;
   };
+  blockchainStats?: {
+    totalTokens: number;
+    totalTransactions: number;
+    activeContracts: number;
+  };
   usersByRole: {
-    farmers: number; buyers: number; agronomists: number; investors: number; admins: number;
+    farmers: number; buyers: number; agronomists: number; investors: number; admins: number; supplier: number;
   };
   recentOrders: Array<{
     _id: string;
@@ -149,11 +156,16 @@ const AdminDashboard: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-
+     
       // These methods can return various wrappers; normalize with parse()
       const [statsRaw, recentUsersRaw, recentOrdersRaw, healthRaw] = await Promise.all([
         adminDashboardAPI.dashboard.getDashboardStats(),
-        adminDashboardAPI.dashboard.getRecentUsers(5),
+        adminDashboardAPI.dashboard.getUsersByRole(),
+        adminDashboardAPI.dashboard.getFields(),
+        adminDashboardAPI.dashboard.getCrops(),
+        adminDashboardAPI.dashboard.getSensors(),
+        adminDashboardAPI.dashboard.getOrders(),
+        adminDashboardAPI.dashboard.getRecentUsers(10),
         adminDashboardAPI.dashboard.getRecentOrders(5),
         adminDashboardAPI.dashboard.getSystemHealth()
       ]);
@@ -327,6 +339,8 @@ const AdminDashboard: React.FC = () => {
   }
 
   const counts = dashboardData?.counts ?? { users: 0, fields: 0, crops: 0, sensors: 0, orders: 0, landTokens: 0, bulkUploads: 0, resources: 0 };
+  const blockchainStats = dashboardData?.blockchainStats ?? { totalTokens: 0, totalTransactions: 0, activeContracts: 0 };
+  console.log(counts);
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -352,7 +366,6 @@ const AdminDashboard: React.FC = () => {
           This is your comprehensive admin control panel. From here, you can manage all aspects of the platform including users, fields, crops, sensors, land tokens, bulk uploads, and system configuration.
         </Typography>
       </Paper>
-
       {/* Stats */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <StatCard title="Total Users" count={counts.users} icon={<PeopleIcon color="primary" sx={{ fontSize: 40 }} />} to="/admin/users" cta="Manage Users" />

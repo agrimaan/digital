@@ -4,14 +4,19 @@ const morgan = require('morgan');
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-const { ServiceRegistry, healthCheck } = require('@agrimaan/shared/service-discovery');
-const { createLogger } = require('@agrimaan/shared/logging');
+// const { ServiceRegistry, healthCheck } = require('@agrimaan/shared/service-discovery');
+// const { createLogger } = require('@agrimaan/shared/logging');
 
 const SERVICE_NAME = process.env.SERVICE_NAME || 'field-service';
-const logger = createLogger({ serviceName: SERVICE_NAME });
+// Using console.log for development instead of shared logger
+const logger = {
+  info: (msg, meta = {}) => console.log(`[${SERVICE_NAME}] ${msg}`, meta),
+  error: (msg, meta = {}) => console.error(`[${SERVICE_NAME}] ${msg}`, meta),
+  warn: (msg, meta = {}) => console.warn(`[${SERVICE_NAME}] ${msg}`, meta)
+};
 
 const app = express();
-const PORT = process.env.PORT || 3003;
+const PORT = process.env.PORT || 3005;
 
 // Middleware
 app.use(cors());
@@ -26,8 +31,6 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Routes
 app.use('/api/fields', require('./routes/fieldRoutes'));
-app.use('/api/soil', require('./routes/soilRoutes'));
-app.use('/api/boundaries', require('./routes/boundaryRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -39,21 +42,22 @@ app.use((err, req, res, next) => {
 const server = app.listen(PORT, () => {
   logger.info(`Field service running on port ${PORT}`);
 
-  const serviceRegistry = new ServiceRegistry({
-    serviceName: SERVICE_NAME,
-    servicePort: PORT,
-    healthCheckUrl: '/health',
-  });
+  // ServiceRegistry disabled for development
+  // const serviceRegistry = new ServiceRegistry({
+  //   serviceName: SERVICE_NAME,
+  //   servicePort: PORT,
+  //   healthCheckUrl: '/health',
+  // });
 
-  serviceRegistry.register()
-    .then(() => {
-      logger.info('Service registered with Consul');
-      serviceRegistry.setupGracefulShutdown(server);
-    })
-    .catch(err => {
-      logger.error('Failed to register service with Consul:', { error: err.message });
-      process.exit(1);
-    });
+  // serviceRegistry.register()
+  //   .then(() => {
+  //     logger.info('Service registered with Consul');
+  //     serviceRegistry.setupGracefulShutdown(server);
+  //   })
+  //   .catch(err => {
+  //     logger.error('Failed to register service with Consul:', { error: err.message });
+  //     process.exit(1);
+  //   });
 });
 
 module.exports = app;

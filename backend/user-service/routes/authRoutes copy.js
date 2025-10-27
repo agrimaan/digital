@@ -4,20 +4,81 @@ const { check, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
 const router = express.Router();
-const authController = require('../controllers/authController');
+const adminController = require('../controllers/adminController');
+
 
 // @route   POST /api/auth/register
 // @desc    Register a new user
 // @access  Public
+
 router.post('/register', [
   check('firstName', 'First name is required').not().isEmpty().trim(),
   check('lastName', 'Last name is required').not().isEmpty().trim(),
   check('email', 'Please include a valid email').isEmail().normalizeEmail(),
-  check('password', 'Please enter a password with 6 or more characters').isLength({ min: 7 }),
+  check('password', 'Please enter a password with 6 or more characters').isLength({ min: 6 }),
   check('role', 'Role must be one of: farmer, buyer, logistics, investor, agronomist, admin, supplier')
     .optional()
     .isIn(['farmer', 'buyer', 'logistics', 'investor', 'agronomist', 'admin', 'supplier'])
-], authController.register);
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+
+    const { firstName, lastName, email, password, role, phoneNumber, address } = req.body;
+
+    // Check if user already exists
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({
+        success: false,
+        message: 'User already exists with this email'
+      });
+    }
+
+    // Create new user
+    user = new User({
+      firstName,
+      lastName,
+      email,
+      password,
+      role: role || 'farmer',
+      phoneNumber,
+      address
+    });
+
+    console.log('user data within authRoute:', user);
+    await user.save();
+
+    // Generate JWT token
+    //const token = user.getSignedJwtToken();
+    const token = this.generateToken(user);
+
+    console.log('token:', token);
+
+    res.status(201).json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during registration'
+    });
+  }
+});
 console.log("within user-service just before login post");
 
 

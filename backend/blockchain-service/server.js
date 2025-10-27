@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 // Corrected import for ServiceRegistry and healthCheck
-const { ServiceRegistry, healthCheck } = require('@agrimaan/shared/service-discovery');
+const { ServiceRegistry } = require('@agrimaan/shared/service-discovery');
 
 // Corrected import for the createLogger function
 const { createLogger } = require('@agrimaan/shared/logging');
@@ -53,9 +53,11 @@ app.use((err, req, res, next) => {
 const server = app.listen(PORT, () => {
   logger.info(`blockchain service running on port ${PORT}`);
 
-  // 4. Instantiate ServiceRegistry correctly
+  // ServiceRegistry disabled for local development
+  // Uncomment when Consul is available
+  /*
   const serviceRegistry = new ServiceRegistry({
-    serviceName: process.env.SERVICE_NAME || 'blockchain-service', // Corrected service name
+    serviceName: process.env.SERVICE_NAME || 'blockchain-service',
     servicePort: PORT,
     healthCheckUrl: '/health',
   });
@@ -63,14 +65,13 @@ const server = app.listen(PORT, () => {
   serviceRegistry.register()
     .then(() => {
       logger.info('Service registered with Consul');
-      // Setup graceful shutdown to deregister service
       serviceRegistry.setupGracefulShutdown(server);
     })
     .catch(err => {
       logger.error('Failed to register service with Consul:', { error: err.message });
-      // Exit if registration fails, as the service cannot be discovered
       process.exit(1);
     });
+  */
 });
 
 module.exports = app; // For testing purposes
