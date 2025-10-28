@@ -5,11 +5,16 @@ const router = express.Router();
 const { 
   getProducts,
   getProductsBySupplier,
+  getProductById,
   getProductPriceForFarmer,
   getProduct,
   createProduct,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  createProduct,
+  calculatePrice,
+  approveProduct,
+  updateStock
 } = require('../controllers/productController');
 const { protect, authorize } = require('@agrimaan/shared').middleware;
 
@@ -59,5 +64,17 @@ router
 router
   .route('/:id/price/:farmerId')
   .get(getProductPriceForFarmer);
+
+
+
+// Public routes
+router.get('/', getProducts);
+router.get('/:id', getProductById);
+router.post('/:id/calculate-price', calculatePrice);
+
+
+
+// Admin only routes
+router.put('/:id/approve', protect, authorize('admin'), approveProduct);
 
 module.exports = router;
