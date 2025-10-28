@@ -1,20 +1,24 @@
 const axios = require('axios');
 
-// Service URLs with fallbacks
+// Service URLs with fallbacks - now using API gateway
+const API_GATEWAY = process.env.API_GATEWAY_URL || 'http://localhost:3000';
 const USER_SVC = process.env.USER_SERVICE_URL || 'http://localhost:3002';
 const FIELD_SVC = process.env.FIELD_SERVICE_URL || 'http://localhost:3003';
 const CROP_SVC = process.env.CROP_SERVICE_URL || 'http://localhost:3005';
 const MARKETPLACE_SVC = process.env.MARKETPLACE_SERVICE_URL || 'http://localhost:3006';
 const IOT_SVC = process.env.IOT_SERVICE_URL || 'http://localhost:3004';
 const ANALYTICS_SVC = process.env.ANALYTICS_SERVICE_URL || 'http://localhost:3009';
-const BLOCKCHAIN_SVC = process.env.BLOCKCHAIN_SERVICE_URL || 'http://localhost:3011';
+const RESOURCE_SVC = process.env.RESOURCE_SERVICE_URL || 'http://localhost:3014';
 
-// Helper function for HTTP requests
+// Helper function for HTTP requests via API gateway
 const httpRequest = async (serviceUrl, endpoint, method = 'GET', data = null, headers = {}) => {
   try {
+    // Use API gateway URL for all requests
+    const gatewayEndpoint = `/api${endpoint}`;
+    
     const config = {
       method,
-      url: `${serviceUrl}${endpoint}`,
+      url: `${API_GATEWAY}${gatewayEndpoint}`,
       headers: {
         'Content-Type': 'application/json',
         ...headers
@@ -29,7 +33,7 @@ const httpRequest = async (serviceUrl, endpoint, method = 'GET', data = null, he
     const response = await axios(config);
     return response.data;
   } catch (error) {
-    console.error(`HTTP request failed: ${method} ${serviceUrl}${endpoint}`, error.message);
+    console.error(`HTTP request failed: ${method} ${API_GATEWAY}${endpoint}`, error.message);
     throw new Error(`Service request failed: ${error.message}`);
   }
 };
@@ -54,420 +58,125 @@ const getAggregatedData = async (requests) => {
 };
 
 /**
- * Get default dashboard for an admin
- * @param {string} adminId - Admin ID
- * @returns {Object} Dashboard data from multiple services
+ * Get dashboard statistics from various services
+ * @returns {Object} Aggregated dashboard statistics
  */
-exports.getDefaultDashboard = async (adminId) => {
+exports.getDashboardStats = async () => {
   try {
-    // Parallel requests to all services for dashboard data
+    // Parallel requests to all services for dashboard statistics
     const [
       userStats,
       fieldStats,
       cropStats,
       orderStats,
       sensorStats,
-      systemHealth,
-      blockchainStats
+      resourceStats
     ] = await getAggregatedData([
-      httpRequest(USER_SVC, '/api/analytics/users'),
-      httpRequest(FIELD_SVC, '/api/analytics/fields'),
-      httpRequest(CROP_SVC, '/api/analytics/crops'),
-      httpRequest(MARKETPLACE_SVC, '/api/analytics/orders'),
-      httpRequest(IOT_SVC, '/api/analytics/devices'),
-      httpRequest(ANALYTICS_SVC, '/api/analytics/health'),
-      httpRequest(BLOCKCHAIN_SVC, '/api/blockchain/market')
+      httpRequest(API_GATEWAY, '/api/users'),
+      httpRequest(FIELD_SVC, '/api/fields'),
+      httpRequest(CROP_SVC, '/api/crops'),
+      httpRequest(MARKETPLACE_SVC, '/api/orders'),
+      httpRequest(IOT_SVC, '/api/devices'),
+      httpRequest(RESOURCE_SVC, '/api/resources')
     ]);
 
-    // Extract counts from blockchain data
-    const blockchainData = blockchainStats?.data?.data || blockchainStats?.data || {};
-    const landTokenCount = blockchainData?.totalTokens || 0;
+    // Extract counts from service data
+    const usersCount = userStats.data?.totalUsers || 0;
+    const fieldsCount = fieldStats.data?.totalFields || 0;
+    const cropsCount = cropStats.data?.totalCrops || 0;
+    const ordersCount = orderStats.data?.totalOrders || 0;
+    const sensorsCount = sensorStats.data?.totalSensors || 0;
+    const resourcesCount = resourceStats.data?.count || 0;
 
-    // Construct dashboard from service data
-    const dashboard = {
-      id: `admin-dashboard-${adminId}`,
-      adminId: adminId,
-      name: 'Admin Dashboard',
-      type: 'default',
-      widgets: [
-        {
-          id: 'user-stats',
-          type: 'stats',
-          title: 'User Statistics',
-          data: userStats.data || { totalUsers: 0, newUsers: 0, activeUsers: 0 }
-        },
-        {
-          id: 'field-stats',
-          type: 'stats',
-          title: 'Field Statistics',
-          data: fieldStats.data || { totalFields: 0, activeFields: 0, totalArea: 0 }
-        },
-        {
-          id: 'crop-stats',
-          type: 'stats',
-          title: 'Crop Statistics',
-          data: cropStats.data || { totalCrops: 0, activeCrops: 0, cropTypes: {} }
-        },
-        {
-          id: 'order-stats',
-          type: 'stats',
-          title: 'Order Statistics',
-          data: orderStats.data || { totalOrders: 0, pendingOrders: 0, completedOrders: 0 }
-        },
-        {
-          id: 'sensor-stats',
-          type: 'stats',
-          title: 'Sensor Statistics',
-          data: sensorStats.data || { totalSensors: 0, activeSensors: 0, alertCount: 0 }
-        },
-        {
-          id: 'blockchain-stats',
-          type: 'stats',
-          title: 'Blockchain Statistics',
-          data: {
-            totalTokens: landTokenCount,
-            totalTransactions: blockchainData?.totalTransactions || 0,
-            activeContracts: blockchainData?.activeContracts || 0
-          }
-        },
-        {
-          id: 'system-health',
-          type: 'health',
-          title: 'System Health',
-          data: systemHealth.data || { status: 'unknown', services: [] }
-        }
-      ],
-      layout: 'default',
-      createdAt: new Date(),
-      updatedAt: new Date()
+    // Construct dashboard stats object
+    const dashboardStats = {
+      users: usersCount,
+      fields: fieldsCount,
+      crops: cropsCount,
+      orders: ordersCount,
+      sensors: sensorsCount,
+      resources: resourcesCount,
+      usersByRole: userStats.data?.usersByRole || {
+        farmers: 0,
+        buyers: 0,
+        agronomists: 0,
+        investors: 0,
+        admins: 0
+      },
+      verificationStats: userStats.data?.verificationStats || {
+        pendingUsers: 0,
+        pendingLandTokens: 0,
+        pendingBulkUploads: 0
+      }
     };
 
-    return dashboard;
+    return dashboardStats;
   } catch (error) {
-    console.error('Get default dashboard error:', error);
-    // Return fallback dashboard with empty data
+    console.error('Get dashboard stats error:', error);
+    // Return fallback dashboard stats with empty data
     return {
-      id: `admin-dashboard-${adminId}`,
-      adminId: adminId,
-      name: 'Admin Dashboard',
-      type: 'default',
-      widgets: [
-        {
-          id: 'error-widget',
-          type: 'error',
-          title: 'Service Unavailable',
-          data: { message: 'Some services are currently unavailable' }
-        }
-      ],
-      layout: 'default',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      users: 0,
+      fields: 0,
+      crops: 0,
+      orders: 0,
+      sensors: 0,
+      resources: 0,
+      usersByRole: {
+        farmers: 0,
+        buyers: 0,
+        agronomists: 0,
+        investors: 0,
+        admins: 0
+      },
+      verificationStats: {
+        pendingUsers: 0,
+        pendingLandTokens: 0,
+        pendingBulkUploads: 0
+      }
     };
   }
 };
 
 /**
- * Get dashboard by ID (admin view)
- * @param {string} id - Dashboard ID
- * @param {string} adminId - Admin ID
- * @returns {Object} Dashboard data
+ * Get recent users
+ * @param {number} limit - Number of recent users to retrieve
+ * @returns {Array} List of recent users
  */
-exports.getDashboardById = async (id, adminId) => {
+exports.getRecentUsers = async (limit = 10) => {
   try {
-    // Get real-time data from services instead of stored dashboard
-    const dashboard = await exports.getDefaultDashboard(adminId);
-    
-    // Add specific dashboard ID
-    dashboard.id = id;
-    
-    return dashboard;
+    const response = await httpRequest(USER_SVC, `/api/users/recent?limit=${limit}`);
+    return response.data?.users || response.users || [];
   } catch (error) {
-    console.error('Get dashboard error:', error);
-    throw new Error(`Failed to get dashboard: ${error.message}`);
+    console.error(`Get recent users error:`, error);
+    return [];
   }
 };
 
 /**
- * Get all dashboards for an admin
- * @param {string} adminId - Admin ID
- * @returns {Array} List of dashboards
+ * Get recent orders
+ * @param {number} limit - Number of recent orders to retrieve
+ * @returns {Array} List of recent orders
  */
-exports.getAllDashboards = async (adminId) => {
+exports.getRecentOrders = async (limit = 10) => {
   try {
-    // For now, return just the default dashboard
-    // In future, this could support multiple custom dashboards
-    const defaultDashboard = await exports.getDefaultDashboard(adminId);
-    
-    return [defaultDashboard];
+    const response = await httpRequest(MARKETPLACE_SVC, `/api/marketplace/orders/recent?limit=${limit}`);
+    return response.data?.orders || response.orders || [];
   } catch (error) {
-    console.error('Get all dashboards error:', error);
-    throw new Error(`Failed to get dashboards: ${error.message}`);
+    console.error(`Get recent orders error:`, error);
+    return [];
   }
 };
 
 /**
- * Create a new dashboard
- * @param {Object} dashboardData - Dashboard data
- * @param {Object} adminData - Admin data for audit logging
- * @returns {Object} Created dashboard
+ * Get system health status
+ * @returns {Object} System health information
  */
-exports.createDashboard = async (dashboardData, adminData) => {
+exports.getSystemHealth = async () => {
   try {
-    // Create dashboard by aggregating real-time data
-    const dashboard = await exports.getDefaultDashboard(adminData.id);
-    
-    // Apply any custom configurations from dashboardData
-    if (dashboardData.name) {
-      dashboard.name = dashboardData.name;
-    }
-    if (dashboardData.layout) {
-      dashboard.layout = dashboardData.layout;
-    }
-    if (dashboardData.widgets) {
-      dashboard.widgets = [...dashboard.widgets, ...dashboardData.widgets];
-    }
-
-    // Log the action via audit service
-    try {
-      await httpRequest(
-        process.env.USER_SERVICE_URL || 'http://localhost:3002',
-        '/api/admin/audit-logs',
-        'POST',
-        {
-          adminId: adminData.id,
-          adminName: adminData.name,
-          action: 'create',
-          resourceType: 'dashboard',
-          resourceId: dashboard.id,
-          description: `Created new dashboard: ${dashboard.name}`,
-          status: 'success',
-          ipAddress: adminData.ipAddress,
-          userAgent: adminData.userAgent
-        },
-        { Authorization: `Bearer ${adminData.token}` }
-      );
-    } catch (auditError) {
-      console.error('Audit log creation failed:', auditError);
-      // Continue without audit log if service is unavailable
-    }
-
-    return dashboard;
+    const response = await httpRequest(ANALYTICS_SVC, '/api/analytics/health');
+    return response.data?.health || response.health || { status: 'unknown', services: [] };
   } catch (error) {
-    console.error('Create dashboard error:', error);
-    throw new Error(`Failed to create dashboard: ${error.message}`);
+    console.error('Get system health error:', error);
+    return { status: 'unknown', services: [] };
   }
 };
-
-/**
- * Update a dashboard
- * @param {string} id - Dashboard ID
- * @param {Object} updateData - Data to update
- * @param {Object} adminData - Admin data for audit logging
- * @returns {Object} Updated dashboard
- */
-exports.updateDashboard = async (id, updateData, adminData) => {
-  try {
-    // Get current dashboard data
-    const currentDashboard = await exports.getDashboardById(id, adminData.id);
-    
-    // Merge updates with current data
-    const updatedDashboard = {
-      ...currentDashboard,
-      ...updateData,
-      id: id, // Preserve ID
-      adminId: adminData.id, // Preserve ownership
-      updatedAt: new Date()
-    };
-
-    // Log the action via audit service
-    try {
-      await httpRequest(
-        process.env.USER_SERVICE_URL || 'http://localhost:3002',
-        '/api/admin/audit-logs',
-        'POST',
-        {
-          adminId: adminData.id,
-          adminName: adminData.name,
-          action: 'update',
-          resourceType: 'dashboard',
-          resourceId: id,
-          description: `Updated dashboard: ${updatedDashboard.name}`,
-          status: 'success',
-          ipAddress: adminData.ipAddress,
-          userAgent: adminData.userAgent
-        },
-        { Authorization: `Bearer ${adminData.token}` }
-      );
-    } catch (auditError) {
-      console.error('Audit log creation failed:', auditError);
-      // Continue without audit log if service is unavailable
-    }
-
-    return updatedDashboard;
-  } catch (error) {
-    console.error('Update dashboard error:', error);
-    throw new Error(`Failed to update dashboard: ${error.message}`);
-  }
-};
-
-/**
- * Delete a dashboard
- * @param {string} id - Dashboard ID
- * @param {Object} adminData - Admin data for audit logging
- * @returns {Object} Deletion result
- */
-exports.deleteDashboard = async (id, adminData) => {
-  try {
-    // For now, just log the deletion (since we're not persisting dashboards)
-    // In future, this would delete from database
-    
-    // Log the action via audit service
-    try {
-      await httpRequest(
-        process.env.USER_SERVICE_URL || 'http://localhost:3002',
-        '/api/admin/audit-logs',
-        'POST',
-        {
-          adminId: adminData.id,
-          adminName: adminData.name,
-          action: 'delete',
-          resourceType: 'dashboard',
-          resourceId: id,
-          description: `Deleted dashboard: ${id}`,
-          status: 'success',
-          ipAddress: adminData.ipAddress,
-          userAgent: adminData.userAgent
-        },
-        { Authorization: `Bearer ${adminData.token}` }
-      );
-    } catch (auditError) {
-      console.error('Audit log creation failed:', auditError);
-      // Continue without audit log if service is unavailable
-    }
-
-    return { success: true, message: 'Dashboard deleted successfully' };
-  } catch (error) {
-    console.error('Delete dashboard error:', error);
-    throw new Error(`Failed to delete dashboard: ${error.message}`);
-  }
-};
-
-/**
- * Get dashboard widgets data
- * @param {string} dashboardId - Dashboard ID
- * @param {Object} adminData - Admin data
- * @returns {Object} Widget data
- */
-exports.getDashboardWidgets = async (dashboardId, adminData) => {
-  try {
-    // Get fresh data from all services for dashboard widgets
-    const dashboard = await exports.getDashboardById(dashboardId, adminData.id);
-    
-    // Refresh widget data with latest information
-    const refreshedWidgets = await Promise.all(
-      dashboard.widgets.map(async (widget) => {
-        try {
-          // Refresh data based on widget type
-          switch (widget.type) {
-            case 'stats':
-              return await refreshStatsWidget(widget, adminData);
-            case 'chart':
-              return await refreshChartWidget(widget, adminData);
-            case 'table':
-              return await refreshTableWidget(widget, adminData);
-            case 'health':
-              return await refreshHealthWidget(widget, adminData);
-            default:
-              return widget;
-          }
-        } catch (refreshError) {
-          console.error(`Error refreshing widget ${widget.id}:`, refreshError);
-          return {
-            ...widget,
-            data: { error: 'Failed to refresh data', originalData: widget.data }
-          };
-        }
-      })
-    );
-
-    return {
-      ...dashboard,
-      widgets: refreshedWidgets,
-      lastRefreshed: new Date()
-    };
-  } catch (error) {
-    console.error('Get dashboard widgets error:', error);
-    throw new Error(`Failed to get dashboard widgets: ${error.message}`);
-  }
-};
-
-// Helper functions to refresh different widget types
-
-async function refreshStatsWidget(widget, adminData) {
-  // Get fresh statistics based on widget ID
-  let freshData = {};
-  
-  switch (widget.id) {
-    case 'user-stats':
-      freshData = await httpRequest(USER_SVC, '/api/analytics/users');
-      break;
-    case 'field-stats':
-      freshData = await httpRequest(FIELD_SVC, '/api/analytics/fields');
-      break;
-    case 'crop-stats':
-      freshData = await httpRequest(CROP_SVC, '/api/analytics/crops');
-      break;
-    case 'order-stats':
-      freshData = await httpRequest(MARKETPLACE_SVC, '/api/analytics/orders');
-      break;
-    case 'sensor-stats':
-      freshData = await httpRequest(IOT_SVC, '/api/analytics/devices');
-      break;
-    case 'blockchain-stats':
-      const blockchainData = await httpRequest(BLOCKCHAIN_SVC, '/api/blockchain/market');
-      const data = blockchainData?.data?.data || blockchainData?.data || {};
-      freshData = {
-        totalTokens: data?.totalTokens || 0,
-        totalTransactions: data?.totalTransactions || 0,
-        activeContracts: data?.activeContracts || 0
-      };
-      break;
-    default:
-      freshData = widget.data; // Keep existing data if no refresh logic
-  }
-  
-  return {
-    ...widget,
-    data: freshData.data || freshData
-  };
-}
-
-async function refreshChartWidget(widget, adminData) {
-  // Implement chart data refresh logic
-  // This would depend on the specific chart type and data source
-  return {
-    ...widget,
-    data: widget.data, // Keep existing for now
-    lastRefreshed: new Date()
-  };
-}
-
-async function refreshTableWidget(widget, adminData) {
-  // Implement table data refresh logic
-  // This would depend on the specific table and data source
-  return {
-    ...widget,
-    data: widget.data, // Keep existing for now
-    lastRefreshed: new Date()
-  };
-}
-
-async function refreshHealthWidget(widget, adminData) {
-  // Refresh system health data
-  const healthData = await httpRequest(ANALYTICS_SVC, '/api/analytics/health');
-  
-  return {
-    ...widget,
-    data: healthData.data || healthData
-  };
-}

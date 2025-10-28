@@ -10,6 +10,7 @@ const IndependentUserServiceClient = require('../utils/user-service-client');
 const IndependentFieldServiceClient = require('../utils/field-service-client');
 const IndependentCropServiceClient = require('../utils/crop-service-client');
 const IndependentSensorServiceClient = require('../utils/sensor-service-client');
+const IndependentResourceServiceClient = require('../utils/resource-service-client');
 const bulkUploadService = require('../services/bulkUploadService');
 const Settings = require('../models/SystemSettings');
 
@@ -18,10 +19,11 @@ const userServiceClient = new IndependentUserServiceClient();
 const fieldServiceClient = new IndependentFieldServiceClient();
 const cropServiceClient = new IndependentCropServiceClient();
 const sensorServiceClient = new IndependentSensorServiceClient();
+const resourceServiceClient = new IndependentResourceServiceClient();
 
 
 // @desc    Get comprehensive dashboard statistics
-// @route   GET /api/admin/dashboard/stats
+// @route   GET /api/admin/stats
 // @access  Private/Admin
 exports.getDashboardStats = asyncHandler(async (req, res, next) => {
   try {
@@ -31,6 +33,7 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
       fieldStats,
       cropStats,
       sensorStats,
+      resourceStats,
       bulkUploadStats,
       systemSettings
     ] = await Promise.all([
@@ -38,6 +41,7 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
       getFieldStats(),
       getCropStats(),
       getSensorStats(),
+      getResourceStats(),
       bulkUploadService.getBulkUploadStats()
     ]);
 
@@ -47,10 +51,23 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
       fields: fieldStats.totalFields || 0,
       crops: cropStats.totalCrops || 0,
       sensors: sensorStats.totalSensors || 0,
+      resources: resourceStats.totalResources || 0,
       bulkUploads: bulkUploadStats.totalUploads || 0,
       recentUploads: bulkUploadStats.recentUploads || [],
       systemStatus: 'healthy',
-      lastUpdated: new Date()
+      lastUpdated: new Date(),
+      usersByRole: userStats.usersByRole || {
+        farmers: 0,
+        buyers: 0,
+        agronomists: 0,
+        investors: 0,
+        admins: 0
+      },
+      verificationStats: userStats.verificationStats || {
+        pendingUsers: 0,
+        pendingLandTokens: 0,
+        pendingBulkUploads: 0
+      }
     };
 
     res.status(200).json({
@@ -74,8 +91,23 @@ async function getUserStats() {
     const totalUsers = users.length;
     const usersByRole = {};
     
+    // Count pending verifications
+    let pendingUsers = 0;
+    const pendingVerifications = [];
+    
     users.forEach(user => {
       usersByRole[user.role] = (usersByRole[user.role] || 0) + 1;
+      if (user.verificationStatus === 'pending' || !user.isVerified) {
+        pendingUsers++;
+        pendingVerifications.push({
+          id: user._id,
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          role: user.role,
+          verificationStatus: user.verificationStatus,
+          createdAt: user.createdAt
+        });
+      }
     });
 
     return {
@@ -87,11 +119,27 @@ async function getUserStats() {
         email: user.email,
         role: user.role,
         createdAt: user.createdAt
-      }))
+      })),
+      pendingVerifications: pendingVerifications.slice(0, 10),
+      verificationStats: {
+        pendingUsers,
+        pendingLandTokens: 0, // This would be fetched from land token service
+        pendingBulkUploads: 0 // This would be fetched from bulk upload service
+      }
     };
   } catch (error) {
     console.error('Error fetching user stats:', error);
-    return { totalUsers: 0, usersByRole: {}, recentUsers: [] };
+    return { 
+      totalUsers: 0, 
+      usersByRole: {}, 
+      recentUsers: [],
+      pendingVerifications: [],
+      verificationStats: {
+        pendingUsers: 0,
+        pendingLandTokens: 0,
+        pendingBulkUploads: 0
+      }
+    };
   }
 }
 
@@ -179,6 +227,55 @@ async function getSensorStats() {
   } catch (error) {
     console.error('Error fetching sensor stats:', error);
     return { totalSensors: 0, sensorsByType: {}, sensorsByStatus: {}, recentSensors: [] };
+  }
+}
+
+// Helper function to get order statistics
+async function getOrderStats() {
+  try {
+    // For now, return mock data since we don't have an order service client
+    // In a real implementation, you would create an IndependentOrderServiceClient
+    return {
+      totalOrders: 0,
+      ordersByStatus: {},
+      recentOrders: []
+    };
+  } catch (error) {
+    console.error('Error fetching order stats:', error);
+    return { totalOrders: 0, ordersByStatus: {}, recentOrders: [] };
+  }
+}
+
+// Helper function to get resource statistics
+async function getResourceStats() {
+  try {
+    const resources = await resourceServiceClient.getAllResources();
+    const totalResources = resources.length;
+    
+    const resourcesByType = {};
+    const resourcesByStatus = {};
+    
+    resources.forEach(resource => {
+      resourcesByType[resource.type] = (resourcesByType[resource.type] || 0) + 1;
+      resourcesByStatus[resource.status] = (resourcesByStatus[resource.status] || 0) + 1;
+    });
+
+    return {
+      totalResources,
+      resourcesByType,
+      resourcesByStatus,
+      recentResources: resources.slice(0, 5).map(resource => ({
+        id: resource._id,
+        name: resource.name,
+        type: resource.type,
+        status: resource.status,
+        location: resource.location,
+        hourlyRate: resource.pricing?.hourlyRate || 0
+      }))
+    };
+  } catch (error) {
+    console.error('Error fetching resource stats:', error);
+    return { totalResources: 0, resourcesByType: {}, resourcesByStatus: {}, recentResources: [] };
   }
 }
 
@@ -347,15 +444,14 @@ exports.getRecentUsers = asyncHandler(async (req, res, next) => {
 });
 
 // @desc    Get recent orders
-// @route   GET /api/admin/dashboard/orders/recent
+// @route   GET /api/admin/stats/orders/recent
 // @access  Private/Admin
 exports.getRecentOrders = asyncHandler(async (req, res, next) => {
   try {
-    // For now, return empty array since we don't have an order service client
-    // In a real implementation, you would create an IndependentOrderServiceClient
+    const orderStats = await getOrderStats();
     res.status(200).json({
       success: true,
-      data: []
+      data: orderStats.recentOrders || []
     });
   } catch (error) {
     res.status(500).json({
@@ -366,26 +462,14 @@ exports.getRecentOrders = asyncHandler(async (req, res, next) => {
 });
 
 // @desc    Get pending verifications
-// @route   GET /api/admin/dashboard/verification/pending
+// @route   GET /api/admin/stats/verification/pending
 // @access  Private/Admin
 exports.getPendingVerifications = asyncHandler(async (req, res, next) => {
   try {
-    // Get users with pending verification status
-    const users = await userServiceClient.getAllUsers();
-    const pendingVerifications = users.filter(user => 
-      user.verificationStatus === 'pending' || !user.isVerified
-    ).slice(0, 10).map(user => ({
-      id: user._id,
-      name: `${user.firstName} ${user.lastName}`,
-      email: user.email,
-      role: user.role,
-      verificationStatus: user.verificationStatus,
-      createdAt: user.createdAt
-    }));
-
+    const userStats = await getUserStats();
     res.status(200).json({
       success: true,
-      data: pendingVerifications
+      data: userStats.pendingVerifications || []
     });
   } catch (error) {
     res.status(500).json({

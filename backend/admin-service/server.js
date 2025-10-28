@@ -20,7 +20,6 @@ const analyticsRoutes = require('./routes/analyticsRoutes');
 const bulkUploadRoutes = require('./routes/bulkUploadRoutes');
 const adminUserRoutes = require('./routes/adminUserRoutes');
 const resourcesRoutes = require('./routes/resourceRoutes');
-const blockchainRoutes = require('./routes/blockchainRoutes');
 
 
 // Import logger
@@ -67,7 +66,6 @@ app.use('/api/admin/fields', fieldRoutes);
 app.use('/api/admin/crops', cropRoutes);
 app.use('/api/admin/orders', orderRoutes);
 app.use('/api/admin/sensors', sensorRoutes);
-app.use('/api/admin/blockchain', blockchainRoutes);
 
 
 
@@ -104,11 +102,6 @@ app.get('/', (req, res) => {
       '/api/admin/dashboard/fields/stats',
       '/api/admin/dashboard/crops/stats',
       '/api/admin/dashboard/sensors/stats',
-        '/api/admin/blockchain/wallet',
-        '/api/admin/blockchain/transactions',
-        '/api/admin/blockchain/contracts',
-        '/api/admin/blockchain/land-tokens',
-        '/api/admin/blockchain/market',
 
       
       '/health',
