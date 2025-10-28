@@ -17,6 +17,10 @@ import trustReducer from './features/trustLedger/trustLedgerSlice';
 import resourcesReducer from './features/resources/resourcesSlice';
 import sustainabilityReducer from './features/sustainability/sustainabilitySlice';
 import matchReducer from './features/matchmaking/matchmakingSlice';
+import logisticsReducer from './features/logistics/logisticsSlice';
+import agronomistReducer from './features/agronomist/agronomistSlice';
+import { log } from 'console';
+
 
 export const store = configureStore({
   reducer: {
@@ -34,6 +38,8 @@ export const store = configureStore({
     resources: resourcesReducer,
     sustainability: sustainabilityReducer,
     match: matchReducer,
+    agronomist: agronomistReducer,
+    logistics: logisticsReducer
   },
 });
 

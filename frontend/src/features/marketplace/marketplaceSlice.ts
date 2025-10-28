@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-import { API_BASE_URL } from '../../config/apiConfig';
+//import { API_BASE_URL } from '../../config/apiConfig';
 import { setAlert } from '../alert/alertSlice';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
 // Types
 export interface MarketplaceItem {
@@ -41,7 +42,7 @@ export const getMarketplaceItems = createAsyncThunk(
   'marketplace/getMarketplaceItems',
   async ({ category, status }: { category?: string; status?: string } = {}, { rejectWithValue }) => {
     try {
-      let url = `${API_BASE_URL}/api/marketplace`;
+      let url = `${API_BASE_URL}/api/marketplace/products`;
       const params = [];
       
       if (category) params.push(`category=${category}`);
@@ -64,7 +65,7 @@ export const getMarketplaceItemById = createAsyncThunk(
   'marketplace/getMarketplaceItemById',
   async (id: string, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/marketplace/${id}`);
+      const res = await axios.get(`${API_BASE_URL}/api/marketplace/products/${id}`);
       return res.data;
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || 'Failed to fetch marketplace item');
@@ -77,7 +78,7 @@ export const createMarketplaceItem = createAsyncThunk(
   'marketplace/createMarketplaceItem',
   async (formData: Partial<MarketplaceItem>, { dispatch, rejectWithValue }) => {
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/marketplace`, formData);
+      const res = await axios.post(`${API_BASE_URL}/api/marketplace/products`, formData);
       
       dispatch(setAlert({
         message: 'Item listed successfully',
@@ -96,7 +97,7 @@ export const updateMarketplaceItem = createAsyncThunk(
   'marketplace/updateMarketplaceItem',
   async ({ id, formData }: { id: string; formData: Partial<MarketplaceItem> }, { dispatch, rejectWithValue }) => {
     try {
-      const res = await axios.put(`${API_BASE_URL}/api/marketplace/${id}`, formData);
+      const res = await axios.put(`${API_BASE_URL}/api/marketplace/products/${id}`, formData);
       
       dispatch(setAlert({
         message: 'Listing updated successfully',
@@ -115,7 +116,7 @@ export const deleteMarketplaceItem = createAsyncThunk(
   'marketplace/deleteMarketplaceItem',
   async (id: string, { dispatch, rejectWithValue }) => {
     try {
-      await axios.delete(`${API_BASE_URL}/api/marketplace/${id}`);
+      await axios.delete(`${API_BASE_URL}/api/marketplace/products/${id}`);
       
       dispatch(setAlert({
         message: 'Listing deleted successfully',
@@ -134,7 +135,7 @@ export const getMyListings = createAsyncThunk(
   'marketplace/getMyListings',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/marketplace/my-listings`);
+      const res = await axios.get(`${API_BASE_URL}/api/marketplace/products/my-listings`);
       return res.data;
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || 'Failed to fetch your listings');

@@ -1,55 +1,84 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { Link as RouterLink } from 'react-router-dom';
+import axios from 'axios';
+import { useTranslation } from 'react-i18next';
+
 import {
   Box,
-  Typography,
-  Grid,
+  Button,
   Card,
   CardContent,
+  CardActions,
   CardMedia,
-  Button,
+  Container,
+  Divider,
+  Grid,
+  Typography,
   TextField,
   InputAdornment,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
   Chip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   IconButton,
+  Rating,
+  Avatar,
   Tabs,
   Tab,
-  Divider,
-  Avatar,
-  Rating,
+  CircularProgress,
   Alert,
-  Autocomplete
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import AddIcon from '@mui/icons-material/Add';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import SellIcon from '@mui/icons-material/Sell';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import PersonIcon from '@mui/icons-material/Person';
-import CloseIcon from '@mui/icons-material/Close';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import WarningIcon from '@mui/icons-material/Warning';
-import { useTranslation } from 'react-i18next';
 
+import {
+  Search as SearchIcon,
+  ShoppingCart as ShoppingCartIcon,
+  FilterList as FilterListIcon,
+  Favorite as FavoriteIcon,
+  FavoriteBorder as FavoriteBorderIcon,
+  LocationOn as LocationOnIcon,
+  Person as PersonIcon,
+  Close as CloseIcon,
+  AttachMoney as AttachMoneyIcon,
+} from '@mui/icons-material';
 
-// Add current user context (in real app, this would come from Redux/Context)
-const CURRENT_USER = {
-  id: 1,
-  name: 'Your Farm',
-  location: 'Your Location'
-};
+import { RootState } from '../../store';
 
-// Add interface for user's crops
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+
+// Define types
+interface MarketplaceItem {
+  _id: string;
+  cropName: string;
+  variety: string;
+  quantity: number;
+  unit: string;
+  pricePerUnit: number;
+  totalPrice: number;
+  seller: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  sellerRating: number;
+  location: string;
+  harvestDate: Date;
+  listedDate: Date;
+  quality: string;
+  description: string;
+  image?: string;
+  status: 'Available' | 'Sold' | 'Reserved';
+  category: 'Grains' | 'Vegetables' | 'Fruits' | 'Herbs';
+  userCropId?: string;
+}
+
 interface UserCrop {
-  id: number;
+  _id: string;
   name: string;
   variety: string;
   plantedArea: string;
@@ -57,72 +86,6 @@ interface UserCrop {
   status: string;
   estimatedYield: number;
   unit: string;
-}
-
-// Mock user crops (from Crops page)
-const mockUserCrops: UserCrop[] = [
-  {
-    id: 1,
-    name: 'Wheat',
-    variety: 'Hard Red Winter',
-    plantedArea: '45 acres',
-    harvestDate: '2024-08-10',
-    status: 'Harvested',
-    estimatedYield: 100,
-    unit: 'tons'
-  },
-  {
-    id: 2,
-    name: 'Corn',
-    variety: 'Sweet Corn',
-    plantedArea: '30 acres',
-    harvestDate: '2024-09-15',
-    status: 'Harvested',
-    estimatedYield: 75,
-    unit: 'tons'
-  },
-  {
-    id: 3,
-    name: 'Soybeans',
-    variety: 'Round-Up Ready',
-    plantedArea: '25 acres',
-    harvestDate: '2024-10-20',
-    status: 'Growing',
-    estimatedYield: 50,
-    unit: 'tons'
-  },
-  {
-    id: 4,
-    name: 'Rice',
-    variety: 'Long Grain',
-    plantedArea: '20 acres',
-    harvestDate: '2024-09-30',
-    status: 'Harvested',
-    estimatedYield: 60,
-    unit: 'tons'
-  }
-];
-
-interface MarketplaceItem {
-  id: number;
-  cropName: string;
-  variety: string;
-  quantity: number;
-  unit: string;
-  pricePerUnit: number;
-  totalPrice: number;
-  seller: string;
-  sellerId: number; // Add seller ID
-  sellerRating: number;
-  location: string;
-  harvestDate: string;
-  listedDate: string;
-  quality: string;
-  description: string;
-  image: string;
-  status: 'Available' | 'Sold' |  'Reserved' ;
-  category: 'Grains' | 'Vegetables' | 'Fruits' | 'Herbs';
-  userCropId?: number; // Reference to user's crop
 }
 
 interface ListingFormData {
@@ -134,82 +97,18 @@ interface ListingFormData {
   image: string;
 }
 
-// Update mock marketplace data with seller IDs
-const mockMarketplaceItems: MarketplaceItem[] = [
-  {
-    id: 1,
-    cropName: 'Wheat',
-    variety: 'Hard Red Winter',
-    quantity: 100,
-    unit: 'tons',
-    pricePerUnit: 250,
-    totalPrice: 25000,
-    seller: 'John Smith Farm',
-    sellerId: 2, // Different from current user
-    sellerRating: 4.8,
-    location: 'Iowa, USA',
-    harvestDate: '2024-08-15',
-    listedDate: '2024-08-20',
-    quality: 'Premium',
-    description: 'High-quality wheat, freshly harvested. Perfect for milling.',
-    image: 'https://images.unsplash.com/photo-1574323347407-f5e1c5a6ec21?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-    status: 'Available',
-    category: 'Grains'
-  },
-  {
-    id: 2,
-    cropName: 'Corn',
-    variety: 'Sweet Corn',
-    quantity: 50,
-    unit: 'tons',
-    pricePerUnit: 180,
-    totalPrice: 9000,
-    seller: 'Green Valley Co-op',
-    sellerId: 3,
-    sellerRating: 4.6,
-    location: 'Nebraska, USA',
-    harvestDate: '2024-09-01',
-    listedDate: '2024-09-05',
-    quality: 'Grade A',
-    description: 'Fresh sweet corn, perfect for direct consumption or processing.',
-    image: 'https://images.unsplash.com/photo-1601472543578-74691771b8be?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-    status: 'Available',
-    category: 'Vegetables'
-  },
-  {
-    id: 3,
-    cropName: 'Rice',
-    variety: 'Long Grain',
-    quantity: 30,
-    unit: 'tons',
-    pricePerUnit: 400,
-    totalPrice: 12000,
-    seller: 'Your Farm', // This is the current user's listing
-    sellerId: 1, // Same as current user
-    sellerRating: 4.5,
-    location: 'Your Location',
-    harvestDate: '2024-09-30',
-    listedDate: '2024-10-01',
-    quality: 'Premium',
-    description: 'Premium quality rice from our farm.',
-    image: 'https://images.unsplash.com/photo-1568347355280-d83c8fceb0fd?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-    status: 'Available',
-    category: 'Grains',
-    userCropId: 4
-  }
-];
-
 const Marketplace: React.FC = () => {
   const { t } = useTranslation();
-
+  const { user } = useSelector((state: RootState) => state.auth);
+  
   const [searchTerm, setSearchTerm] = useState('');
-  const [items, setItems] = useState<MarketplaceItem[]>(mockMarketplaceItems);
+  const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [tabValue, setTabValue] = useState(0);
   const [listingDialog, setListingDialog] = useState(false);
   const [purchaseDialog, setPurchaseDialog] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MarketplaceItem | null>(null);
   const [filterCategory, setFilterCategory] = useState('All');
-  const [userCrops] = useState<UserCrop[]>(mockUserCrops);
+  const [userCrops, setUserCrops] = useState<UserCrop[]>([]);
   
   const [listingForm, setListingForm] = useState<ListingFormData>({
     selectedCrop: null,
@@ -219,574 +118,493 @@ const Marketplace: React.FC = () => {
     description: '',
     image: ''
   });
-
-  // Filter items based on tab
-  const getFilteredItems = () => {
-    let filtered = items.filter(item => {
-      const matchesSearch = item.cropName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           item.variety.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           item.seller.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = filterCategory === 'All' || item.category === filterCategory;
-      
-      return matchesSearch && matchesCategory;
-    });
-
-    switch (tabValue) {
-      case 0: // All Listings
-        return filtered;
-      case 1: // Available (not mine)
-        return filtered.filter(item => item.status === 'Available' && item.sellerId !== CURRENT_USER.id);
-      case 2: // My Listings
-        return filtered.filter(item => item.sellerId === CURRENT_USER.id);
-      default:
-        return filtered;
-    }
+  
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  
+  // Fetch marketplace items
+  useEffect(() => {
+    const fetchMarketplaceItems = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(`${API_BASE_URL}/api/marketplace`);
+        setItems(res.data.data || res.data);
+        
+        // Fetch user crops if user is a farmer
+        if (user?.role === 'farmer') {
+          const cropsRes = await axios.get(`${API_BASE_URL}/api/crops`);
+          setUserCrops(cropsRes.data.data || cropsRes.data);
+        }
+      } catch (err: any) {
+        const errorMessage = err.response?.data?.message || 'Failed to fetch marketplace items';
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchMarketplaceItems();
+  }, [user]);
+  
+  // Handle search
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
-
-  const filteredItems = getFilteredItems();
-
-  // Get available crops for listing (only harvested crops)
-  const getAvailableCropsForListing = () => {
-    return userCrops.filter(crop => crop.status === 'Harvested');
-  };
-
+  
+  // Filter items based on search and category
+  const filteredItems = items.filter(item => {
+    const matchesSearch = item.cropName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.variety.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.seller.name.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCategory = filterCategory === 'All' || item.category === filterCategory;
+    
+    return matchesSearch && matchesCategory;
+  });
+  
+  // Handle tab change
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
-
-  const handleOpenListingDialog = () => {
-    setListingForm({
-      selectedCrop: null,
-      quantity: '',
-      pricePerUnit: '',
-      quality: 'Grade A',
-      description: '',
-      image: ''
-    });
-    setListingDialog(true);
-  };
-
-  const handleCloseListingDialog = () => {
-    setListingDialog(false);
-  };
-
-  const handleCropSelection = (crop: UserCrop | null) => {
-    setListingForm(prev => ({
-      ...prev,
-      selectedCrop: crop,
-      quantity: crop ? Math.min(crop.estimatedYield, parseFloat(prev.quantity) || crop.estimatedYield).toString() : '',
-      image: prev.image || getCropImage(crop?.name || '')
-    }));
-  };
-
-  const getCropImage = (cropName: string) => {
-    const imageMap: { [key: string]: string } = {
-      'Wheat': 'https://images.unsplash.com/photo-1574323347407-f5e1c5a6ec21?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-      'Corn': 'https://images.unsplash.com/photo-1601472543578-74691771b8be?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-      'Soybeans': 'https://images.unsplash.com/photo-1536054695850-b8f9e8d9fd5d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-      'Rice': 'https://images.unsplash.com/photo-1568347355280-d83c8fceb0fd?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-      'Tomatoes': 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
-    };
-    return imageMap[cropName] || 'https://images.unsplash.com/photo-1574323347407-f5e1c5a6ec21?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80';
-  };
-
-  const getCropCategory = (cropName: string): 'Grains' | 'Vegetables' | 'Fruits' | 'Herbs' => {
-    const categoryMap: { [key: string]: 'Grains' | 'Vegetables' | 'Fruits' | 'Herbs' } = {
-      'Wheat': 'Grains',
-      'Corn': 'Vegetables',
-      'Soybeans': 'Grains',
-      'Rice': 'Grains',
-      'Tomatoes': 'Vegetables'
-    };
-    return categoryMap[cropName] || 'Grains';
-  };
-
-  const handleListingInputChange = (Fields: keyof Omit<ListingFormData, 'selectedCrop'>, value: string) => {
-    setListingForm(prev => ({
-      ...prev,
-      [Fields]: value
-    }));
-  };
-
-  const handleSubmitListing = () => {
-    if (!listingForm.selectedCrop) return;
-
-    const newListing: MarketplaceItem = {
-      id: Math.max(...items.map(i => i.id)) + 1,
-      cropName: listingForm.selectedCrop.name,
-      variety: listingForm.selectedCrop.variety,
-      quantity: parseFloat(listingForm.quantity),
-      unit: listingForm.selectedCrop.unit,
-      pricePerUnit: parseFloat(listingForm.pricePerUnit),
-      totalPrice: parseFloat(listingForm.quantity) * parseFloat(listingForm.pricePerUnit),
-      seller: CURRENT_USER.name,
-      sellerId: CURRENT_USER.id,
-      sellerRating: 4.5,
-      location: CURRENT_USER.location,
-      harvestDate: listingForm.selectedCrop.harvestDate,
-      listedDate: new Date().toISOString().split('T')[0],
-      quality: listingForm.quality,
-      description: listingForm.description,
-      image: listingForm.image || getCropImage(listingForm.selectedCrop.name),
-      status: 'Available',
-      category: getCropCategory(listingForm.selectedCrop.name),
-      userCropId: listingForm.selectedCrop.id
-    };
-
-    setItems(prev => [...prev, newListing]);
-    handleCloseListingDialog();
-    alert('Listing created successfully!');
-  };
-
-  const handleOpenPurchaseDialog = (item: MarketplaceItem) => {
-    if (item.sellerId === CURRENT_USER.id) {
-      alert("You cannot buy your own listing!");
-      return;
-    }
+  
+  // Handle purchase
+  const handlePurchaseClick = (item: MarketplaceItem) => {
     setSelectedItem(item);
     setPurchaseDialog(true);
   };
-
-  const handleClosePurchaseDialog = () => {
-    setPurchaseDialog(false);
-    setSelectedItem(null);
-  };
-
+  
+  // Handle purchase
   const handlePurchase = () => {
     if (selectedItem) {
+      // In a real app, this would make an API call to purchase the item
+      alert(`Successfully purchased ${selectedItem.quantity} ${selectedItem.unit} of ${selectedItem.cropName} from ${selectedItem.seller.name}!`);
+      
+      // Update item status
       setItems(prev => prev.map(item => 
-        item.id === selectedItem.id 
-          ? { ...item, status: 'Sold' as const }
+        item._id === selectedItem._id 
+          ? { ...item, status: 'Sold' } 
           : item
       ));
-      handleClosePurchaseDialog();
-      alert(`Successfully purchased ${selectedItem.quantity} ${selectedItem.unit} of ${selectedItem.cropName} from ${selectedItem.seller}!`);
+      
+      setPurchaseDialog(false);
+      setSelectedItem(null);
     }
   };
-
-  const isListingFormValid = () => {
-    return listingForm.selectedCrop !== null &&
-           listingForm.quantity.trim() !== '' &&
-           listingForm.pricePerUnit.trim() !== '' &&
-           parseFloat(listingForm.quantity) > 0 &&
-           parseFloat(listingForm.pricePerUnit) > 0 &&
-           parseFloat(listingForm.quantity) <= (listingForm.selectedCrop?.estimatedYield || 0);
+  
+  // Handle list crop
+  const handleListCropClick = () => {
+    setListingDialog(true);
   };
-
-  const getQualityColor = (quality: string) => {
-    switch (quality) {
-      case 'Premium':
-      case 'Organic':
-        return 'success';
-      case 'Grade A':
-        return 'primary';
-      case 'Grade B':
-        return 'warning';
-      default:
-        return 'default';
+  
+  // Handle form change
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setListingForm(prev => ({ ...prev, [name]: value }));
+  };
+  
+  // Handle crop selection
+  const handleCropSelect = (e: any) => {
+    const selected = userCrops.find(crop => crop._id === e.target.value);
+    if (selected) {
+      setListingForm(prev => ({
+        ...prev,
+        selectedCrop: selected,
+        quantity: selected.estimatedYield.toString(),
+        description: `Fresh ${selected.name} ${selected.variety} harvested from our farm`
+      }));
     }
   };
-
-  const isOwnListing = (item: MarketplaceItem) => {
-    return item.sellerId === CURRENT_USER.id;
+  
+  // Handle listing submission
+  const handleListingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const listingData = {
+        cropName: listingForm.selectedCrop?.name,
+        variety: listingForm.selectedCrop?.variety,
+        quantity: parseFloat(listingForm.quantity),
+        unit: listingForm.selectedCrop?.unit || 'kg',
+        pricePerUnit: parseFloat(listingForm.pricePerUnit),
+        quality: listingForm.quality,
+        description: listingForm.description,
+        image: listingForm.image,
+        status: 'Available',
+        category: 'Grains', // This would be determined by the crop type
+        userCropId: listingForm.selectedCrop?._id
+      };
+      
+      const res = await axios.post(`${API_BASE_URL}/api/marketplace`, listingData);
+      
+      // Add new item to the list
+      setItems(prev => [res.data.data, ...prev]);
+      
+      // Reset form and close dialog
+      setListingForm({
+        selectedCrop: null,
+        quantity: '',
+        pricePerUnit: '',
+        quality: 'Grade A',
+        description: '',
+        image: ''
+      });
+      
+      setListingDialog(false);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Failed to create listing';
+      setError(errorMessage);
+    }
   };
-
+  
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+  
+  if (error) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Alert severity="error">{error}</Alert>
+      </Container>
+    );
+  }
+  
   return (
-    <Box sx={{ flexGrow: 1, p: 3 }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="div">
-          Marketplace
-        </Typography>
-        <Button 
-          variant="contained" 
-          color="primary" 
-          startIcon={<AddIcon />}
-          onClick={handleOpenListingDialog}
-          disabled={getAvailableCropsForListing().length === 0}
-        >
-          List Crop
-        </Button>
-      </Box>
-
-      {getAvailableCropsForListing().length === 0 && (
-        <Alert severity="info" sx={{ mb: 3 }}>
-          You need harvested crops to create listings. Harvest your crops first!
-        </Alert>
-      )}
-
-      {/* Tabs */}
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Typography variant="h4" gutterBottom>
+        {t('marketplace.title')}
+      </Typography>
+      
       <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 3 }}>
-        <Tab label={`All Listings (${items.length})`} />
-        <Tab label={`Available (${items.filter(item => item.status === 'Available' && item.sellerId !== CURRENT_USER.id).length})`} />
-        <Tab label={`My Listings (${items.filter(item => item.sellerId === CURRENT_USER.id).length})`} />
+        <Tab label={t('marketplace.browse')} />
+        <Tab label={t('marketplace.myListings')} />
       </Tabs>
-
-      {/* Search and Filters */}
-      <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Search crops, varieties, or sellers..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <FormControl sx={{ minWidth: 120 }}>
-          <InputLabel>Category</InputLabel>
-          <Select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            label="Category"
-          >
-            <MenuItem value="All">All</MenuItem>
-            <MenuItem value="Grains">Grains</MenuItem>
-            <MenuItem value="Vegetables">Vegetables</MenuItem>
-            <MenuItem value="Fruits">Fruits</MenuItem>
-            <MenuItem value="Herbs">Herbs</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
-
-      {/* Marketplace Items Grid */}
+      
       <Grid container spacing={3}>
-        {filteredItems.map((item) => (
-          <Grid item xs={12} sm={6} md={4} key={item.id}>
-            <Card sx={{ 
-              height: '100%', 
-              display: 'flex', 
-              flexDirection: 'column',
-              border: isOwnListing(item) ? '2px solid #1976d2' : 'none',
-              position: 'relative'
-            }}>
-              {isOwnListing(item) && (
-                <Chip 
-                  label="Your Listing" 
-                  color="primary" 
-                  size="small" 
-                  sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}
-                />
-              )}
+        <Grid item xs={12} md={3}>
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                {t('marketplace.filters')}
+              </Typography>
               
-              <CardMedia
-                component="img"
-                height="140"
-                image={item.image}
-                alt={item.cropName}
+              <TextField
+                fullWidth
+                variant="outlined"
+                placeholder={t('marketplace.searchPlaceholder')}
+                value={searchTerm}
+                onChange={handleSearch}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ mb: 2 }}
               />
-              <CardContent sx={{ flexGrow: 1 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                  <Typography gutterBottom variant="h5" component="div">
-                    {item.cropName}
-                  </Typography>
-                  <Chip 
-                    label={item.status} 
-                    color={item.status === 'Available' ? 'success' : 'default'} 
-                    size="small" 
-                  />
-                </Box>
-                
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  {item.variety} • {item.quantity} {item.unit}
-                </Typography>
-
-                <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                  <Chip 
-                    label={item.quality} 
-                    color={getQualityColor(item.quality) as any} 
-                    size="small" 
-                  />
-                  <Chip 
-                    label={item.category} 
-                    variant="outlined" 
-                    size="small" 
-                  />
-                </Box>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <AttachMoneyIcon fontSize="small" />
-                  <Typography variant="h6" color="primary" sx={{ ml: 0.5 }}>
-                    ${item.pricePerUnit}/{item.unit}
-                  </Typography>
-                </Box>
-
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  Total: ${item.totalPrice.toLocaleString()}
-                </Typography>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <PersonIcon fontSize="small" color="action" />
-                  <Typography variant="body2" color="text.secondary">
-                    {item.seller}
-                  </Typography>
-                  <Rating value={item.sellerRating} size="small" precision={0.1} readOnly />
-                </Box>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                  <LocationOnIcon fontSize="small" color="action" />
-                  <Typography variant="body2" color="text.secondary">
-                    {item.location}
-                  </Typography>
-                </Box>
-
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {item.description}
-                </Typography>
-
-                <Typography variant="caption" color="text.secondary">
-                  Harvested: {item.harvestDate} • Listed: {item.listedDate}
-                </Typography>
-              </CardContent>
               
-              <Box sx={{ p: 2 }}>
-                {isOwnListing(item) ? (
-                  <Button 
-                    variant="outlined" 
-                    fullWidth
-                    disabled
-                    startIcon={<PersonIcon />}
-                  >
-                    Your Listing
-                  </Button>
-                ) : (
-                  <Button 
-                    variant="contained" 
-                    fullWidth
-                    startIcon={<ShoppingCartIcon />}
-                    onClick={() => handleOpenPurchaseDialog(item)}
-                    disabled={item.status !== 'Available'}
-                  >
-                    {item.status === 'Available' ? 'Buy Now' : 'Sold Out'}
-                  </Button>
-                )}
-              </Box>
-            </Card>
+              <FormControl fullWidth variant="outlined" sx={{ mb: 2 }}>
+                <InputLabel>{t('marketplace.category')}</InputLabel>
+                <Select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value as string)}
+                  label={t('marketplace.category')}
+                >
+                  <MenuItem value="All">{t('marketplace.allCategories')}</MenuItem>
+                  <MenuItem value="Grains">{t('marketplace.grains')}</MenuItem>
+                  <MenuItem value="Vegetables">{t('marketplace.vegetables')}</MenuItem>
+                  <MenuItem value="Fruits">{t('marketplace.fruits')}</MenuItem>
+                  <MenuItem value="Herbs">{t('marketplace.herbs')}</MenuItem>
+                </Select>
+              </FormControl>
+              
+              {user?.role === 'farmer' && (
+                <Button
+                  fullWidth
+                  variant="contained"
+                  color="primary"
+                  startIcon={<ShoppingCartIcon />}
+                  onClick={handleListCropClick}
+                  sx={{ mt: 2 }}
+                >
+                  {t('marketplace.listCrop')}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} md={9}>
+          <Grid container spacing={3}>
+            {filteredItems.map((item) => (
+              <Grid item xs={12} sm={6} md={4} key={item._id}>
+                <Card 
+                  sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                >
+                  <CardMedia
+                    component="img"
+                    height="140"
+                    image={item.image || '/images/default-product.jpg'}
+                    alt={item.cropName}
+                  />
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography gutterBottom variant="h6" component="h2">
+                        {item.cropName}
+                      </Typography>
+                      <IconButton aria-label="add to favorites" size="small">
+                        {item.status === 'Sold' ? (
+                          <FavoriteIcon color="disabled" />
+                        ) : (
+                          <FavoriteBorderIcon />
+                        )}
+                      </IconButton>
+                    </Box>
+                    
+                    <Typography variant="body2" color="textSecondary" paragraph>
+                      {item.variety}
+                    </Typography>
+                    
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="h6" color="primary">
+                        ₹{item.pricePerUnit}/{item.unit}
+                      </Typography>
+                      <Chip 
+                        label={item.quality} 
+                        size="small" 
+                        color={
+                          item.quality === 'Premium' ? 'success' :
+                          item.quality === 'Good' ? 'primary' : 'default'
+                        } 
+                      />
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <LocationOnIcon fontSize="small" sx={{ mr: 1 }} />
+                      <Typography variant="body2" color="textSecondary">
+                        {item.location}
+                      </Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <PersonIcon fontSize="small" sx={{ mr: 1 }} />
+                      <Typography variant="body2" color="textSecondary">
+                        {item.seller.name}
+                      </Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Rating 
+                        value={item.sellerRating} 
+                        readOnly 
+                        size="small" 
+                        sx={{ mr: 1 }} 
+                      />
+                      <Typography variant="body2" color="textSecondary">
+                        ({item.sellerRating})
+                      </Typography>
+                    </Box>
+                    
+                    <Typography variant="body2" color="textSecondary">
+                      {new Date(item.harvestDate).toLocaleDateString()}
+                    </Typography>
+                  </CardContent>
+                  
+                  <CardActions>
+                    <Button 
+                      size="small" 
+                      color="primary"
+                      component={RouterLink}
+                      to={`/marketplace/${item._id}`}
+                    >
+                      {t('marketplace.viewDetails')}
+                    </Button>
+                    <Button 
+                      size="small" 
+                      variant="contained" 
+                      disabled={item.status === 'Sold'}
+                      onClick={() => handlePurchaseClick(item)}
+                    >
+                      {item.status === 'Sold' ? t('marketplace.soldOut') : t('marketplace.purchase')}
+                    </Button>
+                  </CardActions>
+                </Card>
+              </Grid>
+            ))}
           </Grid>
-        ))}
+        </Grid>
       </Grid>
-
-      {filteredItems.length === 0 && (
-        <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Typography variant="h6" color="text.secondary">
-            {tabValue === 2 ? "You haven't created any listings yet." : "No items found matching your criteria."}
-          </Typography>
-        </Box>
-      )}
-
-      {/* List Crop Dialog */}
-      <Dialog 
-        open={listingDialog} 
-        onClose={handleCloseListingDialog}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <SellIcon />
-              List Your Crop
-            </Box>
-            <IconButton onClick={handleCloseListingDialog}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-            <Autocomplete
-              options={getAvailableCropsForListing()}
-              getOptionLabel={(option) => `${option.name} - ${option.variety} (${option.estimatedYield} ${option.unit} available)`}
-              value={listingForm.selectedCrop}
-              onChange={(_, value) => handleCropSelection(value)}
-              renderInput={(params) => (
-                <TextField 
-                  {...params} 
-                  label="Select Crop to List" 
-                  required 
-                  helperText="Only harvested crops can be listed"
-                />
-              )}
-              renderOption={(props, option) => (
-                <Box component="li" {...props}>
-                  <Box>
-                    <Typography variant="body1">
-                      {option.name} - {option.variety}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Available: {option.estimatedYield} {option.unit} | Harvested: {option.harvestDate}
-                    </Typography>
-                  </Box>
-                </Box>
-              )}
-            />
-
-            {listingForm.selectedCrop && (
-              <Alert severity="info">
-                <Typography variant="body2">
-                  <strong>Selected:</strong> {listingForm.selectedCrop.name} - {listingForm.selectedCrop.variety}
-                  <br />
-                  <strong>Available quantity:</strong> {listingForm.selectedCrop.estimatedYield} {listingForm.selectedCrop.unit}
-                  <br />
-                  <strong>Harvest date:</strong> {listingForm.selectedCrop.harvestDate}
-                </Typography>
-              </Alert>
-            )}
-
-            <TextField
-              label="Quantity to Sell"
-              type="number"
-              value={listingForm.quantity}
-              onChange={(e) => handleListingInputChange('quantity', e.target.value)}
-              required
-              fullWidth
-              inputProps={{ 
-                min: 0, 
-                max: listingForm.selectedCrop?.estimatedYield || 0,
-                step: 0.1 
-              }}
-              helperText={listingForm.selectedCrop ? 
-                `Maximum available: ${listingForm.selectedCrop.estimatedYield} ${listingForm.selectedCrop.unit}` : 
-                'Select a crop first'
-              }
-              disabled={!listingForm.selectedCrop}
-              error={Boolean(listingForm.selectedCrop && parseFloat(listingForm.quantity) > listingForm.selectedCrop.estimatedYield)}
-            />
-
-            <TextField
-              label={`Price per ${listingForm.selectedCrop?.unit || 'unit'}`}
-              type="number"
-              value={listingForm.pricePerUnit}
-              onChange={(e) => handleListingInputChange('pricePerUnit', e.target.value)}
-              required
-              fullWidth
-              InputProps={{
-                startAdornment: <InputAdornment position="start">$</InputAdornment>,
-              }}
-              inputProps={{ min: 0, step: 0.01 }}
-              disabled={!listingForm.selectedCrop}
-            />
-
-            {listingForm.quantity && listingForm.pricePerUnit && listingForm.selectedCrop && (
-              <Box sx={{ p: 2, bgcolor: 'success.light', borderRadius: 1, color: 'success.contrastText' }}>
-                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <AttachMoneyIcon />
-                  Total Value: ${(parseFloat(listingForm.quantity) * parseFloat(listingForm.pricePerUnit)).toLocaleString()}
-                </Typography>
-              </Box>
-            )}
-
-            <FormControl fullWidth disabled={!listingForm.selectedCrop}>
-              <InputLabel>Quality Grade</InputLabel>
-              <Select
-                value={listingForm.quality}
-                onChange={(e) => handleListingInputChange('quality', e.target.value)}
-                label="Quality Grade"
-              >
-                <MenuItem value="Premium">Premium</MenuItem>
-                <MenuItem value="Organic">Organic</MenuItem>
-                <MenuItem value="Grade A">Grade A</MenuItem>
-                <MenuItem value="Grade B">Grade B</MenuItem>
-              </Select>
-            </FormControl>
-
-            <TextField
-              label="Description"
-              value={listingForm.description}
-              onChange={(e) => handleListingInputChange('description', e.target.value)}
-              multiline
-              rows={3}
-              fullWidth
-              placeholder="Describe your crop quality, growing conditions, storage, etc."
-              disabled={!listingForm.selectedCrop}
-            />
-
-            <TextField
-              label="Custom Image URL (optional)"
-              value={listingForm.image}
-              onChange={(e) => handleListingInputChange('image', e.target.value)}
-              fullWidth
-              disabled={!listingForm.selectedCrop}
-              helperText="Leave empty to use default crop image"
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseListingDialog}>Cancel</Button>
-          <Button 
-            onClick={handleSubmitListing}
-            variant="contained"
-            disabled={!isListingFormValid()}
-          >
-            List Crop for Sale
-          </Button>
-        </DialogActions>
-      </Dialog>
-
+      
       {/* Purchase Dialog */}
-      <Dialog
-        open={purchaseDialog}
-        onClose={handleClosePurchaseDialog}
-        maxWidth="sm"
-        fullWidth
-      >
+      <Dialog open={purchaseDialog} onClose={() => setPurchaseDialog(false)}>
         <DialogTitle>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            Confirm Purchase
-            <IconButton onClick={handleClosePurchaseDialog}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
+          {t('marketplace.purchaseItem')}
+          <IconButton
+            aria-label="close"
+            onClick={() => setPurchaseDialog(false)}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
+        
         <DialogContent>
           {selectedItem && (
             <Box>
               <Typography variant="h6" gutterBottom>
-                {selectedItem.cropName} - {selectedItem.variety}
+                {selectedItem.cropName} ({selectedItem.variety})
               </Typography>
+              
               <Typography variant="body1" gutterBottom>
-                Quantity: {selectedItem.quantity} {selectedItem.unit}
+                {t('marketplace.seller')}: {selectedItem.seller.name}
               </Typography>
+              
               <Typography variant="body1" gutterBottom>
-                Price: ${selectedItem.pricePerUnit}/{selectedItem.unit}
+                {t('marketplace.quantity')}: {selectedItem.quantity} {selectedItem.unit}
               </Typography>
-              <Typography variant="h5" color="primary" gutterBottom>
-                Total: ${selectedItem.totalPrice.toLocaleString()}
+              
+              <Typography variant="body1" gutterBottom>
+                {t('marketplace.price')}: ₹{selectedItem.totalPrice}
               </Typography>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Seller: {selectedItem.seller}
+              
+              <Typography variant="body1" gutterBottom>
+                {t('marketplace.quality')}: {selectedItem.quality}
               </Typography>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Location: {selectedItem.location}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Quality: {selectedItem.quality}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Harvest Date: {selectedItem.harvestDate}
+              
+              <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
+                {selectedItem.description}
               </Typography>
             </Box>
           )}
         </DialogContent>
+        
         <DialogActions>
-          <Button onClick={handleClosePurchaseDialog}>Cancel</Button>
+          <Button onClick={() => setPurchaseDialog(false)} color="primary">
+            {t('marketplace.cancel')}
+          </Button>
           <Button 
+            variant="contained" 
+            color="primary" 
             onClick={handlePurchase}
-            variant="contained"
-            color="success"
             startIcon={<ShoppingCartIcon />}
           >
-            Confirm Purchase
+            {t('marketplace.confirmPurchase')}
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+      
+      {/* Listing Dialog */}
+      <Dialog open={listingDialog} onClose={() => setListingDialog(false)}>
+        <DialogTitle>
+          {t('marketplace.listNewCrop')}
+          <IconButton
+            aria-label="close"
+            onClick={() => setListingDialog(false)}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        
+        <DialogContent>
+          <Box component="form" onSubmit={handleListingSubmit}>
+            <FormControl fullWidth variant="outlined" sx={{ mb: 2 }}>
+              <InputLabel>{t('marketplace.selectCrop')}</InputLabel>
+              <Select
+                value={listingForm.selectedCrop?._id || ''}
+                onChange={handleCropSelect}
+                label={t('marketplace.selectCrop')}
+              >
+                {userCrops.map(crop => (
+                  <MenuItem key={crop._id} value={crop._id}>
+                    {crop.name} ({crop.variety})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            
+            <TextField
+              fullWidth
+              variant="outlined"
+              label={t('marketplace.quantity')}
+              name="quantity"
+              value={listingForm.quantity}
+              onChange={handleFormChange}
+              type="number"
+              sx={{ mb: 2 }}
+            />
+            
+            <TextField
+              fullWidth
+              variant="outlined"
+              label={t('marketplace.pricePerUnit')}
+              name="pricePerUnit"
+              value={listingForm.pricePerUnit}
+              onChange={handleFormChange}
+              type="number"
+              InputProps={{
+                startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+              }}
+              sx={{ mb: 2 }}
+            />
+            
+            <FormControl fullWidth variant="outlined" sx={{ mb: 2 }}>
+              <InputLabel>{t('marketplace.quality')}</InputLabel>
+              <Select
+                value={listingForm.quality}
+                onChange={(e) => setListingForm(prev => ({ ...prev, quality: e.target.value as string }))}
+                label={t('marketplace.quality')}
+              >
+                <MenuItem value="Premium">{t('marketplace.premium')}</MenuItem>
+                <MenuItem value="Grade A">{t('marketplace.gradeA')}</MenuItem>
+                <MenuItem value="Grade B">{t('marketplace.gradeB')}</MenuItem>
+                <MenuItem value="Standard">{t('marketplace.standard')}</MenuItem>
+              </Select>
+            </FormControl>
+            
+            <TextField
+              fullWidth
+              variant="outlined"
+              label={t('marketplace.description')}
+              name="description"
+              value={listingForm.description}
+              onChange={handleFormChange}
+              multiline
+              rows={3}
+              sx={{ mb: 2 }}
+            />
+            
+            <TextField
+              fullWidth
+              variant="outlined"
+              label={t('marketplace.imageURL')}
+              name="image"
+              value={listingForm.image}
+              onChange={handleFormChange}
+              sx={{ mb: 2 }}
+            />
+          </Box>
+        </DialogContent>
+        
+        <DialogActions>
+          <Button onClick={() => setListingDialog(false)} color="primary">
+            {t('marketplace.cancel')}
+          </Button>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={handleListingSubmit}
+            startIcon={<AttachMoneyIcon />}
+          >
+            {t('marketplace.createListing')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Container>
   );
 };
 

@@ -5,6 +5,9 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 const SERVICE_NAME = process.env.SERVICE_NAME || 'supplier-service';
+const { serviceRegistry } = require('@agrimaan/shared/service-discovery/service-registry');
+
+
 
 // Using console.log for development instead of shared logger
 const logger = {
@@ -39,8 +42,29 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/api/suppliers', require('./routes/supplierRoutes'));
+app.use('/api/suppliers/register', require('./routes/supplierRoutes'));
+app.use('/api/suppliers/login', require('./routes/supplierRoutes'));
 app.use('/api/products', require('./routes/productRoutes'));
+app.use('/api/ratings', require('./routes/ratingRoutes'));
+app.use('/api/promotions', require('./routes/promotionRoutes'));
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.status(200).json({
+    service: 'Supplier Service',
+    version: '1.0.0',
+    endpoints: [
+      '/api/suppliers',
+      '/api/suppliers/register',
+      '/api/suppliers/login',
+      '/api/products',
+      '/api/ratings',
+      '/api/promotions',    
+      '/health',
+      '/'
+    ]
+  });
+});
 // Error handling middleware
 app.use((err, req, res, next) => {
   logger.error('Unhandled error:', { error: err.stack });
@@ -76,4 +100,17 @@ process.on('SIGTERM', () => {
   });
 });
 
+
+  // Register service with Consul
+/*
+serviceRegistry.register()
+.then(() => {
+  console.log('Service registered with Consul');
+  // Setup graceful shutdown to deregister service
+  serviceRegistry.setupGracefulShutdown(server);
+})
+.catch(err => {
+  console.error('Failed to register service with Consul:', err);
+});
+*/
 module.exports = app;

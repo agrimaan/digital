@@ -23,6 +23,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  CircularProgress,
+  Alert
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -36,6 +38,9 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { AppDispatch } from '../../store';
+import { getLogisticsStats, getDeliveries } from '../../features/logistics/logisticsSlice';
 
 interface LogisticsStats {
   totalDeliveries: number;
@@ -61,289 +66,228 @@ interface Delivery {
 const LogisticsDashboard: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [stats, setStats] = useState<LogisticsStats>({
-    totalDeliveries: 150,
-    activeDeliveries: 12,
-    completedDeliveries: 135,
-    pendingDeliveries: 3,
-    totalRevenue: 75000,
-  });
-
-  const [recentDeliveries, setRecentDeliveries] = useState<Delivery[]>([
-    {
-      id: '1',
-      orderId: 'ORD001',
-      farmer: 'राम कुमार',
-      buyer: 'श्याम लाल',
-      pickupLocation: 'हरियाणा',
-      deliveryLocation: 'दिल्ली',
-      status: 'in-transit',
-      estimatedTime: '2 घंटे',
-      driver: 'सुरेश',
-      vehicle: 'ट्रक HR01AB1234',
-    },
-    {
-      id: '2',
-      orderId: 'ORD002',
-      farmer: 'सीता देवी',
-      buyer: 'मोहन लाल',
-      pickupLocation: 'पंजाब',
-      deliveryLocation: 'चंडीगढ़',
-      status: 'scheduled',
-      estimatedTime: '4 घंटे',
-      driver: 'राजेश',
-      vehicle: 'ट्रक PB02CD5678',
-    },
-  ]);
-
-  const quickActions = [
-    {
-      title: t('roles.logistics.scheduleDelivery'),
-      icon: <ScheduleIcon />,
-      action: () => navigate('/deliveries/schedule'),
-      color: 'success',
-    },
-    {
-      title: t('roles.logistics.manageRoutes'),
-      icon: <RouteIcon />,
-      action: () => navigate('/routes'),
-      color: 'primary',
-    },
-    {
-      title: t('roles.logistics.vehicleTracking'),
-      icon: <DirectionsCarIcon />,
-      action: () => navigate('/vehicles'),
-      color: 'warning',
-    },
-    {
-      title: t('roles.logistics.deliveryStatus'),
-      icon: <LocalShippingIcon />,
-      action: () => navigate('/deliveries'),
-      color: 'info',
-    },
-  ];
-
-  const dashboardStats = [
-    {
-      title: t('deliveries.totalDeliveries'),
-      value: stats.totalDeliveries,
-      icon: <LocalShippingIcon />,
-      color: 'primary',
-      description: t('roles.logistics.totalDeliveries'),
-    },
-    {
-      title: t('deliveries.activeDeliveries'),
-      value: stats.activeDeliveries,
-      icon: <LocalShippingIcon />,
-      color: 'warning',
-      description: t('roles.logistics.activeDeliveries'),
-    },
-    {
-      title: t('deliveries.completedDeliveries'),
-      value: stats.completedDeliveries,
-      icon: <AssignmentIcon />,
-      color: 'success',
-      description: t('roles.logistics.completedDeliveries'),
-    },
-    {
-      title: t('deliveries.totalRevenue'),
-      value: `₹${stats.totalRevenue}`,
-      icon: <LocalShippingIcon />,
-      color: 'info',
-      description: t('roles.logistics.totalRevenue'),
-    },
-  ];
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'scheduled':
-        return 'primary';
-      case 'in-transit':
-        return 'warning';
-      case 'delivered':
-        return 'success';
-      case 'delayed':
-        return 'error';
-      default:
-        return 'default';
-    };
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'scheduled':
-        return t('deliveries.scheduled');
-      case 'in-transit':
-        return t('deliveries.inTransit');
-      case 'delivered':
-        return t('deliveries.delivered');
-      case 'delayed':
-        return t('deliveries.delayed');
-      default:
-        return status;
-    };
-  };
-
-  return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          {t('roles.logistics.title')}
-        </Typography>
-        <Typography variant="h6" color="text.secondary">
-          {t('roles.logistics.welcome')}
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          {t('roles.logistics.description')}
-        </Typography>
+  const dispatch = useDispatch<AppDispatch>();
+  
+  const { deliveries, stats, loading, error } = useSelector((state: any) => state.logistics);
+  
+  const [recentDeliveries, setRecentDeliveries] = useState<Delivery[]>([]);
+  
+  useEffect(() => {
+    // Fetch logistics statistics
+    dispatch(getLogisticsStats());
+    
+    // Fetch recent deliveries
+    dispatch(getDeliveries());
+  }, [dispatch]);
+  
+  useEffect(() => {
+    // Update recent deliveries when deliveries data changes
+    if (deliveries && deliveries.length > 0) {
+      const formattedDeliveries = deliveries.slice(0, 5).map((delivery: any) => ({
+        id: delivery._id,
+        orderId: delivery.orderId,
+        farmer: delivery.farmer?.name || 'Unknown Farmer',
+        buyer: delivery.buyer?.name || 'Unknown Buyer',
+        pickupLocation: delivery.pickupAddress?.city || 'Unknown Location',
+        deliveryLocation: delivery.deliveryAddress?.city || 'Unknown Location',
+        status: delivery.status,
+        estimatedTime: new Date(delivery.estimatedDeliveryTime).toLocaleString(),
+        driver: delivery.vehicle?.driver || 'Unassigned',
+        vehicle: delivery.vehicle?.registrationNumber || 'Unassigned',
+      }));
+      
+      setRecentDeliveries(formattedDeliveries);
+    }
+  }, [deliveries]);
+  
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+        <CircularProgress />
       </Box>
-
+    );
+  }
+  
+  if (error) {
+    return (
+      <Box sx={{ mt: 4 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
+  
+  return (
+    <Box sx={{ flexGrow: 1, p: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        {t('logisticsDashboard.title')}
+      </Typography>
+      
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {dashboardStats.map((stat, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Avatar sx={{ bgcolor: `${stat.color}.main`, mr: 2 }}>
-                    {stat.icon}
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h4" color={`${stat.color}.main`}>
-                      {stat.value}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {stat.title}
-                    </Typography>
-                  </Box>
-                </Box>
-                <Typography variant="caption" color="text.secondary">
-                  {stat.description}
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
+                  <AssignmentIcon />
+                </Avatar>
+                <Typography color="textSecondary" gutterBottom>
+                  {t('logisticsDashboard.totalDeliveries')}
                 </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
+              </Box>
+              <Typography variant="h5" component="h2">
+                {stats?.totalDeliveries || 0}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar sx={{ mr: 2, bgcolor: 'secondary.main' }}>
+                  <LocalShippingIcon />
+                </Avatar>
+                <Typography color="textSecondary" gutterBottom>
+                  {t('logisticsDashboard.activeDeliveries')}
+                </Typography>
+              </Box>
+              <Typography variant="h5" component="h2">
+                {stats?.activeDeliveries || 0}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar sx={{ mr: 2, bgcolor: 'success.main' }}>
+                  <ScheduleIcon />
+                </Avatar>
+                <Typography color="textSecondary" gutterBottom>
+                  {t('logisticsDashboard.completedDeliveries')}
+                </Typography>
+              </Box>
+              <Typography variant="h5" component="h2">
+                {stats?.completedDeliveries || 0}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar sx={{ mr: 2, bgcolor: 'info.main' }}>
+                  <NotificationsIcon />
+                </Avatar>
+                <Typography color="textSecondary" gutterBottom>
+                  {t('logisticsDashboard.pendingDeliveries')}
+                </Typography>
+              </Box>
+              <Typography variant="h5" component="h2">
+                {stats?.pendingDeliveries || 0}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
       </Grid>
-
-      {/* Quick Actions */}
-      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          {t('dashboard.quickActions')}
-        </Typography>
-        <Grid container spacing={2}>
-          {quickActions.map((action, index) => (
-            <Grid item xs={12} sm={6} md={3} key={index}>
-              <Button
-                variant="contained"
-                fullWidth
-                startIcon={action.icon}
-                onClick={action.action}
-                sx={{
-                  bgcolor: `${action.color}.main`,
-                  '&:hover': { bgcolor: `${action.color}.dark` },
-                  height: 60,
-                }}
-              >
-                {action.title}
-              </Button>
-            </Grid>
-          ))}
-        </Grid>
-      </Paper>
-
+      
       {/* Recent Deliveries */}
-      <Paper elevation={3} sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          {t('deliveries.recentDeliveries')}
-        </Typography>
-        <List>
-          {recentDeliveries.map((delivery) => (
-            <ListItem key={delivery.id}>
-              <ListItemIcon>
-                <LocalShippingIcon color={getStatusColor(delivery.status) as any} />
-              </ListItemIcon>
-              <ListItemText
-                primary={
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="h6">
-                      {t('deliveries.order')}: {delivery.orderId}
-                    </Typography>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={8}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              {t('logisticsDashboard.recentDeliveries')}
+            </Typography>
+            <List>
+              {recentDeliveries.map((delivery) => (
+                <ListItem key={delivery.id} divider>
+                  <ListItemIcon>
+                    <Avatar>
+                      <RouteIcon />
+                    </Avatar>
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={`${delivery.orderId} - ${delivery.farmer} to ${delivery.buyer}`}
+                    secondary={`${delivery.pickupLocation} → ${delivery.deliveryLocation}`}
+                  />
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                     <Chip
-                      label={getStatusText(delivery.status)}
+                      label={delivery.status}
+                      color={
+                        delivery.status === 'delivered' ? 'success' :
+                        delivery.status === 'in-transit' ? 'primary' :
+                        delivery.status === 'pending' ? 'warning' : 'default'
+                      }
                       size="small"
-                      color={getStatusColor(delivery.status) as any}
+                      sx={{ mb: 1 }}
                     />
-                  </Box>
-                }
-                secondary={
-                  <Box>
-                    <Typography variant="body2">
-                      {t('common.farmer')}: {delivery.farmer} → {t('common.buyer')}: {delivery.buyer}
-                    </Typography>
-                    <Typography variant="body2">
-                      {t('common.location')}: {delivery.pickupLocation} → {delivery.deliveryLocation}
-                    </Typography>
-                    <Typography variant="body2">
-                      {t('deliveries.estimatedTime')}: {delivery.estimatedTime}
-                    </Typography>
-                    <Typography variant="body2">
-                      {t('deliveries.driver')}: {delivery.driver} | {t('deliveries.vehicle')}: {delivery.vehicle}
+                    <Typography variant="caption" color="textSecondary">
+                      {delivery.estimatedTime}
                     </Typography>
                   </Box>
-                }
-              />
-            </ListItem>
-          ))}
-        </List>
-      </Paper>
-
-      {/* Navigation Cards */}
-      <Grid container spacing={3} sx={{ mt: 2 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ cursor: 'pointer' }} onClick={() => navigate('/deliveries')}>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <LocalShippingIcon sx={{ fontSize: 40, mb: 2, color: 'primary.main' }} />
-              <Typography variant="h6">{t('deliveries.title')}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t('roles.logistics.deliveryManagement')}
-              </Typography>
-            </CardContent>
-          </Card>
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ cursor: 'pointer' }} onClick={() => navigate('/routes')}>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <RouteIcon sx={{ fontSize: 40, mb: 2, color: 'success.main' }} />
-              <Typography variant="h6">{t('deliveries.routes')}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t('roles.logistics.routeManagement')}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ cursor: 'pointer' }} onClick={() => navigate('/vehicles')}>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <DirectionsCarIcon sx={{ fontSize: 40, mb: 2, color: 'warning.main' }} />
-              <Typography variant="h6">{t('deliveries.vehicles')}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t('roles.logistics.vehicleManagement')}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ cursor: 'pointer' }} onClick={() => navigate('/analytics')}>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <AssignmentIcon sx={{ fontSize: 40, mb: 2, color: 'info.main' }} />
-              <Typography variant="h6">{t('analytics.title')}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t('roles.logistics.analytics')}
-              </Typography>
-            </CardContent>
-          </Card>
+        
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 2, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              {t('logisticsDashboard.quickActions')}
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={6}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                  startIcon={<AssignmentIcon />}
+                  onClick={() => navigate('/logistics/deliveries')}
+                >
+                  {t('logisticsDashboard.viewAll')}
+                </Button>
+              </Grid>
+              <Grid item xs={6}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  fullWidth
+                  startIcon={<MapIcon />}
+                  onClick={() => navigate('/logistics/tracking')}
+                >
+                  {t('logisticsDashboard.track')}
+                </Button>
+              </Grid>
+            </Grid>
+          </Paper>
+          
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              {t('logisticsDashboard.vehicleStatus')}
+            </Typography>
+            <List>
+              {recentDeliveries.slice(0, 3).map((delivery) => (
+                <ListItem key={delivery.id}>
+                  <ListItemText
+                    primary={delivery.vehicle}
+                    secondary={delivery.driver}
+                  />
+                  <Chip
+                    label={delivery.status === 'in-transit' ? t('logisticsDashboard.onDelivery') : t('logisticsDashboard.available')}
+                    color={delivery.status === 'in-transit' ? 'primary' : 'success'}
+                    size="small"
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
         </Grid>
       </Grid>
     </Box>

@@ -118,6 +118,88 @@ exports.getProductById = async (req, res) => {
   }
 };
 
+// @desc    Get products by supplier
+// @route   GET /api/products/supplier/:supplierId
+// @access  Public
+exports.getProductsBySupplier = async (req, res) => {
+  try {
+    const products = await Product.find({ 
+      supplierId: req.params.supplierId, 
+      isActive: true 
+    });
+    
+    return responseHandler.success(res, 200, products, 'Supplier products retrieved successfully');
+  } catch (error) {
+    return responseHandler.error(res, 500, 'Error retrieving supplier products', error);
+  }
+};
+
+// @desc    Get single product
+// @route   GET /api/products/:id
+// @access  Public
+exports.getProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    
+    if (!product) {
+      return responseHandler.notFound(res, 'Product not found');
+    }
+    
+    if (!product.isActive) {
+      return responseHandler.badRequest(res, 'Product is not active');
+    }
+    
+    return responseHandler.success(res, 200, product, 'Product retrieved successfully');
+  } catch (error) {
+    return responseHandler.error(res, 500, 'Error retrieving product', error);
+  }
+};
+
+// @desc    Get product price for farmer
+// @route   GET /api/products/:id/price/:farmerId
+// @access  Public
+exports.getProductPriceForFarmer = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    
+    if (!product) {
+      return responseHandler.notFound(res, 'Product not found');
+    }
+    
+    if (!product.isActive) {
+      return responseHandler.badRequest(res, 'Product is not active');
+    }
+    
+    // Calculate base price
+    let finalPrice = product.pricing.basePrice;
+    const quantity = req.query.quantity ? parseFloat(req.query.quantity) : 1;
+    
+    // Apply volume discounts
+    if (product.pricing.volumeDiscounts && product.pricing.volumeDiscounts.length > 0) {
+      // Sort volume discounts by minQuantity descending
+      const sortedDiscounts = [...product.pricing.volumeDiscounts].sort((a, b) => b.minQuantity - a.minQuantity);
+      
+      // Find applicable discount
+      for (const discount of sortedDiscounts) {
+        if (quantity >= discount.minQuantity) {
+          finalPrice = finalPrice * (1 - discount.discountPercentage / 100);
+          break;
+        }
+      }
+    }
+    
+    return responseHandler.success(res, 200, { 
+      productId: product._id,
+      basePrice: product.pricing.basePrice,
+      finalPrice,
+      quantity,
+      unit: product.pricing.unit
+    }, 'Product price calculated successfully');
+  } catch (error) {
+    return responseHandler.error(res, 500, 'Error calculating product price', error);
+  }
+};
+
 /**
  * @desc    Create new product
  * @route   POST /api/products

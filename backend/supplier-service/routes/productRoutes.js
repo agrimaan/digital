@@ -1,46 +1,63 @@
+
 const express = require('express');
-const { body } = require('express-validator');
+const { check } = require('express-validator');
 const router = express.Router();
-const {
+const { 
   getProducts,
-  getProductById,
+  getProductsBySupplier,
+  getProductPriceForFarmer,
+  getProduct,
   createProduct,
   updateProduct,
-  deleteProduct,
-  calculatePrice,
-  approveProduct,
-  updateStock
+  deleteProduct
 } = require('../controllers/productController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize } = require('@agrimaan/shared').middleware;
 
-// Public routes
-router.get('/', getProducts);
-router.get('/:id', getProductById);
-router.post('/:id/calculate-price', calculatePrice);
+// Validation middleware
+const validateProductCreation = [
+  check('name', 'Product name is required').not().isEmpty(),
+  check('description', 'Product description is required').not().isEmpty(),
+  check('category', 'Category is required').not().isEmpty(),
+  check('category', 'Category must be one of: seeds, fertilizers, pesticides, equipment, organic, sustainable')
+    .isIn(['seeds', 'fertilizers', 'pesticides', 'equipment', 'organic', 'sustainable']),
+  check('supplierId', 'Supplier ID is required').not().isEmpty(),
+  check('pricing.basePrice', 'Base price is required and must be a positive number').isFloat({ min: 0 }),
+  check('pricing.unit', 'Price unit is required').not().isEmpty(),
+  check('pricing.unit', 'Price unit must be one of: kg, ton, piece, package, liter, quintal')
+    .isIn(['kg', 'ton', 'piece', 'package', 'liter', 'quintal']),
+  check('inventory.availableQuantity', 'Available quantity is required and must be a non-negative number').isInt({ min: 0 })
+];
 
-// Protected routes
-router.post(
-  '/',
-  protect,
-  [
-    body('supplierId', 'Supplier ID is required').not().isEmpty(),
-    body('name', 'Product name is required').not().isEmpty(),
-    body('category', 'Category is required').isIn(['seeds', 'fertilizers', 'pesticides', 'equipment', 'tools', 'irrigation', 'other']),
-    body('subcategory', 'Subcategory is required').not().isEmpty(),
-    body('description', 'Description is required').not().isEmpty(),
-    body('basePrice', 'Base price is required').isFloat({ min: 0 }),
-    body('unit', 'Unit is required').isIn(['kg', 'gram', 'liter', 'ml', 'piece', 'packet', 'bag', 'box']),
-    body('unitSize', 'Unit size is required').isFloat({ min: 0 }),
-    body('stockQuantity', 'Stock quantity is required').isInt({ min: 0 })
-  ],
-  createProduct
-);
+const validateProductUpdate = [
+  check('name', 'Product name must not be empty if provided').optional().not().isEmpty(),
+  check('category', 'Category must be valid if provided')
+    .optional()
+    .isIn(['seeds', 'fertilizers', 'pesticides', 'equipment', 'organic', 'sustainable']),
+  check('pricing.basePrice', 'Base price must be a positive number if provided').optional().isFloat({ min: 0 }),
+  check('pricing.unit', 'Price unit must be valid if provided')
+    .optional()
+    .isIn(['kg', 'ton', 'piece', 'package', 'liter', 'quintal']),
+  check('inventory.availableQuantity', 'Available quantity must be a non-negative number if provided').optional().isInt({ min: 0 })
+];
 
-router.put('/:id', protect, updateProduct);
-router.delete('/:id', protect, deleteProduct);
-router.put('/:id/stock', protect, updateStock);
+// Routes
+router
+  .route('/')
+  .get(getProducts)
+  .post(protect, authorize('supplier'), validateProductCreation, createProduct);
 
-// Admin only routes
-router.put('/:id/approve', protect, authorize('admin'), approveProduct);
+router
+  .route('/supplier/:supplierId')
+  .get(getProductsBySupplier);
+
+router
+  .route('/:id')
+  .get(getProduct)
+  .put(protect, authorize('supplier', 'admin'), validateProductUpdate, updateProduct)
+  .delete(protect, authorize('supplier', 'admin'), deleteProduct);
+
+router
+  .route('/:id/price/:farmerId')
+  .get(getProductPriceForFarmer);
 
 module.exports = router;

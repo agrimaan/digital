@@ -1,913 +1,294 @@
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Link as RouterLink } from 'react-router-dom';
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Container,
-  Divider,
-  Grid,
-  Link,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-  Chip,
-  Avatar,
-  LinearProgress
-} from '@mui/material';
-import {
-  Science as ScienceIcon,
-  Grass as GrassIcon,
-  Terrain as TerrainIcon,
-  Assignment as AssignmentIcon,
-  VideoCall as VideoCallIcon,
-  Notifications as NotificationsIcon,
-  Spa as SpaIcon,
-  BugReport as BugReportIcon
-} from '@mui/icons-material';
-import { RootState } from '../../store';
-import axios from 'axios';
+// src/pages/agronomist/AgronomistDashboard.tsx
+import React, { useEffect, useMemo, useState } from 'react';
+import { Box, Typography, Grid, Card, CardContent, Button, Chip, List, ListItem, ListItemText, Avatar, CircularProgress, Alert } from '@mui/material';
+import MapIcon from '@mui/icons-material/Map';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import EventIcon from '@mui/icons-material/Event';
+import WarningIcon from '@mui/icons-material/Warning';
+import ThermostatIcon from '@mui/icons-material/Thermostat';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../../storeHooks';
+import { getRecommendations, getConsultations, getCropIssues } from '../../features/agronomist/agronomistSlice';
 
-// Define types
-interface Fields {
-  _id: string;
-  name: string;
+type WeatherData = {
   location: string;
-  size: number;
-  unit: string;
-  owner: {
-    _id: string;
-    name: string;
-  };
-  crops: Array<{
-    _id: string;
-    name: string;
-    variety: string;
-    status: string;
-  }>;
-  soilType: string;
-  lastInspection: string;
-  healthStatus: 'excellent' | 'good' | 'fair' | 'poor' | 'critical';
-}
-
-interface Recommendation {
-  _id: string;
-  Fields: {
-    _id: string;
-    name: string;
-  };
-  farmer: {
-    _id: string;
-    name: string;
-  };
-  type: 'fertilizer' | 'pesticide' | 'irrigation' | 'harvest' | 'planting' | 'other';
-  description: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'implemented';
-  createdAt: string;
-  dueDate: string;
-}
-
-interface Consultation {
-  _id: string;
-  farmer: {
-    _id: string;
-    name: string;
-    email: string;
-  };
-  Fields?: {
-    _id: string;
-    name: string;
-  };
-  topic: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
-  scheduledDate: string;
-  notes?: string;
-}
-
-interface CropIssue {
-  _id: string;
-  Fields: {
-    _id: string;
-    name: string;
-  };
-  farmer: {
-    _id: string;
-    name: string;
-  };
-  crop: {
-    _id: string;
-    name: string;
-    variety: string;
-  };
-  issueType: 'disease' | 'pest' | 'nutrient' | 'water' | 'other';
-  description: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  status: 'reported' | 'diagnosed' | 'treated' | 'resolved';
-  reportedDate: string;
-}
-
-interface WeatherData {
-  location: string;
-  temperature: number;
-  humidity: number;
+  condition: string;
+  temperature: { min: number; max: number };
   precipitation: number;
-  windSpeed: number;
-  forecast: Array<{
-    date: string;
-    condition: string;
-    temperature: {
-      min: number;
-      max: number;
-    };
-    precipitation: number;
-  }>;
-}
+} | null;
 
 const AgronomistDashboard: React.FC = () => {
-  const dispatch = useDispatch();
-  const { user } = useSelector((state: RootState) => state.auth);
-  
-  const [monitoredfields, setMonitoredfields] = useState<Fields[]>([]);
-  const [pendingRecommendations, setPendingRecommendations] = useState<Recommendation[]>([]);
-  const [upcomingConsultations, setUpcomingConsultations] = useState<Consultation[]>([]);
-  const [recentCropIssues, setRecentCropIssues] = useState<CropIssue[]>([]);
-  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
-  
-  const [loading, setLoading] = useState({
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+
+  const { recommendations, consultations, issues, loading, error } = useAppSelector((s) => s.agronomist);
+
+  // local “loading” placeholders just for skeletons
+  const [loadingState, setLoadingState] = useState({
     fields: true,
     recommendations: true,
     consultations: true,
     cropIssues: true,
-    weather: true
+    weather: true,
   });
+  const [monitoredFields] = useState<any[]>([]); // replace with real fields when you have them
+  const [weatherData] = useState<WeatherData>(null);
 
   useEffect(() => {
-    // In a real implementation, these would be API calls
-    // For now, we'll use mock data
+    dispatch(getRecommendations() as any);
+    dispatch(getConsultations() as any);
+    dispatch(getCropIssues() as any);
 
-    // Mock fields data
-    const mockfields: Fields[] = [
-      {
-        _id: 'f1',
-        name: 'North Wheat Fields',
-        location: 'Punjab',
-        size: 25,
-        unit: 'acres',
-        owner: {
-          _id: 'u1',
-          name: 'Farmer Singh'
-        },
-        crops: [
-          {
-            _id: 'c1',
-            name: 'Wheat',
-            variety: 'HD-2967',
-            status: 'growing'
-          }
-        ],
-        soilType: 'Loamy',
-        lastInspection: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        healthStatus: 'good'
-      },
-      {
-        _id: 'f2',
-        name: 'South Rice Paddy',
-        location: 'Kerala',
-        size: 15,
-        unit: 'acres',
-        owner: {
-          _id: 'u2',
-          name: 'Farmer Kumar'
-        },
-        crops: [
-          {
-            _id: 'c2',
-            name: 'Rice',
-            variety: 'Basmati-1121',
-            status: 'growing'
-          }
-        ],
-        soilType: 'Clay',
-        lastInspection: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-        healthStatus: 'fair'
-      },
-      {
-        _id: 'f3',
-        name: 'East Cotton Fields',
-        location: 'Gujarat',
-        size: 30,
-        unit: 'acres',
-        owner: {
-          _id: 'u3',
-          name: 'Farmer Patel'
-        },
-        crops: [
-          {
-            _id: 'c3',
-            name: 'Cotton',
-            variety: 'Bt Cotton',
-            status: 'growing'
-          }
-        ],
-        soilType: 'Sandy Loam',
-        lastInspection: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        healthStatus: 'excellent'
-      },
-      {
-        _id: 'f4',
-        name: 'West Sugarcane Fields',
-        location: 'Maharashtra',
-        size: 20,
-        unit: 'acres',
-        owner: {
-          _id: 'u4',
-          name: 'Farmer Deshmukh'
-        },
-        crops: [
-          {
-            _id: 'c4',
-            name: 'Sugarcane',
-            variety: 'CO-0238',
-            status: 'growing'
-          }
-        ],
-        soilType: 'Alluvial',
-        lastInspection: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(),
-        healthStatus: 'poor'
-      }
-    ];
+    const t = setTimeout(() => {
+      setLoadingState({
+        fields: false,
+        recommendations: false,
+        consultations: false,
+        cropIssues: false,
+        weather: false,
+      });
+    }, 400);
+    return () => clearTimeout(t);
+  }, [dispatch]);
 
-    // Mock recommendations data
-    const mockRecommendations: Recommendation[] = [
-      {
-        _id: 'r1',
-        Fields: {
-          _id: 'f1',
-          name: 'North Wheat Fields'
-        },
-        farmer: {
-          _id: 'u1',
-          name: 'Farmer Singh'
-        },
-        type: 'fertilizer',
-        description: 'Apply nitrogen fertilizer at 50kg/acre to address yellowing leaves',
-        status: 'pending',
-        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        _id: 'r2',
-        Fields: {
-          _id: 'f2',
-          name: 'South Rice Paddy'
-        },
-        farmer: {
-          _id: 'u2',
-          name: 'Farmer Kumar'
-        },
-        type: 'irrigation',
-        description: 'Increase irrigation frequency to twice daily due to high temperatures',
-        status: 'pending',
-        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        _id: 'r3',
-        Fields: {
-          _id: 'f3',
-          name: 'East Cotton Fields'
-        },
-        farmer: {
-          _id: 'u3',
-          name: 'Farmer Patel'
-        },
-        type: 'pesticide',
-        description: 'Apply recommended pesticide to control bollworm infestation',
-        status: 'accepted',
-        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString()
-      }
-    ];
+  const pendingRecommendations = useMemo(() => (recommendations ?? []).slice(0, 5), [recommendations]);
+  const upcomingConsultations = useMemo(() => (consultations ?? []).slice(0, 5), [consultations]);
+  const reportedIssues = useMemo(() => (issues ?? []).slice(0, 5), [issues]);
 
-    // Mock consultations data
-    const mockConsultations: Consultation[] = [
-      {
-        _id: 'c1',
-        farmer: {
-          _id: 'u1',
-          name: 'Farmer Singh',
-          email: 'farmer.singh@example.com'
-        },
-        Fields: {
-          _id: 'f1',
-          name: 'North Wheat Fields'
-        },
-        topic: 'Wheat disease prevention strategies',
-        status: 'scheduled',
-        scheduledDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        _id: 'c2',
-        farmer: {
-          _id: 'u2',
-          name: 'Farmer Kumar',
-          email: 'farmer.kumar@example.com'
-        },
-        Fields: {
-          _id: 'f2',
-          name: 'South Rice Paddy'
-        },
-        topic: 'Rice yield optimization techniques',
-        status: 'scheduled',
-        scheduledDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString()
-      }
-    ];
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
-    // Mock crop issues data
-    const mockCropIssues: CropIssue[] = [
-      {
-        _id: 'i1',
-        Fields: {
-          _id: 'f1',
-          name: 'North Wheat Fields'
-        },
-        farmer: {
-          _id: 'u1',
-          name: 'Farmer Singh'
-        },
-        crop: {
-          _id: 'c1',
-          name: 'Wheat',
-          variety: 'HD-2967'
-        },
-        issueType: 'disease',
-        description: 'Yellow rust observed on wheat leaves',
-        severity: 'medium',
-        status: 'diagnosed',
-        reportedDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        _id: 'i2',
-        Fields: {
-          _id: 'f4',
-          name: 'West Sugarcane Fields'
-        },
-        farmer: {
-          _id: 'u4',
-          name: 'Farmer Deshmukh'
-        },
-        crop: {
-          _id: 'c4',
-          name: 'Sugarcane',
-          variety: 'CO-0238'
-        },
-        issueType: 'pest',
-        description: 'Sugarcane borer infestation detected',
-        severity: 'high',
-        status: 'reported',
-        reportedDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-      }
-    ];
+  if (error) {
+    return (
+      <Box sx={{ mt: 4 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
 
-    // Mock weather data
-    const mockWeatherData: WeatherData = {
-      location: 'Punjab Agricultural Region',
-      temperature: 32,
-      humidity: 65,
-      precipitation: 10,
-      windSpeed: 8,
-      forecast: [
-        {
-          date: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
-          condition: 'Partly Cloudy',
-          temperature: {
-            min: 26,
-            max: 34
-          },
-          precipitation: 20
-        },
-        {
-          date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-          condition: 'Scattered Showers',
-          temperature: {
-            min: 25,
-            max: 33
-          },
-          precipitation: 40
-        },
-        {
-          date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-          condition: 'Sunny',
-          temperature: {
-            min: 27,
-            max: 36
-          },
-          precipitation: 5
-        }
-      ]
-    };
-
-    // Set the mock data with a small delay to simulate API calls
-    setTimeout(() => {
-      setMonitoredfields(mockfields);
-      setLoading(prev => ({ ...prev, fields: false }));
-    }, 300);
-
-    setTimeout(() => {
-      setPendingRecommendations(mockRecommendations);
-      setLoading(prev => ({ ...prev, recommendations: false }));
-    }, 500);
-
-    setTimeout(() => {
-      setUpcomingConsultations(mockConsultations);
-      setLoading(prev => ({ ...prev, consultations: false }));
-    }, 700);
-
-    setTimeout(() => {
-      setRecentCropIssues(mockCropIssues);
-      setLoading(prev => ({ ...prev, cropIssues: false }));
-    }, 900);
-
-    setTimeout(() => {
-      setWeatherData(mockWeatherData);
-      setLoading(prev => ({ ...prev, weather: false }));
-    }, 1100);
-  }, []);
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  };
-
-  // Get health status color
-  const getHealthStatusColor = (status: string) => {
-    switch (status) {
-      case 'excellent':
-        return 'success';
-      case 'good':
-        return 'info';
-      case 'fair':
-        return 'warning';
-      case 'poor':
-        return 'error';
-      case 'critical':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  // Get severity color
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'low':
-        return 'info';
-      case 'medium':
-        return 'warning';
-      case 'high':
-        return 'error';
-      case 'critical':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  // Get recommendation type icon
-  const getRecommendationTypeIcon = (type: string) => {
-    switch (type) {
-      case 'fertilizer':
-        return <SpaIcon />;
-      case 'pesticide':
-        return <BugReportIcon />;
-      case 'irrigation':
-        return <TerrainIcon />;
-      case 'harvest':
-        return <GrassIcon />;
-      case 'planting':
-        return <SpaIcon />;
-      default:
-        return <AssignmentIcon />;
-    }
-  };
+  const fmtDate = (d?: string | Date) => (d ? new Date(d).toLocaleDateString() : '');
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Agronomist Dashboard
-        </Typography>
-        
-        <Box>
-          <Button
-            component={RouterLink}
-            to="/agronomist/fields"
-            variant="contained"
-            startIcon={<TerrainIcon />}
-            sx={{ mr: 1 }}
-          >
-            Monitor fields
-          </Button>
-          <Button
-            component={RouterLink}
-            to="/agronomist/consultations"
-            variant="outlined"
-            startIcon={<VideoCallIcon />}
-          >
-            Consultations
-          </Button>
-        </Box>
-      </Box>
+    <Box sx={{ flexGrow: 1, p: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        {t('agronomistDashboard.title', 'Agronomist Dashboard')}
+      </Typography>
 
-      {/* Welcome Card */}
-      <Paper elevation={3} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
-        <Typography variant="h5" gutterBottom>
-          Welcome back, {user?.name || 'Agronomist'}!
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Monitor Fields conditions, provide expert recommendations, and help farmers optimize their crop yields with your agricultural expertise.
-        </Typography>
-      </Paper>
+      <Grid container spacing={3}>
+        {/* Fields Overview */}
+        <Grid item xs={12} md={6} lg={4}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
+                  <MapIcon />
+                </Avatar>
+                <Typography variant="h6">
+                  {t('agronomistDashboard.fieldsOverview', 'Fields overview')}
+                </Typography>
+              </Box>
 
-      {/* Summary Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={3}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Monitored fields
-                  </Typography>
-                  <Typography variant="h4" component="div">
-                    {loading.fields ? '..' : monitoredfields.length}
-                  </Typography>
+              {loadingState.fields ? (
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight={100}>
+                  <CircularProgress size={24} />
                 </Box>
-                <TerrainIcon color="primary" sx={{ fontSize: 40 }} />
-              </Box>
-              <Box sx={{ mt: 2 }}>
-                <Link component={RouterLink} to="/agronomist/fields" color="primary" underline="hover">
-                  View all fields
-                </Link>
-              </Box>
+              ) : (monitoredFields ?? []).length > 0 ? (
+                <List dense>
+                  {(monitoredFields ?? []).slice(0, 3).map((field: any) => (
+                    <ListItem key={field._id} sx={{ pl: 0, pr: 0 }}>
+                      <ListItemText
+                        primary={field.name}
+                        secondary={`${field.location ?? ''} • ${field.size ?? ''} ${field.unit ?? ''}`}
+                      />
+                      <Chip
+                        label={field.status ?? 'unknown'}
+                        size="small"
+                        color={field.status === 'active' ? 'success' : 'default'}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              ) : (
+                <Typography color="text.secondary">{t('agronomistDashboard.noFields', 'No fields')}</Typography>
+              )}
+
+              <Button variant="outlined" fullWidth onClick={() => navigate('/agronomist/fields')}>
+                {t('agronomistDashboard.viewAllFields', 'View all fields')}
+              </Button>
             </CardContent>
           </Card>
         </Grid>
-        
-        <Grid item xs={12} md={3}>
-          <Card sx={{ height: '100%' }}>
+
+        {/* Pending Recommendations */}
+        <Grid item xs={12} md={6} lg={4}>
+          <Card>
             <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Pending Recommendations
-                  </Typography>
-                  <Typography variant="h4" component="div">
-                    {loading.recommendations ? '..' : pendingRecommendations.filter(rec => rec.status === 'pending').length}
-                  </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar sx={{ mr: 2, bgcolor: 'secondary.main' }}>
+                  <AssignmentIcon />
+                </Avatar>
+                <Typography variant="h6">
+                  {t('agronomistDashboard.pendingRecommendations', 'Pending recommendations')}
+                </Typography>
+              </Box>
+
+              {loadingState.recommendations ? (
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight={100}>
+                  <CircularProgress size={24} />
                 </Box>
-                <AssignmentIcon color="warning" sx={{ fontSize: 40 }} />
-              </Box>
-              <Box sx={{ mt: 2 }}>
-                <Link component={RouterLink} to="/agronomist/recommendations" color="primary" underline="hover">
-                  Manage recommendations
-                </Link>
-              </Box>
+              ) : pendingRecommendations.length > 0 ? (
+                <List dense>
+                  {pendingRecommendations.map((r) => (
+                    <ListItem key={r._id} sx={{ pl: 0, pr: 0 }}>
+                      <ListItemText primary={r.title} secondary={fmtDate(r.createdAt)} />
+                      <Chip
+                        label={r.priority}
+                        size="small"
+                        color={
+                          r.priority === 'urgent'
+                            ? 'error'
+                            : r.priority === 'high'
+                            ? 'warning'
+                            : r.priority === 'medium'
+                            ? 'info'
+                            : 'default'
+                        }
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              ) : (
+                <Typography color="text.secondary">{t('agronomistDashboard.noRecommendations', 'No recommendations')}</Typography>
+              )}
+
+              <Button variant="outlined" fullWidth onClick={() => navigate('/agronomist/recommendations')}>
+                {t('agronomistDashboard.createRecommendation', 'Create recommendation')}
+              </Button>
             </CardContent>
           </Card>
         </Grid>
-        
-        <Grid item xs={12} md={3}>
-          <Card sx={{ height: '100%' }}>
+
+        {/* Upcoming Consultations */}
+        <Grid item xs={12} md={6} lg={4}>
+          <Card>
             <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Upcoming Consultations
-                  </Typography>
-                  <Typography variant="h4" component="div">
-                    {loading.consultations ? '..' : upcomingConsultations.length}
-                  </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar sx={{ mr: 2, bgcolor: 'success.main' }}>
+                  <EventIcon />
+                </Avatar>
+                <Typography variant="h6">
+                  {t('agronomistDashboard.upcomingConsultations', 'Upcoming consultations')}
+                </Typography>
+              </Box>
+
+              {loadingState.consultations ? (
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight={100}>
+                  <CircularProgress size={24} />
                 </Box>
-                <VideoCallIcon color="info" sx={{ fontSize: 40 }} />
-              </Box>
-              <Box sx={{ mt: 2 }}>
-                <Link component={RouterLink} to="/agronomist/consultations" color="primary" underline="hover">
-                  View schedule
-                </Link>
-              </Box>
+              ) : upcomingConsultations.length > 0 ? (
+                <List dense>
+                  {upcomingConsultations.map((c) => (
+                    <ListItem key={c._id} sx={{ pl: 0, pr: 0 }}>
+                      <ListItemText primary={c.title} secondary={c.farmerId} />
+                      <Chip label={c.status} size="small" color={c.status === 'completed' ? 'success' : 'warning'} />
+                    </ListItem>
+                  ))}
+                </List>
+              ) : (
+                <Typography color="text.secondary">{t('agronomistDashboard.noConsultations', 'No consultations')}</Typography>
+              )}
+
+              <Button variant="outlined" fullWidth onClick={() => navigate('/agronomist/consultations')}>
+                {t('agronomistDashboard.scheduleConsultation', 'Schedule consultation')}
+              </Button>
             </CardContent>
           </Card>
         </Grid>
-        
-        <Grid item xs={12} md={3}>
-          <Card sx={{ height: '100%' }}>
+
+        {/* Reported Issues */}
+        <Grid item xs={12} md={6} lg={4}>
+          <Card>
             <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Crop Issues
-                  </Typography>
-                  <Typography variant="h4" component="div">
-                    {loading.cropIssues ? '..' : recentCropIssues.length}
-                  </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar sx={{ mr: 2, bgcolor: 'error.main' }}>
+                  <WarningIcon />
+                </Avatar>
+                <Typography variant="h6">
+                  {t('agronomistDashboard.reportedIssues', 'Reported issues')}
+                </Typography>
+              </Box>
+
+              {loadingState.cropIssues ? (
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight={100}>
+                  <CircularProgress size={24} />
                 </Box>
-                <BugReportIcon color="error" sx={{ fontSize: 40 }} />
+              ) : reportedIssues.length > 0 ? (
+                <List dense>
+                  {reportedIssues.map((i) => (
+                    <ListItem key={i._id} sx={{ pl: 0, pr: 0 }}>
+                      <ListItemText primary={i.title} secondary={fmtDate(i.createdAt)} />
+                      <Chip
+                        label={i.severity}
+                        size="small"
+                        color={i.severity === 'critical' ? 'error' : i.severity === 'high' ? 'warning' : i.severity === 'medium' ? 'info' : 'default'}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              ) : (
+                <Typography color="text.secondary">{t('agronomistDashboard.noIssues', 'No issues')}</Typography>
+              )}
+
+              <Button variant="outlined" fullWidth onClick={() => navigate('/agronomist/issues')}>
+                {t('agronomistDashboard.viewAllIssues', 'View all issues')}
+              </Button>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Weather */}
+        <Grid item xs={12} md={6} lg={4}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar sx={{ mr: 2, bgcolor: 'info.main' }}>
+                  <ThermostatIcon />
+                </Avatar>
+                <Typography variant="h6">
+                  {t('agronomistDashboard.weatherForecast', 'Weather forecast')}
+                </Typography>
               </Box>
-              <Box sx={{ mt: 2 }}>
-                <Link component={RouterLink} to="/agronomist/crop-issues" color="primary" underline="hover">
-                  View all issues
-                </Link>
-              </Box>
+
+              {loadingState.weather ? (
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight={100}>
+                  <CircularProgress size={24} />
+                </Box>
+              ) : weatherData ? (
+                <>
+                  <Typography variant="subtitle1">{weatherData.location}</Typography>
+                  <Typography variant="body2" color="text.secondary">{weatherData.condition}</Typography>
+                  <Typography variant="body2">{t('agronomistDashboard.temperature', 'Temperature')}: {weatherData.temperature.min}°C – {weatherData.temperature.max}°C</Typography>
+                  <Typography variant="body2">{t('agronomistDashboard.precipitation', 'Precipitation')}: {weatherData.precipitation}mm</Typography>
+                </>
+              ) : (
+                <Typography color="text.secondary">{t('agronomistDashboard.noWeatherData', 'No weather data')}</Typography>
+              )}
+
+              <Button variant="outlined" fullWidth onClick={() => navigate('/agronomist/weather')}>
+                {t('agronomistDashboard.detailedForecast', 'Detailed forecast')}
+              </Button>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
-
-      {/* Weather Information */}
-      {!loading.weather && weatherData && (
-        <Paper sx={{ p: 2, mb: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" component="h2">
-              Weather Information - {weatherData.location}
-            </Typography>
-            <Button 
-              component={RouterLink} 
-              to="/agronomist/weather" 
-              size="small"
-            >
-              Detailed Forecast
-            </Button>
-          </Box>
-          <Divider sx={{ mb: 2 }} />
-          
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body1">
-                  Current Conditions
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 1 }}>
-                  <Chip label={`Temperature: ${weatherData.temperature}°C`} />
-                  <Chip label={`Humidity: ${weatherData.humidity}%`} />
-                  <Chip label={`Precipitation: ${weatherData.precipitation}%`} />
-                  <Chip label={`Wind: ${weatherData.windSpeed} km/h`} />
-                </Box>
-              </Box>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="body1" gutterBottom>
-                3-Day Forecast
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                {weatherData.forecast.map((day, index) => (
-                  <Chip 
-                    key={index}
-                    label={`${formatDate(day.date)}: ${day.condition}, ${day.temperature.min}-${day.temperature.max}°C`} 
-                    variant="outlined"
-                  />
-                ))}
-              </Box>
-            </Grid>
-          </Grid>
-        </Paper>
-      )}
-
-      {/* Fields Health Status */}
-      <Paper sx={{ p: 2, mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6" component="h2">
-            Fields Health Status
-          </Typography>
-          <Button 
-            component={RouterLink} 
-            to="/agronomist/fields" 
-            size="small" 
-            endIcon={<TerrainIcon />}
-          >
-            View All
-          </Button>
-        </Box>
-        <Divider sx={{ mb: 2 }} />
-        
-        {loading.fields ? (
-          <Box sx={{ width: '100%' }}>
-            <LinearProgress />
-          </Box>
-        ) : monitoredfields.length === 0 ? (
-          <Typography color="text.secondary">
-            No fields are currently being monitored.
-          </Typography>
-        ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Fields Name</TableCell>
-                  <TableCell>Location</TableCell>
-                  <TableCell>Crop</TableCell>
-                  <TableCell>Owner</TableCell>
-                  <TableCell>Last Inspection</TableCell>
-                  <TableCell>Health Status</TableCell>
-                  <TableCell align="right">Action</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {monitoredfields.map((Fields) => (
-                  <TableRow key={Fields._id}>
-                    <TableCell>{Fields.name}</TableCell>
-                    <TableCell>{Fields.location}</TableCell>
-                    <TableCell>
-                      {Fields.crops.map(crop => crop.name).join(', ')}
-                    </TableCell>
-                    <TableCell>{Fields.owner.name}</TableCell>
-                    <TableCell>{formatDate(Fields.lastInspection)}</TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={Fields.healthStatus.charAt(0).toUpperCase() + Fields.healthStatus.slice(1)} 
-                        color={getHealthStatusColor(Fields.healthStatus) as any}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <Button 
-                        component={RouterLink} 
-                        to={`/agronomist/fields/${Fields._id}`} 
-                        size="small" 
-                        variant="outlined"
-                      >
-                        Details
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
-
-      {/* Recent Crop Issues */}
-      <Paper sx={{ p: 2, mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6" component="h2">
-            Recent Crop Issues
-          </Typography>
-          <Button 
-            component={RouterLink} 
-            to="/agronomist/crop-issues" 
-            size="small" 
-            endIcon={<BugReportIcon />}
-          >
-            View All
-          </Button>
-        </Box>
-        <Divider sx={{ mb: 2 }} />
-        
-        {loading.cropIssues ? (
-          <Box sx={{ width: '100%' }}>
-            <LinearProgress />
-          </Box>
-        ) : recentCropIssues.length === 0 ? (
-          <Typography color="text.secondary">
-            No crop issues have been reported recently.
-          </Typography>
-        ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Fields</TableCell>
-                  <TableCell>Crop</TableCell>
-                  <TableCell>Issue Type</TableCell>
-                  <TableCell>Severity</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Reported Date</TableCell>
-                  <TableCell align="right">Action</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {recentCropIssues.map((issue) => (
-                  <TableRow key={issue._id}>
-                    <TableCell>{issue.Fields.name}</TableCell>
-                    <TableCell>{issue.crop.name} ({issue.crop.variety})</TableCell>
-                    <TableCell>{issue.issueType.charAt(0).toUpperCase() + issue.issueType.slice(1)}</TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={issue.severity.charAt(0).toUpperCase() + issue.severity.slice(1)} 
-                        color={getSeverityColor(issue.severity) as any}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>{issue.status.charAt(0).toUpperCase() + issue.status.slice(1)}</TableCell>
-                    <TableCell>{formatDate(issue.reportedDate)}</TableCell>
-                    <TableCell align="right">
-                      <Button 
-                        component={RouterLink} 
-                        to={`/agronomist/crop-issues/${issue._id}`} 
-                        size="small" 
-                        variant="outlined"
-                      >
-                        Diagnose
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
-
-      {/* Pending Recommendations */}
-      <Paper sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6" component="h2">
-            Pending Recommendations
-          </Typography>
-          <Button 
-            component={RouterLink} 
-            to="/agronomist/recommendations" 
-            size="small" 
-            endIcon={<AssignmentIcon />}
-          >
-            Manage All
-          </Button>
-        </Box>
-        <Divider sx={{ mb: 2 }} />
-        
-        {loading.recommendations ? (
-          <Box sx={{ width: '100%' }}>
-            <LinearProgress />
-          </Box>
-        ) : pendingRecommendations.length === 0 ? (
-          <Typography color="text.secondary">
-            No pending recommendations at the moment.
-          </Typography>
-        ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Fields</TableCell>
-                  <TableCell>Farmer</TableCell>
-                  <TableCell>Type</TableCell>
-                  <TableCell>Description</TableCell>
-                  <TableCell>Created</TableCell>
-                  <TableCell>Due Date</TableCell>
-                  <TableCell align="right">Action</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {pendingRecommendations.map((recommendation) => (
-                  <TableRow key={recommendation._id}>
-                    <TableCell>{recommendation.Fields.name}</TableCell>
-                    <TableCell>{recommendation.farmer.name}</TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        {getRecommendationTypeIcon(recommendation.type)}
-                        <Typography variant="body2" sx={{ ml: 1 }}>
-                          {recommendation.type.charAt(0).toUpperCase() + recommendation.type.slice(1)}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      {recommendation.description.length > 50 
-                        ? `${recommendation.description.substring(0, 50)}...` 
-                        : recommendation.description}
-                    </TableCell>
-                    <TableCell>{formatDate(recommendation.createdAt)}</TableCell>
-                    <TableCell>{formatDate(recommendation.dueDate)}</TableCell>
-                    <TableCell align="right">
-                      <Button 
-                        component={RouterLink} 
-                        to={`/agronomist/recommendations/${recommendation._id}`} 
-                        size="small" 
-                        variant="outlined"
-                      >
-                        Edit
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
-    </Container>
+    </Box>
   );
 };
 

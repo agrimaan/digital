@@ -21,7 +21,7 @@ import {
 import { Business as BusinessIcon } from '@mui/icons-material';
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3014';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
 const steps = ['Business Information', 'Contact Details', 'Legal Documents'];
 
@@ -110,7 +110,7 @@ const SupplierRegister: React.FC = () => {
         }
       };
 
-      const response = await axios.post(`${API_BASE_URL}/api/supplier/register`, payload);
+      const response = await axios.post(`${API_BASE_URL}/api/suppliers/register`, payload);
 
       if (response.data.success) {
         setSuccess(true);
@@ -388,7 +388,7 @@ const SupplierRegister: React.FC = () => {
         <Box sx={{ mt: 3, textAlign: 'center' }}>
           <Typography variant="body2">
             Already have an account?{' '}
-            <RouterLink to="/supplier/login" style={{ textDecoration: 'none', color: '#1976d2' }}>
+            <RouterLink to="/suppliers/login" style={{ textDecoration: 'none', color: '#1976d2' }}>
               Login here
             </RouterLink>
           </Typography>

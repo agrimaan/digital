@@ -375,3 +375,150 @@ module.exports = (app) => {
       console.log(`➡️ Proxying request: ${req.method} ${req.originalUrl}`);
     }
   }));
+
+    // ---------------------------
+  // SUPPLIER SERVICE
+  // ---------------------------
+  app.use('/api/suppliers', createProxyMiddleware({
+    target: process.env.SUPPLIER_SERVICE_URL || 'http://localhost:3015',
+    changeOrigin: true,
+    logLevel: 'debug',
+    pathRewrite: { '^/api/suppliers': '/api/suppliers' },
+    onError: handleProxyError,
+
+    // Forward JSON body to the backend
+    onProxyReq: (proxyReq, req, res) => {
+      if (req.body && Object.keys(req.body).length) {
+        const bodyData = JSON.stringify(req.body);
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
+
+      console.log(`➡️ Proxying request: ${req.method} ${req.originalUrl}`);
+    }
+  }));
+
+  app.use('/api/products', createProxyMiddleware({
+    target: process.env.SUPPLIER_SERVICE_URL || 'http://localhost:3015',
+    changeOrigin: true,
+    logLevel: 'debug',
+    pathRewrite: { '^/api/products': '/api/products' },
+    onError: handleProxyError,
+
+    // Forward JSON body to the backend
+    onProxyReq: (proxyReq, req, res) => {
+      if (req.body && Object.keys(req.body).length) {
+        const bodyData = JSON.stringify(req.body);
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
+
+      console.log(`➡️ Proxying request: ${req.method} ${req.originalUrl}`);
+    }
+  }));
+
+  app.use('/api/ratings', createProxyMiddleware({
+    target: process.env.SUPPLIER_SERVICE_URL || 'http://localhost:3015',
+    changeOrigin: true,
+    logLevel: 'debug',
+    pathRewrite: { '^/api/ratings': '/api/ratings' },
+    onError: handleProxyError,
+
+    // Forward JSON body to the backend
+    onProxyReq: (proxyReq, req, res) => {
+      if (req.body && Object.keys(req.body).length) {
+        const bodyData = JSON.stringify(req.body);
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
+
+      console.log(`➡️ Proxying request: ${req.method} ${req.originalUrl}`);
+    }
+  }));
+
+  app.use('/api/supplier/promotions', createProxyMiddleware({
+    target: process.env.SUPPLIER_SERVICE_URL || 'http://localhost:3015',
+    changeOrigin: true,
+    logLevel: 'debug',
+    pathRewrite: { '^/api/supplier/promotions': '/api/promotions' },
+    onError: handleProxyError,
+
+    // Forward JSON body to the backend
+    onProxyReq: (proxyReq, req, res) => {
+      if (req.body && Object.keys(req.body).length) {
+        const bodyData = JSON.stringify(req.body);
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
+
+      console.log(`➡️ Proxying request: ${req.method} ${req.originalUrl}`);
+    }
+  }));
+
+  // ---------------------------
+  // AGRONOMIST SERVICE
+  // ---------------------------
+  app.use('/api/recommendations', createProxyMiddleware({
+    target: process.env.AGRONOMIST_SERVICE_URL || 'http://localhost:3016',
+    changeOrigin: true,
+    logLevel: 'debug',
+    pathRewrite: { '^/api/recommendations': '/api/recommendations' },
+    onError: handleProxyError,
+
+    // Forward JSON body to the backend
+    onProxyReq: (proxyReq, req, res) => {
+      if (req.body && Object.keys(req.body).length) {
+        const bodyData = JSON.stringify(req.body);
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
+
+      console.log(`➡️ Proxying request: ${req.method} ${req.originalUrl}`);
+    }
+  }));
+
+  app.use('/api/consultations', createProxyMiddleware({
+    target: process.env.AGRONOMIST_SERVICE_URL || 'http://localhost:3016',
+    changeOrigin: true,
+    logLevel: 'debug',
+    pathRewrite: { '^/api/consultations': '/api/consultations' },
+    onError: handleProxyError,
+
+    // Forward JSON body to the backend
+    onProxyReq: (proxyReq, req, res) => {
+      if (req.body && Object.keys(req.body).length) {
+        const bodyData = JSON.stringify(req.body);
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
+
+      console.log(`➡️ Proxying request: ${req.method} ${req.originalUrl}`);
+    }
+  }));
+
+  app.use('/api/issues', createProxyMiddleware({
+    target: process.env.AGRONOMIST_SERVICE_URL || 'http://localhost:3016',
+    changeOrigin: true,
+    logLevel: 'debug',
+    pathRewrite: { '^/api/issues': '/api/issues' },
+    onError: handleProxyError,
+
+    // Forward JSON body to the backend
+    onProxyReq: (proxyReq, req, res) => {
+      if (req.body && Object.keys(req.body).length) {
+        const bodyData = JSON.stringify(req.body);
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
+
+      console.log(`➡️ Proxying request: ${req.method} ${req.originalUrl}`);
+    }
+  }));
+
