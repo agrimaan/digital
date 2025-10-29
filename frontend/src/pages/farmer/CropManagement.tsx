@@ -288,7 +288,10 @@ const CropManagement: React.FC = () => {
 
   const filteredCrops = useMemo(() => {
     return crops.filter((c) => {
-      const matchesName = c.name.toLowerCase().includes(filterName.toLowerCase());
+      const cropName = c.name?.toLowerCase() || '';
+      const searchName = filterName?.toLowerCase() || '';
+      const matchesName = cropName.includes(searchName);
+
       const matchesField = !filterField || c.fieldId === filterField;
       const matchesHealth = !filterHealth || c.healthStatus === filterHealth;
       const matchesStage = !filterStage || c.growthStage === filterStage;
