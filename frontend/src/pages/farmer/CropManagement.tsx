@@ -9,6 +9,7 @@ import { Add, Edit, Delete, Visibility, Clear } from '@mui/icons-material';
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../store';
+import { getFields } from '../../features/fields/fieldSlice'
 import { getCrops, addCrop, updateCrop, deleteCrop, Crop } from '../../features/crops/cropSlice';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000';
@@ -106,14 +107,17 @@ const CropManagement: React.FC = () => {
   }, [dispatch]);
 
   const loadFields = async () => {
-    try {
+  try {
       setFieldsLoading(true);
-      const res = await axios.get(`${API_BASE_URL}/api/fields`, { headers: authHeaders() });
-      const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
-      setFields(data as FieldDoc[]);
-    } catch (err: any) {
-      setListingError(err?.response?.data?.message || err?.message || 'Failed to load fields');
-    } finally { setFieldsLoading(false); }
+      const resultAction = await dispatch(getFields()).unwrap();
+      setFields(resultAction as FieldDoc[]);
+      } catch (err: any) {
+        setListingError(
+          err?.response?.data?.message || err?.message || 'Failed to load fields'
+        );
+      } finally {
+        setFieldsLoading(false);
+      }
   };
 
   /* reference-service crop options */
