@@ -5,7 +5,7 @@ import {
   DialogActions, Table, TableHead, TableRow, TableCell, TableBody, Tooltip, Stack, Divider
 } from '@mui/material';
 import Autocomplete from '@mui/material/Autocomplete';
-import { Add, Edit, Delete, Visibility } from '@mui/icons-material';
+import { Add, Edit, Delete, Visibility, Clear } from '@mui/icons-material';
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../store';
@@ -45,6 +45,11 @@ const numericKeys = new Set<keyof Crop>(['plantedArea','expectedYield','actualYi
 const CropManagement: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { crops, loading, error } = useSelector((s: RootState) => s.crop);
+
+  const [filterName, setFilterName] = useState('');
+  const [filterField, setFilterField] = useState('');
+  const [filterHealth, setFilterHealth] = useState('');
+  const [filterStage, setFilterStage] = useState('');
 
   /* listing state */
   const [success, setSuccess] = useState(false);
@@ -277,12 +282,57 @@ const CropManagement: React.FC = () => {
 
   const anyLoading = loading || fieldsLoading;
 
+  const filteredCrops = useMemo(() => {
+    return crops.filter((c) => {
+      const matchesName = c.name.toLowerCase().includes(filterName.toLowerCase());
+      const matchesField = !filterField || c.fieldId === filterField;
+      const matchesHealth = !filterHealth || c.healthStatus === filterHealth;
+      const matchesStage = !filterStage || c.growthStage === filterStage;
+      return matchesName && matchesField && matchesHealth && matchesStage;
+    });
+  }, [crops, filterName, filterField, filterHealth, filterStage]);
+
+  const clearFilters = () => {
+    setFilterName('');
+    setFilterField('');
+    setFilterHealth('');
+    setFilterStage('');
+  };
+
   return (
     <Box p={4}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
         <Typography variant="h5">🌾 Crop Management</Typography>
         <Button startIcon={<Add />} variant="contained" onClick={openAdd}>Add Crop</Button>
       </Stack>
+
+      <Box sx={{ mb: 3, p: 2, border: '1px solid #ddd', borderRadius: 2, backgroundColor: '#fafafa' }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+          <TextField label="Crop Name" value={filterName} onChange={(e) => setFilterName(e.target.value)} size="small" sx={{ minWidth: 180 }} />
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel>Field</InputLabel>
+            <Select value={filterField} label="Field" onChange={(e) => setFilterField(e.target.value)}>
+              <MenuItem value="">All</MenuItem>
+              {fieldOptions.map(f => (<MenuItem key={f.id} value={f.id}>{f.label}</MenuItem>))}
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel>Health</InputLabel>
+            <Select value={filterHealth} label="Health" onChange={(e) => setFilterHealth(e.target.value)}>
+              <MenuItem value="">All</MenuItem>
+              {HEALTH.map(h => (<MenuItem key={h} value={h}>{capitalize(h)}</MenuItem>))}
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel>Stage</InputLabel>
+            <Select value={filterStage} label="Stage" onChange={(e) => setFilterStage(e.target.value)}>
+              <MenuItem value="">All</MenuItem>
+              {STAGES.map(s => (<MenuItem key={s} value={s}>{capitalize(s)}</MenuItem>))}
+            </Select>
+          </FormControl>
+          <Button variant="outlined" startIcon={<Clear />} onClick={clearFilters}>Clear</Button>
+        </Stack>
+      </Box>
 
       {(error || listingError) && <Alert severity="error" sx={{ mb: 2 }}>{String(error || listingError)}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
@@ -298,20 +348,20 @@ const CropManagement: React.FC = () => {
               <TableCell>Field</TableCell>
               <TableCell>Planting</TableCell>
               <TableCell>Harvest (exp.)</TableCell>
-              <TableCell align="right">Actions</TableCell>
+              <TableCell align="center">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {crops.map((c) => (
+            {filteredCrops.map((c) => (
               <TableRow key={c._id}>
                 <TableCell>{c.name}</TableCell>
-                <TableCell>{c.variety || '—'}</TableCell>
-                <TableCell sx={{ fontStyle: 'italic' }}>{c.scientificName || '—'}</TableCell>
-                <TableCell>{c.fieldId || '—'}</TableCell>
-                <TableCell>{c.plantingDate ? new Date(c.plantingDate).toLocaleDateString() : '—'}</TableCell>
-                <TableCell>{c.expectedHarvestDate ? new Date(c.expectedHarvestDate).toLocaleDateString() : '—'}</TableCell>
-                <TableCell align="right">
-                  <Stack direction="row" spacing={1} justifyContent="flex-end">
+                <TableCell>{c.variety || '-'}</TableCell>
+                <TableCell sx={{ fontStyle: 'italic' }}>{c.scientificName || '-'}</TableCell>
+                <TableCell>{fields.find(f => f._id === c.fieldId)?.name || '-'}</TableCell>
+                <TableCell>{c.plantingDate ? new Date(c.plantingDate).toLocaleDateString() : '-'}</TableCell>
+                <TableCell>{c.expectedHarvestDate ? new Date(c.expectedHarvestDate).toLocaleDateString() : '-'}</TableCell>
+                <TableCell align="center">
+                  <Stack direction="row" spacing={1} justifyContent="center">
                     <Tooltip title="View"><IconButton size="small" onClick={() => openView(c)}><Visibility fontSize="small" /></IconButton></Tooltip>
                     <Tooltip title="Edit"><IconButton size="small" onClick={() => openEdit(c)}><Edit fontSize="small" /></IconButton></Tooltip>
                     <Tooltip title="Delete"><IconButton size="small" color="error" onClick={() => handleDeleteClick(c)}><Delete fontSize="small" /></IconButton></Tooltip>
@@ -319,7 +369,7 @@ const CropManagement: React.FC = () => {
                 </TableCell>
               </TableRow>
             ))}
-            {crops.length === 0 && (<TableRow><TableCell colSpan={7}><Typography color="text.secondary">No crops yet. Click “Add Crop”.</Typography></TableCell></TableRow>)}
+            {filteredCrops.length === 0 && (<TableRow><TableCell colSpan={7}><Typography color="text.secondary">No crops yet. Click “Add Crop”.</Typography></TableCell></TableRow>)}
           </TableBody>
         </Table>
       </Box>
