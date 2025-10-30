@@ -1,11 +1,8 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { getWeatherAdviceByBundle, type WeatherAdvice } from "../../services/ai";
 import { api } from "../../lib/api";
-import {
-  getWeatherAdviceByFields,
-  getWeatherAdviceByBundle,
-  type WeatherAdvice,
-} from "../../services/ai";
 
+// -------------------- Types --------------------
 export type Suggestion = {
   id: number | string;
   name: string;
@@ -16,22 +13,38 @@ export type Suggestion = {
   countryCode?: string | null;
 };
 
-type FieldsLite = {
+export type FieldsLite = {
   _id: string;
   name?: string;
-  location?: { lat: number; lng: number };
+  location?: { type: "Point"; coordinates: [number, number] };
+  locationName?: string;
 };
 
 export type WeatherResponse = {
-  location?: { name?: string };
-  current?: {
-    temp_c?: number;
-    wind_kph?: number;
-    condition?: { text?: string };
-    humidity?: number;
-    precip_mm?: number;
+  current_weather?: {
+    time: string;
+    temperature: number;
+    windspeed: number;
+    winddirection: number;
+    is_day: number;
+    weathercode: number;
   };
-  forecast?: any;
+  daily?: Array<{
+    date: string;
+    maxTemp: number;
+    minTemp: number;
+    totalRain: number;
+    weatherCode: number;
+    sunrise?: string;
+    sunset?: string;
+  }>;
+  hourly?: {
+    time: string[];
+    temperature_2m: number[];
+    relative_humidity_2m?: number[];
+    precipitation: number[];
+    windspeed_10m: number[];
+  };
   meta?: any;
 };
 
@@ -46,6 +59,7 @@ interface WeatherState {
   error: string | null;
 }
 
+// -------------------- Initial State --------------------
 const initialState: WeatherState = {
   fields: [],
   weather: null,
@@ -58,8 +72,6 @@ const initialState: WeatherState = {
 };
 
 // -------------------- Thunks --------------------
-
-// Fetch all fields
 export const fetchfields = createAsyncThunk(
   "weather/fetchfields",
   async (_, { rejectWithValue }) => {
@@ -74,49 +86,45 @@ export const fetchfields = createAsyncThunk(
   }
 );
 
-// Fetch weather by Fields ID
 export const fetchWeatherByFields = createAsyncThunk(
   "weather/fetchWeatherByFields",
-  async (id: string, { rejectWithValue }) => {
+  async (field: any, { rejectWithValue }) => {
     try {
-      const wx = await api<WeatherResponse>(`/api/weather/current/${id}`);
-      const advice = await getWeatherAdviceByFields(id);
-      return { wx, advice, FieldsId: id };
-    } catch (e: any) {
-      return rejectWithValue(e?.message || "Failed to fetch weather/advice");
-    }
-  }
-);
+      if (!field?.location?.coordinates) throw new Error("Field coordinates not found");
+      const [lng, lat] = field.location.coordinates;
 
-// Fetch weather by location
-export const fetchWeatherByLocation = createAsyncThunk(
-  "weather/fetchWeatherByLocation",
-  async (s: Suggestion, { rejectWithValue }) => {
-    try {
-      const wx = await api<WeatherResponse>(
-        `/api/weather/by-coords?lat=${encodeURIComponent(
-          s.lat
-        )}&lng=${encodeURIComponent(s.lng)}`
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+      const res = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
+        `&current_weather=true` +
+        `&hourly=temperature_2m,relative_humidity_2m,precipitation,windspeed_10m` +
+        `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode,sunrise,sunset` +
+        `&timezone=${timezone}`
       );
 
-      const bundle = {
-        current: {
-          ...wx.current,
-          temperatureUnit: "°C",
-          windUnit: "km/h",
-          station: wx.location?.name || s.name,
-        },
-        forecast: Array.isArray(wx.forecast?.forecastday)
-          ? wx.forecast.forecastday
-          : Array.isArray(wx.forecast)
-          ? wx.forecast
-          : [],
-        historical: [],
-        meta: wx.meta || {},
+      const wx = await res.json();
+
+      const today = new Date().toISOString().split("T")[0];
+
+      const filteredDaily = wx.daily.time.map((date: string, i: number) => ({
+        date,
+        maxTemp: wx.daily.temperature_2m_max[i],
+        minTemp: wx.daily.temperature_2m_min[i],
+        totalRain: wx.daily.precipitation_sum[i],
+        weatherCode: wx.daily.weathercode[i],
+        sunrise: wx.daily.sunrise[i],
+        sunset: wx.daily.sunset[i],
+      })).filter((d: any) => d.date >= today);
+
+      const formattedWeather: WeatherResponse = {
+        current_weather: wx.current_weather,
+        daily: filteredDaily.slice(0, 3),
+        hourly: wx.hourly,
+        meta: wx,
       };
 
-      const advice = await getWeatherAdviceByBundle(bundle);
-      return { wx, advice, location: s };
+      return { weather: formattedWeather, field, advice: null };
     } catch (e: any) {
       return rejectWithValue(e?.message || "Failed to fetch weather/advice");
     }
@@ -128,9 +136,7 @@ const weatherSlice = createSlice({
   name: "weather",
   initialState,
   reducers: {
-    clearWeatherError: (state) => {
-      state.error = null;
-    },
+    clearWeatherError: (state) => { state.error = null; },
     clearWeather: (state) => {
       state.weather = null;
       state.advice = null;
@@ -143,53 +149,22 @@ const weatherSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // fields
-      .addCase(fetchfields.fulfilled, (state, action) => {
-        state.fields = action.payload;
-      })
-      .addCase(fetchfields.rejected, (state, action) => {
-        state.error = action.payload as string;
-      })
-
-      // Fields weather
+      .addCase(fetchfields.fulfilled, (state, action) => { state.fields = action.payload; })
+      .addCase(fetchfields.rejected, (state, action) => { state.error = action.payload as string; })
       .addCase(fetchWeatherByFields.pending, (state) => {
         state.loadingWeather = true;
         state.loadingAdvice = true;
         state.error = null;
       })
       .addCase(fetchWeatherByFields.fulfilled, (state, action) => {
-        state.weather = { ...action.payload.wx }; // ✅ clone
+        state.weather = action.payload.weather;
         state.advice = action.payload.advice;
-        state.FieldsName =
-          state.fields.find((f) => f._id === action.payload.FieldsId)?.name ||
-          undefined;
+        state.FieldsName = action.payload.field.name || action.payload.field.locationName;
         state.lastPickedLocation = null;
         state.loadingWeather = false;
         state.loadingAdvice = false;
       })
       .addCase(fetchWeatherByFields.rejected, (state, action) => {
-        state.error = action.payload as string;
-        state.loadingWeather = false;
-        state.loadingAdvice = false;
-      })
-
-      // Location weather
-      .addCase(fetchWeatherByLocation.pending, (state) => {
-        state.loadingWeather = true;
-        state.loadingAdvice = true;
-        state.error = null;
-      })
-      .addCase(fetchWeatherByLocation.fulfilled, (state, action) => {
-        state.weather = { ...action.payload.wx }; // ✅ clone
-        state.advice = action.payload.advice;
-        state.FieldsName =
-          action.payload.location.name ||
-          action.payload.location.displayName;
-        state.lastPickedLocation = action.payload.location;
-        state.loadingWeather = false;
-        state.loadingAdvice = false;
-      })
-      .addCase(fetchWeatherByLocation.rejected, (state, action) => {
         state.error = action.payload as string;
         state.loadingWeather = false;
         state.loadingAdvice = false;

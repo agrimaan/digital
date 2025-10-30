@@ -1,7 +1,6 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { Field } from '../../types/domains';
-
 import {
   Box,
   Typography,
@@ -13,140 +12,210 @@ import {
   CardContent,
   CircularProgress,
   Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
 } from "@mui/material";
+
 import ThermostatIcon from "@mui/icons-material/Thermostat";
 import AirIcon from "@mui/icons-material/Air";
 import OpacityIcon from "@mui/icons-material/Opacity";
-import GrainIcon from "@mui/icons-material/Grain";
 import WbSunnyIcon from "@mui/icons-material/WbSunny";
+import Brightness5Icon from "@mui/icons-material/Brightness5";
+import Brightness3Icon from "@mui/icons-material/Brightness3";
 
 import WeatherAdvicePanel from "../../components/WeatherAdvicePanel";
-import LocationSearch from "../../components/LocationSearch";
-import { Suggestion } from "../../features/weather/weatherSlice";
-import { RootState } from "../../store";
-import {
-  fetchfields,
-  fetchWeatherByFields,
-  fetchWeatherByLocation,
-  clearWeather,
-} from "../../features/weather/weatherSlice";
-
-// Forecast helpers
-function pickForecastArray(wx: any | null): any[] {
-  if (!wx) return [];
-  const f = wx?.forecast;
-  if (!f) return [];
-  if (Array.isArray(f?.forecastday)) return f.forecastday;
-  if (Array.isArray(f)) return f;
-  return [];
-}
-function getDateLabel(item: any, index: number): string {
-  const date = item?.date ? new Date(item.date) : item?.dt ? new Date(item.dt * 1000) : new Date(Date.now() + index * 86400000);
-  return date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-}
-function readMaxC(item: any): number | undefined { return item?.day?.maxtemp_c ?? item?.max_c; }
-function readMinC(item: any): number | undefined { return item?.day?.mintemp_c ?? item?.min_c; }
-function readRainMM(item: any): number | undefined { return item?.day?.totalprecip_mm ?? item?.rain_mm; }
-function readWindKPH(item: any): number | undefined { return item?.day?.maxwind_kph ?? item?.wind_kph; }
-function readCondition(item: any): string | undefined { return item?.day?.condition?.text ?? item?.condition; }
+import { RootState, AppDispatch } from "../../store";
+import { fetchWeatherByFields, clearWeather } from "../../features/weather/weatherSlice";
+import { getFields } from "../../features/fields/fieldSlice";
+import { getWeatherDescription, calculateFeelsLike } from "../../utils/weatherUtils"; // Assume you have these helpers
 
 export default function WeatherPage() {
-  const dispatch = useDispatch();
-  const { fields, weather, advice, loadingWeather, loadingAdvice, error, FieldsName, lastPickedLocation } = useSelector((state: RootState) => state.weather);
+  const dispatch = useDispatch<AppDispatch>();
+  const { weather, advice, loadingWeather, loadingAdvice, error, FieldsName } =
+    useSelector((state: RootState) => state.weather);
 
   const [FieldsId, setFieldsId] = useState<string>("");
-  const [locationQuery, setLocationQuery] = useState<string>("");
-
+  const [fieldsList, setFieldsList] = useState<Field[]>([]);
+  const [fieldsLoading, setFieldsLoading] = useState(false);
+  
+  // Fetch Fields
   useEffect(() => {
-    dispatch(fetchfields() as any);
-    return () => { dispatch(clearWeather()); };
+    const loadFields = async () => {
+      try {
+        setFieldsLoading(true);
+        const resultAction = await dispatch(getFields()).unwrap();
+        setFieldsList(resultAction as Field[]);
+      } catch (err: any) {
+        console.error("Failed to load fields", err);
+      } finally {
+        setFieldsLoading(false);
+      }
+    };
+    loadFields();
+  }, [dispatch]);
+
+  // Cleanup weather on unmount
+  useEffect(() => {
+    return () => {
+      dispatch(clearWeather());
+    };
   }, [dispatch]);
 
   const handleFieldsChange = (id: string) => {
     setFieldsId(id);
-    if (id) dispatch(fetchWeatherByFields(id) as any);
+    const selectedField = fieldsList.find(f => f._id === id);
+    if (selectedField) dispatch(fetchWeatherByFields(selectedField) as any);
   };
 
-  const onPickLocation = useCallback((s: Suggestion) => {
-    setLocationQuery(s.displayName || s.name);
-    dispatch(fetchWeatherByLocation(s) as any);
-  }, [dispatch]);
+  // Calculate Daily Forecast with Max Wind
+  const dailyForecastWithWind = useMemo(() => {
+    if (!weather?.daily || !weather?.hourly) return [];
 
-  const forecastArray = useMemo(() => pickForecastArray(weather).slice(0, 3), [weather]);
+    const hourly = weather.hourly;
+    return weather.daily.map(d => {
+      const windSpeeds = hourly.windspeed_10m.filter((_, i) =>
+        hourly.time[i].startsWith(d.date)
+      );
+      const maxWind = windSpeeds.length ? Math.max(...windSpeeds) : undefined;
+      return { ...d, maxWind };
+    }).slice(0, 3);
+  }, [weather]);
+
+  // Current weather & additional info
+  const currentWeather = weather?.current_weather;
+  const currentHumidity = weather?.hourly?.relative_humidity_2m?.[0] ?? null;
+  const feelsLike = currentWeather && currentHumidity !== null
+    ? calculateFeelsLike(currentWeather.temperature, currentWeather.windspeed, currentHumidity)
+    : null;
+
+  const sunrise = weather?.daily?.[0]?.sunrise
+    ? new Date(weather.daily[0].sunrise).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : '';
+  const sunset = weather?.daily?.[0]?.sunset
+    ? new Date(weather.daily[0].sunset).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : '';
 
   return (
-    <Box display="grid" gridTemplateColumns={{ md: "2fr 1fr" }} gap={3}>
-      {/* Left */}
+    <Box sx={{ flexGrow: 1, p: 3 }} display="grid" gridTemplateColumns={{ md: "2fr 1fr" }} gap={3}>
+      {/* Left Column */}
       <Box>
-        <Typography variant="h5" gutterBottom fontWeight="bold">Weather Dashboard</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4">Weather Forecast</Typography>
+        </Box>
 
         <Box display="flex" alignItems="center" gap={2} mb={2}>
           <FormControl size="small" sx={{ minWidth: 200 }}>
             <InputLabel id="Fields-select-label">Fields</InputLabel>
-            <Select labelId="Fields-select-label" value={FieldsId} label="Fields" onChange={(e) => handleFieldsChange(e.target.value)}>
-              <MenuItem value=""><em>Select a Fields</em></MenuItem>
-              {fields.map((f) => (<MenuItem key={f._id} value={f._id}>{f.name || f._id}</MenuItem>))}
+            <Select
+              labelId="Fields-select-label"
+              value={FieldsId}
+              label="Fields"
+              onChange={(e) => handleFieldsChange(e.target.value)}
+            >
+              <MenuItem value=""><em>Select a Field</em></MenuItem>
+              {fieldsLoading && <MenuItem disabled>Loading...</MenuItem>}
+              {fieldsList.map(f => (
+                <MenuItem key={f._id} value={f._id}>{f.name || f._id}</MenuItem>
+              ))}
             </Select>
           </FormControl>
         </Box>
 
-        <Box display="flex" alignItems="center" gap={2} mb={2}>
-          <LocationSearch value={locationQuery} onChange={setLocationQuery} onPick={onPickLocation} placeholder="Type a location" />
-          <Typography variant="caption" color="text.secondary">or pick a Fields above</Typography>
-        </Box>
-
         {loadingWeather && <CircularProgress size={24} />}
-        {weather && !loadingWeather && (
+
+        {currentWeather && !loadingWeather && (
           <Card variant="outlined" sx={{ mb: 2, p: 1 }}>
             <CardContent>
-              <Typography variant="subtitle1" gutterBottom>Current Weather {FieldsName ? `(${FieldsName})` : ""}</Typography>
+              <Typography variant="subtitle1" gutterBottom>
+                Current Weather {FieldsName ? `(${FieldsName})` : ""}
+              </Typography>
               <Divider sx={{ mb: 1 }} />
+
               <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
-                <Box display="flex" alignItems="center" gap={1}><ThermostatIcon color="primary" fontSize="small" /><Typography variant="body2">Temp: <strong>{weather.current?.temp_c ?? "—"} °C</strong></Typography></Box>
-                <Box display="flex" alignItems="center" gap={1}><AirIcon color="info" fontSize="small" /><Typography variant="body2">Wind: <strong>{weather.current?.wind_kph ?? "—"} km/h</strong></Typography></Box>
-                <Box display="flex" alignItems="center" gap={1}><OpacityIcon color="secondary" fontSize="small" /><Typography variant="body2">Humidity: <strong>{weather.current?.humidity ?? "—"}%</strong></Typography></Box>
-                <Box display="flex" alignItems="center" gap={1}><GrainIcon color="success" fontSize="small" /><Typography variant="body2">Precip: <strong>{weather.current?.precip_mm ?? "—"} mm</strong></Typography></Box>
-                <Box display="flex" alignItems="center" gap={1} gridColumn="span 2"><WbSunnyIcon color="warning" fontSize="small" /><Typography variant="body2">Condition: <strong>{weather.current?.condition?.text || "—"}</strong></Typography></Box>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <ThermostatIcon color="primary" fontSize="small"/>
+                  <Typography variant="body2">Temp: <strong>{currentWeather.temperature} °C</strong></Typography>
+                </Box>
+
+                <Box display="flex" alignItems="center" gap={1}>
+                  <AirIcon color="info" fontSize="small"/>
+                  <Typography variant="body2">Wind: <strong>{currentWeather.windspeed} km/h</strong></Typography>
+                </Box>
+
+                <Box display="flex" alignItems="center" gap={1}>
+                  <OpacityIcon color="secondary" fontSize="small"/>
+                  <Typography variant="body2">Humidity: <strong>{currentHumidity ?? "N/A"}%</strong></Typography>
+                </Box>
+
+                <Box display="flex" alignItems="center" gap={1}>
+                  <ThermostatIcon color="warning" fontSize="small"/>
+                  <Typography variant="body2">Feels like: <strong>{feelsLike?.toFixed(1) ?? "-" } °C</strong></Typography>
+                </Box>
+
+                <Box display="flex" alignItems="center" gap={1}>
+                  <WbSunnyIcon color="warning" fontSize="small"/>
+                  <Typography variant="body2">Condition: <strong>{getWeatherDescription(currentWeather.weathercode)}</strong></Typography>
+                </Box>
+
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Brightness5Icon color="info" fontSize="small"/>
+                  <Typography variant="body2">Sunrise: <strong>{sunrise}</strong></Typography>
+                </Box>
+
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Brightness3Icon color="secondary" fontSize="small"/>
+                  <Typography variant="body2">Sunset: <strong>{sunset}</strong></Typography>
+                </Box>
               </Box>
             </CardContent>
           </Card>
         )}
 
-        {forecastArray.length > 0 && (
+        {/* Daily Forecast Table */}
+        {dailyForecastWithWind.length > 0 && (
           <Card variant="outlined">
             <CardContent>
               <Typography variant="subtitle1" gutterBottom>Next 3 Days</Typography>
-              <Divider sx={{ mb: 1 }} />
-              <table style={{ width: "100%", fontSize: "0.875rem" }}>
-                <thead><tr><th>Day</th><th>Max / Min (°C)</th><th>Rain (mm)</th><th>Wind (km/h)</th><th>Condition</th></tr></thead>
-                <tbody>
-                  {forecastArray.map((item: any, i: number) => (
-                    <tr key={i}>
-                      <td>{getDateLabel(item, i)}</td>
-                      <td>{readMaxC(item) ?? "—"} / {readMinC(item) ?? "—"}</td>
-                      <td>{readRainMM(item) ?? "—"}</td>
-                      <td>{readWindKPH(item) ?? "—"}</td>
-                      <td>{readCondition(item) ?? "—"}</td>
-                    </tr>
+              <Divider sx={{ mb: 1.5 }} />
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Day</TableCell>
+                    <TableCell align="right">Max / Min (°C)</TableCell>
+                    <TableCell align="right">Rain (mm)</TableCell>
+                    <TableCell align="right">Wind (km/h)</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {dailyForecastWithWind.map(d => (
+                    <TableRow key={d.date} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
+                      <TableCell>
+                        {new Date(d.date).toLocaleDateString(undefined, { weekday:"short", month:"short", day:"numeric" })}
+                      </TableCell>
+                      <TableCell align="right">{d.maxTemp.toFixed(1)} / {d.minTemp.toFixed(1)}</TableCell>
+                      <TableCell align="right">{d.totalRain.toFixed(1)}</TableCell>
+                      <TableCell align="right">{d.maxWind?.toFixed(1) ?? "-"}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
-              <Typography variant="caption" color="text.secondary">* Values shown in °C, km/h, and mm.</Typography>
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         )}
 
-        {error && <Typography color="error" variant="body2" mt={2}>{error}</Typography>}
+        {error && <Typography color="error" mt={2}>{error}</Typography>}
       </Box>
 
-      {/* Right */}
+      {/* Right Column */}
       <WeatherAdvicePanel
         advice={advice}
         loading={loadingAdvice}
         error={error}
         onRefresh={() => {
-          if (FieldsId) dispatch(fetchWeatherByFields(FieldsId) as any);
-          else if (lastPickedLocation) dispatch(fetchWeatherByLocation(lastPickedLocation) as any);
+          if (FieldsId) dispatch(fetchWeatherByFields(fieldsList.find(f => f._id === FieldsId)!) as any);
         }}
         FieldsName={FieldsName}
       />
