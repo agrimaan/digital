@@ -27,6 +27,22 @@ import AgricultureIcon from '@mui/icons-material/Agriculture';
 import { AppDispatch, RootState } from '../../store';
 import { getFieldsById } from '../../features/fields/fieldSlice';
 
+// 🗺️ React Leaflet imports
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix marker icon issue in Leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png'
+});
+
 // --- Mapping Helpers ---
 const mapSoilType = (type?: string): string => {
   if (!type) return 'N/A';
@@ -128,11 +144,15 @@ const FieldDetail: React.FC = () => {
     );
   }
 
+  // Get coordinates from field
+  const lat = field.location?.coordinates?.[1];
+  const lon = field.location?.coordinates?.[0];
+
   return (
     <Box sx={{ flexGrow: 1, p: 3 }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Button component={Link} to=".." startIcon={<ArrowBackIcon />}>
+        <Button component={Link} to="/farmer/fields" startIcon={<ArrowBackIcon />}>
           Back to fields
         </Button>
         <Button variant="contained" startIcon={<EditIcon />} component={Link} to="edit">
@@ -164,7 +184,7 @@ const FieldDetail: React.FC = () => {
                   primary="Coordinates"
                   secondary={
                     field.location?.coordinates
-                      ? `${field.location.coordinates[1]?.toFixed(4)}° N, ${field.location.coordinates[0]?.toFixed(4)}° E`
+                      ? `${lat?.toFixed(4)}° N, ${lon?.toFixed(4)}° E`
                       : field.locationName || 'N/A'
                   }
                 />
@@ -187,17 +207,38 @@ const FieldDetail: React.FC = () => {
             <Typography variant="h6" gutterBottom>
               Field Map
             </Typography>
-            <Box
-              sx={{
-                height: 300,
-                bgcolor: 'grey.200',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}
-            >
-              <Typography>Map Visualization Would Go Here</Typography>
-            </Box>
+
+            {lat && lon ? (
+              <MapContainer
+                center={[lat, lon]}
+                zoom={15}
+                style={{ height: 300, width: '100%', borderRadius: 8 }}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <Marker position={[lat, lon]}>
+                  <Popup>
+                    <strong>{field.name}</strong>
+                    <br />
+                    {field.locationName || 'Unknown location'}
+                  </Popup>
+                </Marker>
+              </MapContainer>
+            ) : (
+              <Box
+                sx={{
+                  height: 300,
+                  bgcolor: 'grey.200',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}
+              >
+                <Typography>No location data available</Typography>
+              </Box>
+            )}
           </Paper>
         </Grid>
       </Grid>

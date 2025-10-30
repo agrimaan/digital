@@ -16,7 +16,7 @@ const { check } = require('express-validator');
 
 const cropValidation = [
   check('name', 'Crop Name is required').not().isEmpty(),
-  check('scientificName', 'Scientific Name is required').not().isEmpty(),
+  check('scientificName', 'Scientific Name is required').optional(),
   check('variety', 'Variety is required').not().isEmpty(),
   check('fieldId', 'Field is required').not().isEmpty(),
   check('plantedArea', 'Planted Area must be a positive number')
