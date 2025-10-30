@@ -365,8 +365,8 @@ const CropManagement: React.FC = () => {
                 <TableCell>{c.variety || '-'}</TableCell>
                 <TableCell>{c.scientificName || '-'}</TableCell>
                 <TableCell>{fields.find(f => f._id === c.fieldId)?.name || '-'}</TableCell>
-                <TableCell>{c.plantingDate ? new Date(c.plantingDate).toLocaleDateString() : '-'}</TableCell>
-                <TableCell>{c.expectedHarvestDate ? new Date(c.expectedHarvestDate).toLocaleDateString() : '-'}</TableCell>
+                <TableCell>{c.plantingDate ? new Date(c.plantingDate).toLocaleDateString('en-GB') : '-'}</TableCell>
+                <TableCell>{c.expectedHarvestDate ? new Date(c.expectedHarvestDate).toLocaleDateString('en-GB') : '-'}</TableCell>
                 <TableCell align="center">
                   <Stack direction="row" spacing={1} justifyContent="center">
                     <Tooltip title="View"><IconButton size="small" onClick={() => openView(c)}><Visibility fontSize="small" /></IconButton></Tooltip>
@@ -505,9 +505,9 @@ const CropManagement: React.FC = () => {
               <Typography><b>Name:</b> {viewingCrop.name}</Typography>
               {viewingCrop.variety && <Typography><b>Variety:</b> {viewingCrop.variety}</Typography>}
               {viewingCrop.scientificName && <Typography><b>Scientific:</b> <i>{viewingCrop.scientificName}</i></Typography>}
-              <Typography><b>Field:</b> {viewingCrop.fieldId || '—'}</Typography>
-              <Typography><b>Planting:</b> {viewingCrop.plantingDate ? new Date(viewingCrop.plantingDate).toLocaleDateString() : '—'}</Typography>
-              <Typography><b>Expected Harvest:</b> {viewingCrop.expectedHarvestDate ? new Date(viewingCrop.expectedHarvestDate).toLocaleDateString() : '—'}</Typography>
+              <Typography><b>Field:</b> {fields.find(f => f._id === viewingCrop.fieldId)?.name || '—'}</Typography>
+              <Typography><b>Planting:</b> {viewingCrop.plantingDate ? new Date(viewingCrop.plantingDate).toLocaleDateString('en-GB') : '—'}</Typography>
+              <Typography><b>Expected Harvest:</b> {viewingCrop.expectedHarvestDate ? new Date(viewingCrop.expectedHarvestDate).toLocaleDateString('en-GB') : '—'}</Typography>
               <Typography><b>Soil:</b> {capitalize(viewingCrop.soilType)} | <b>Irrigation:</b> {capitalize(viewingCrop.irrigationMethod)}</Typography>
             </Stack>
           ) : <Typography>—</Typography>}
