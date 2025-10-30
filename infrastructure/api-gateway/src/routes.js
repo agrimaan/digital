@@ -399,11 +399,11 @@ module.exports = (app) => {
     }
   }));
 
-  app.use('/api/products', createProxyMiddleware({
+  app.use('/api/suppliers/products', createProxyMiddleware({
     target: process.env.SUPPLIER_SERVICE_URL || 'http://localhost:3015',
     changeOrigin: true,
     logLevel: 'debug',
-    pathRewrite: { '^/api/products': '/api/products' },
+    pathRewrite: { '^/api/suppliers/products': '/api/suppliers/products' },
     onError: handleProxyError,
 
     // Forward JSON body to the backend
@@ -423,7 +423,7 @@ module.exports = (app) => {
     target: process.env.SUPPLIER_SERVICE_URL || 'http://localhost:3015',
     changeOrigin: true,
     logLevel: 'debug',
-    pathRewrite: { '^/api/ratings': '/api/ratings' },
+    pathRewrite: { '^/api/suppliers/ratings': '/api/suppliers/ratings' },
     onError: handleProxyError,
 
     // Forward JSON body to the backend
@@ -439,11 +439,11 @@ module.exports = (app) => {
     }
   }));
 
-  app.use('/api/supplier/promotions', createProxyMiddleware({
+  app.use('/api/suppliers/promotions', createProxyMiddleware({
     target: process.env.SUPPLIER_SERVICE_URL || 'http://localhost:3015',
     changeOrigin: true,
     logLevel: 'debug',
-    pathRewrite: { '^/api/supplier/promotions': '/api/promotions' },
+    pathRewrite: { '^/api/suppliers/promotions': '/api/suppliers/promotions' },
     onError: handleProxyError,
 
     // Forward JSON body to the backend

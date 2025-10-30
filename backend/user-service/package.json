@@ -18,7 +18,7 @@
   "author": "Agrimaan Team",
   "license": "MIT",
   "dependencies": {
-    "@agrimaan/shared": "file:../../shared",
+    "@agrimaan/shared": "^1.0.24",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",

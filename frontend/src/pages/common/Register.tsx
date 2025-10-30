@@ -17,6 +17,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { register, loadUser } from '../../features/auth/authSlice'; // Import loadUser
+import { ThemeContext } from '@emotion/react';
 
 const Register: React.FC = () => {
   const dispatch = useDispatch();
@@ -164,13 +165,21 @@ const Register: React.FC = () => {
       return;
     }
 
-    try {
+    try 
+    {
       await dispatch(register(formData) as any).unwrap();
       // Dispatch loadUser after successful registration to update isAuthenticated state
       dispatch(loadUser() as any); 
+      
+      if(formData.role == 'supplier') {
+        navigate('/supplier/register');
+      }
+      else
+      {
       // This redirect will now work as the state is correct.
       navigate('/login');
-    } catch (error) {
+    } 
+  }catch (error) {
       console.error('Registration error:', error);
     }
   };

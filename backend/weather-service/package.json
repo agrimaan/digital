@@ -14,7 +14,7 @@
   "author": "Agrimaan Team",
   "license": "MIT",
   "dependencies": {
-    "@agrimaan/shared": "file:../../shared",
+    "@agrimaan/shared": "^1.0.24",
     "express": "^4.18.2",
     "axios": "^1.5.0",
     "cors": "^2.8.5",
@@ -22,7 +22,10 @@
     "morgan": "^1.10.0",
     "express-rate-limit": "^6.8.1",
     "dotenv": "^16.3.1",
-    "moment": "^2.29.4"
+    "moment": "^2.29.4",
+    "nodemailer": "^6.9.4",
+    "mongoose": "^7.5.0",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1",

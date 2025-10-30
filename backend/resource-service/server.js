@@ -8,6 +8,14 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3014;
 
+const SERVICE_NAME = process.env.SERVICE_NAME || 'resource-service';
+// Using console.log for development instead of shared logger
+const logger = {
+  info: (msg, meta = {}) => console.log(`[${SERVICE_NAME}] ${msg}`, meta),
+  error: (msg, meta = {}) => console.error(`[${SERVICE_NAME}] ${msg}`, meta),
+  warn: (msg, meta = {}) => console.warn(`[${SERVICE_NAME}] ${msg}`, meta)
+};
+
 // Middleware
 app.use(cors({
   origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5007'],
@@ -64,7 +72,7 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Resource service running on port ${PORT}`);
+  logger.info(`Resource service running on port ${PORT}`);
 });
 
 module.exports = app;

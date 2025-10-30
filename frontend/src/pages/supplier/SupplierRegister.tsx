@@ -187,10 +187,8 @@ const SupplierRegister: React.FC = () => {
       const registrationData = {
         businessName: businessInfo.businessName,
         businessType: businessInfo.businessType,
-        contactPerson: {
-          firstName: contactInfo.firstName,
-          lastName: contactInfo.lastName
-        },
+        firstName: contactInfo.firstName,
+        lastName: contactInfo.lastName,
         email: contactInfo.email,
         phone: contactInfo.phone,
         address: {
@@ -209,17 +207,16 @@ const SupplierRegister: React.FC = () => {
         },
         role: 'supplier'
       };
+      console.log("registrationData witin handleSubmit: ", registrationData);
       
       // Register supplier
-      await axios.post(`${API_BASE_URL}/api/suppliers`, registrationData);
+      await axios.post(`${API_BASE_URL}/api/suppliers/register`, registrationData);
       
       dispatch(setAlert({ 
-        message: 'Registration successful! Please wait for verification.', 
+        message: 'Supplier Registration successful! Please wait for verification. Meanwhile lets register you for portal access', 
         type: 'success' 
       }) as any);
       
-      // Navigate to login page
-      navigate('/supplier/login');
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Registration failed';
       setError(errorMessage);
@@ -259,10 +256,10 @@ const SupplierRegister: React.FC = () => {
                     businessType: e.target.value as string
                   })}
                 >
-                  <MenuItem value="wholesale">Wholesale</MenuItem>
-                  <MenuItem value="retail">Retail</MenuItem>
+                  <MenuItem value="wholesaler">wholesaler</MenuItem>
                   <MenuItem value="manufacturer">Manufacturer</MenuItem>
                   <MenuItem value="distributor">Distributor</MenuItem>
+                  <MenuItem value="retailer">retailer</MenuItem>
                 </Select>
               </FormControl>
             </Grid>

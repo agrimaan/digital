@@ -85,6 +85,7 @@ interface Order {
   status: string;
   createdAt: string;
 }
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
@@ -111,16 +112,20 @@ const SupplierDashboard: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-
+      console.log('user in supplier dashboard', user?.email);
+      const supplier = await axios.get(`${API_BASE_URL}/api/suppliers/${user?.email}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    });
+    const supplierId = supplier.data;
+      console.log('supplierId in supplier dashboard', supplierId, supplier.status);
       // Fetch supplier stats
       const statsResponse = await axios.get(
-        `${SUPPLIER_SERVICE_URL}/api/suppliers/${user?.supplierId}/stats`,
-        { headers }
-      );
+        `${API_BASE_URL}/api/suppliers/${supplierId}/stats`,
+        {headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    });
 
       // Fetch products
       const productsResponse = await axios.get(
-        `${SUPPLIER_SERVICE_URL}/api/products?supplierId=${user?.supplierId}&limit=5`,
+        `${API_BASE_URL}/api/suppliers/products?supplierId=${supplierId}&limit=5`,
         { headers }
       );
 

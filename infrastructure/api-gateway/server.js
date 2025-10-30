@@ -98,10 +98,6 @@ app.use('/api/reference', createServiceProxy('reference-data-service', '/api/ref
 app.use('/api/resources', createServiceProxy('resource-service', '/api/resources'));
 app.use('/api/bookings', createServiceProxy('resource-service', '/api/bookings'));
 app.use('/api/suppliers',createServiceProxy('supplier-service','/api/suppliers'));
-app.use('/api/products',createServiceProxy('supplier-service','/api/products'));
-app.use('/api/ratings',createServiceProxy('supplier-service','/api/ratings'));
-app.use('/api/promotions',createServiceProxy('supplier-service','/api/promotions'));
-
 app.use('/api/ref', createServiceProxy('reference-data-service', '/api/ref'));
 
 

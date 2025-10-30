@@ -10,7 +10,7 @@
     "seed:sensors": "node scripts/seed-sensors.js"
   },
   "dependencies": {
-    "@agrimaan/shared": "file:../../shared",
+    "@agrimaan/shared": "^1.0.24",
     "opossum": "^9.0.0",
     "consul": "^1.2.0",
     "cors": "^2.8.5",

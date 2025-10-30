@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   getSuppliers,
   getSupplierById,
+  getSupplierByEmail,
   createSupplier,
   updateSupplier,
   deleteSupplier,
@@ -20,19 +21,22 @@ router.get('/:id/stats', getSupplierStats);
 
 // Protected routes
 router.post(
-  '/',
+  '/register',
   [
     body('businessName', 'Business name is required').not().isEmpty(),
-    body('ownerName', 'Owner name is required').not().isEmpty(),
+    body('firstName', 'Owner first name is required').not().isEmpty(),
+    body('lastName', 'Owner last name is required').not().isEmpty(),
     body('email', 'Please provide a valid email').isEmail(),
     body('phone', 'Please provide a valid 10-digit phone number').matches(/^[0-9]{10}$/),
     body('gstNumber', 'GST number is required').not().isEmpty(),
     body('panNumber', 'PAN number is required').not().isEmpty(),
     body('businessType', 'Business type is required').isIn(['wholesaler', 'manufacturer', 'distributor', 'retailer'])
   ],
-  protect,
   createSupplier
 );
+
+// Public route: no auth middleware here
+//router.post('/register', createSupplier);
 
 router.put('/:id', protect, updateSupplier);
 router.delete('/:id', protect, authorize('admin'), deleteSupplier);

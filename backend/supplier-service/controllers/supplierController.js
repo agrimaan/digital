@@ -74,8 +74,11 @@ exports.getSuppliers = async (req, res) => {
  * @access  Public/Admin
  */
 exports.getSupplierById = async (req, res) => {
-  try {
-    const supplier = await Supplier.findById(req.params.id);
+    //const supplier = await Supplier.findById(req.params.id);
+    try {
+      console.log("email:", req.params.id);
+      const supplier = await Supplier.find({ email: req.params.id })
+    .populate('supplierId');
 
     if (!supplier) {
       return res.status(404).json({
@@ -83,7 +86,7 @@ exports.getSupplierById = async (req, res) => {
         message: 'Supplier not found'
       });
     }
-
+  
     // Hide sensitive data for non-admin users
     if (req.user && req.user.role !== 'admin' && req.user.id !== supplier._id.toString()) {
       supplier.bankDetails = undefined;
@@ -92,7 +95,7 @@ exports.getSupplierById = async (req, res) => {
 
     res.json({
       success: true,
-      data: supplier
+      data: supplier._id?.toString()
     });
   } catch (err) {
     console.error('Error fetching supplier:', err);
@@ -109,6 +112,34 @@ exports.getSupplierById = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Create new supplier
+ * @route   POST /api/suppliers
+ * @access  Private
+ */
+exports.registerSupplier = async (req, res) => {
+  const axios = require('axios');
+  const USER_SVC = process.env.USER_SERVICE_URL || 'http://localhost:3002';
+  
+  exports.createSupplier = async (req, res) => {
+    try {
+      const { name, email, password, phone } = req.body;
+  
+      // call your user-service public registration (or create directly)
+      const { data } = await axios.post(
+        `${USER_SVC}/api/auth/register`,
+        { name, email, password, phone, role: 'supplier' },
+        { timeout: 8000 }
+      );
+  
+      return res.status(201).json(data);
+    } catch (err) {
+      const status = err.response?.status || 500;
+      return res.status(status).json({ message: err.response?.data?.message || err.message });
+    }
+};
+}
 
 /**
  * @desc    Create new supplier
@@ -147,8 +178,8 @@ exports.createSupplier = async (req, res) => {
     res.status(201).json({
       success: true,
       data: supplier,
-      message: 'Supplier registered successfully. Awaiting admin approval.'
-    });
+      message: 'Supplier registered successfully. Awaiting for admin approval.'
+    });   
   } catch (err) {
     console.error('Error creating supplier:', err);
     res.status(500).json({
@@ -157,7 +188,22 @@ exports.createSupplier = async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? err.message : {}
     });
   }
+
+  //Now let us register supplier for the portal access
+  try {
+    this.registerSupplier();
+  }
+  catch (err) {
+    console.error('Error registering supplier for the Agrimaan Portal:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: process.env.NODE_ENV === 'development' ? err.message : {}
+    });
+  }
+
 };
+
 
 /**
  * @desc    Update supplier
@@ -332,8 +378,8 @@ exports.rejectSupplier = async (req, res) => {
  */
 exports.getSupplierStats = async (req, res) => {
   try {
-    const supplier = await Supplier.findById(req.params.id);
-
+    const supplier = await Supplier.find({ email: req.params.id })
+    .populate('supplierId');
     if (!supplier) {
       return res.status(404).json({
         success: false,
@@ -343,7 +389,7 @@ exports.getSupplierStats = async (req, res) => {
 
     // Get product count
     const Product = require('../models/Product');
-    const totalProducts = await Product.countDocuments({ supplierId: supplier._id });
+    const totalProducts = await Product.countDocuments({ supplierId: supplier._id })|| 0;
     const activeProducts = await Product.countDocuments({ 
       supplierId: supplier._id, 
       status: 'active' 
@@ -352,12 +398,12 @@ exports.getSupplierStats = async (req, res) => {
     const stats = {
       totalProducts,
       activeProducts,
-      totalSales: supplier.totalSales,
-      totalOrders: supplier.totalOrders,
-      rating: supplier.calculateAverageRating(),
-      totalRatings: supplier.totalRatings,
+      totalSales: supplier.totalSales||0,
+      totalOrders: supplier.totalOrders||0,
+      rating: supplier.rating||0,
+      totalRatings: supplier.totalRatings||0,
       status: supplier.status,
-      isOperational: supplier.isOperational()
+      isOperational: supplier.isOperational
     };
 
     res.json({

@@ -43,7 +43,7 @@ import axios from 'axios';
 // Add Grid import
 import { Grid } from '@mui/material';
 
-const SUPPLIER_SERVICE_URL = process.env.REACT_APP_SUPPLIER_URL || 'http://localhost:3006';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
 interface Product {
   _id: string;
@@ -120,7 +120,7 @@ const SupplierProducts: React.FC = () => {
       if (statusFilter !== 'all') params.status = statusFilter;
       if (searchTerm) params.search = searchTerm;
 
-      const response = await axios.get(`${SUPPLIER_SERVICE_URL}/api/products`, {
+      const response = await axios.get(`${API_BASE_URL}/api/suppliers/products`, {
         headers: { Authorization: `Bearer ${token}` },
         params,
       });
@@ -159,7 +159,7 @@ const SupplierProducts: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`${SUPPLIER_SERVICE_URL}/api/products/${productToDelete}`, {
+      await axios.delete(`${API_BASE_URL}/api/suppliers/products/${productToDelete}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

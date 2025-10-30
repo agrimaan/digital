@@ -44,9 +44,9 @@ app.get('/health', (req, res) => {
 app.use('/api/suppliers', require('./routes/supplierRoutes'));
 app.use('/api/suppliers/register', require('./routes/supplierRoutes'));
 app.use('/api/suppliers/login', require('./routes/supplierRoutes'));
-app.use('/api/products', require('./routes/productRoutes'));
-app.use('/api/ratings', require('./routes/ratingRoutes'));
-app.use('/api/promotions', require('./routes/promotionRoutes'));
+app.use('/api/suppliers/products', require('./routes/productRoutes'));
+app.use('/api/suppliers/ratings', require('./routes/ratingRoutes'));
+app.use('/api/suppliers/promotions', require('./routes/promotionRoutes'));
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -57,10 +57,10 @@ app.get('/', (req, res) => {
       '/api/suppliers',
       '/api/suppliers/register',
       '/api/suppliers/login',
-      '/api/products',
-      '/api/ratings',
-      '/api/promotions',    
-      '/health',
+      '/api/suppliers/products',
+      '/api/suppliers/ratings',
+      '/api/suppliers/promotions',    
+      '/api/suppliers/health',
       '/'
     ]
   });

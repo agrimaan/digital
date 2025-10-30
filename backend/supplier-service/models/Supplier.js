@@ -8,9 +8,14 @@ const supplierSchema = new mongoose.Schema({
     trim: true,
     maxlength: [200, 'Business name cannot exceed 200 characters']
   },
-  ownerName: {
+  firstName: {
     type: String,
-    required: [true, 'Owner name is required'],
+    required: [true, 'Owner First name is required'],
+    trim: true
+  },
+  lastName: {
+    type: String,
+    required: [true, 'Owner Last name is required'],
     trim: true
   },
   email: {

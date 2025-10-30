@@ -11,7 +11,6 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
-  createProduct,
   calculatePrice,
   approveProduct,
   updateStock
