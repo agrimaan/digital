@@ -264,7 +264,7 @@ const AdminDashboard: React.FC = () => {
 
       setDashboardData({ 
         counts: {
-          users: dashboardStats.users.length,
+          users: dashboardStats.users,
           fields: dashboardStats.fields,
           crops: dashboardStats.crops,
           sensors: dashboardStats.sensors,

@@ -45,8 +45,8 @@ export const adminDashboardAPI = {
   // Get dashboard statistics
   getDashboardStats: async () => {
     try {
-      const response = await adminApi.get("/admin/users");
-      console.log('response.data:', response.data);
+      const response = await adminApi.get("/admin/stats/");
+      console.log('response.data:', response.data.users);
       return response.data;
 
     } catch (error) {

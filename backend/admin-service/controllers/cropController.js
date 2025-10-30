@@ -33,7 +33,7 @@ function svcDelete(path, { req } = {}) {
 // @access  Private/Admin
 exports.getAllCrops = asyncHandler(async (req, res) => {
   try {
-    console.log('Fetching crops...', req.query);
+    //console.log('Fetching crops...', req.query);
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
     const search = req.query.search || '';

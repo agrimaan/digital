@@ -1,3 +1,4 @@
+
 const axios = require('axios');
 
 // Service URLs with fallbacks - now using API gateway
@@ -72,11 +73,11 @@ exports.getDashboardStats = async () => {
       sensorStats,
       resourceStats
     ] = await getAggregatedData([
-      httpRequest(API_GATEWAY, '/api/users'),
-      httpRequest(FIELD_SVC, '/api/fields'),
-      httpRequest(CROP_SVC, '/api/crops'),
-      httpRequest(MARKETPLACE_SVC, '/api/orders'),
-      httpRequest(IOT_SVC, '/api/devices'),
+      httpRequest(USER_SVC, '/api/analytics/users'),
+      httpRequest(FIELD_SVC, '/api/analytics/fields'),
+      httpRequest(CROP_SVC, '/api/analytics/crops'),
+      httpRequest(MARKETPLACE_SVC, '/api/analytics/orders'),
+      httpRequest(IOT_SVC, '/api/analytics/devices'),
       httpRequest(RESOURCE_SVC, '/api/resources')
     ]);
 

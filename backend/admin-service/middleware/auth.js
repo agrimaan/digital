@@ -85,7 +85,7 @@ exports.protect = async (req, res, next) => {
 exports.authorize = (...roles) => {
   return (req, res, next) => {
     console.log('Roles:', roles);
-    console.log('Request:', req);
+    //console.log('Request:', req);
    console.log('Admin Role:', req.admin.role);
   /*
    if (!roles.includes(req.admin.role)) {
