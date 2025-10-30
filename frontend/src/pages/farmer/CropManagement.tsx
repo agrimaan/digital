@@ -307,11 +307,11 @@ const CropManagement: React.FC = () => {
   };
 
   return (
-    <Box p={4}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
-        <Typography variant="h5">🌾 Crop Management</Typography>
+    <Box sx={{ flexGrow: 1, p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4">Crop Management</Typography>
         <Button startIcon={<Add />} variant="contained" onClick={openAdd}>Add Crop</Button>
-      </Stack>
+      </Box>
 
       <Box sx={{ mb: 3, p: 2, border: '1px solid #ddd', borderRadius: 2, backgroundColor: '#fafafa' }}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
@@ -363,7 +363,7 @@ const CropManagement: React.FC = () => {
               <TableRow key={c._id}>
                 <TableCell>{c.name}</TableCell>
                 <TableCell>{c.variety || '-'}</TableCell>
-                <TableCell sx={{ fontStyle: 'italic' }}>{c.scientificName || '-'}</TableCell>
+                <TableCell>{c.scientificName || '-'}</TableCell>
                 <TableCell>{fields.find(f => f._id === c.fieldId)?.name || '-'}</TableCell>
                 <TableCell>{c.plantingDate ? new Date(c.plantingDate).toLocaleDateString() : '-'}</TableCell>
                 <TableCell>{c.expectedHarvestDate ? new Date(c.expectedHarvestDate).toLocaleDateString() : '-'}</TableCell>
