@@ -1,6 +1,4 @@
-// src/components/WeatherAdvicePanel.tsx
-import React from "react";
-import type { WeatherAdvice } from "../services/ai";
+import type { WeatherAdvice } from "../../services/ai";
 import {
   Card,
   CardContent,

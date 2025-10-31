@@ -1,3 +1,4 @@
+// src/features/weather/weatherSlice.ts
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { getWeatherAdviceByBundle, type WeatherAdvice } from "../../services/ai";
 import { api } from "../../lib/api";
@@ -20,37 +21,9 @@ export type FieldsLite = {
   locationName?: string;
 };
 
-export type WeatherResponse = {
-  current_weather?: {
-    time: string;
-    temperature: number;
-    windspeed: number;
-    winddirection: number;
-    is_day: number;
-    weathercode: number;
-  };
-  daily?: Array<{
-    date: string;
-    maxTemp: number;
-    minTemp: number;
-    totalRain: number;
-    weatherCode: number;
-    sunrise?: string;
-    sunset?: string;
-  }>;
-  hourly?: {
-    time: string[];
-    temperature_2m: number[];
-    relative_humidity_2m?: number[];
-    precipitation: number[];
-    windspeed_10m: number[];
-  };
-  meta?: any;
-};
-
 interface WeatherState {
   fields: FieldsLite[];
-  weather: WeatherResponse | null;
+  weather: any | null; // weather will be populated by service, type can be imported if needed
   advice: WeatherAdvice | null;
   FieldsName?: string;
   lastPickedLocation: Suggestion | null;
@@ -86,62 +59,14 @@ export const fetchfields = createAsyncThunk(
   }
 );
 
-export const fetchWeatherByFields = createAsyncThunk(
-  "weather/fetchWeatherByFields",
-  async (field: any, { rejectWithValue }) => {
-    try {
-      if (!field?.location?.coordinates) throw new Error("Field coordinates not found");
-      const [lng, lat] = field.location.coordinates;
-
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-      const res = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
-          `&current_weather=true` +
-          `&hourly=temperature_2m,relative_humidity_2m,precipitation,windspeed_10m` +
-          `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode,sunrise,sunset` +
-          `&timezone=${timezone}`
-      );
-
-      const wx = await res.json();
-
-      const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
-      const tomorrowISO = tomorrow.toISOString().split("T")[0];
-
-      const filteredDaily = wx.daily.time
-        .map((date: string, i: number) => ({
-          date,
-          maxTemp: wx.daily.temperature_2m_max[i],
-          minTemp: wx.daily.temperature_2m_min[i],
-          totalRain: wx.daily.precipitation_sum[i],
-          weatherCode: wx.daily.weathercode[i],
-          sunrise: wx.daily.sunrise[i],
-          sunset: wx.daily.sunset[i],
-        }))
-        .filter((d: any) => d.date >= tomorrowISO);
-
-      const formattedWeather: WeatherResponse = {
-        current_weather: wx.current_weather,
-        daily: filteredDaily.slice(0, 3),
-        hourly: wx.hourly,
-        meta: wx,
-      };
-
-      return { weather: formattedWeather, field, advice: null };
-    } catch (e: any) {
-      return rejectWithValue(e?.message || "Failed to fetch weather/advice");
-    }
-  }
-);
-
 // -------------------- Slice --------------------
 const weatherSlice = createSlice({
   name: "weather",
   initialState,
   reducers: {
-    clearWeatherError: (state) => { state.error = null; },
+    clearWeatherError: (state) => {
+      state.error = null;
+    },
     clearWeather: (state) => {
       state.weather = null;
       state.advice = null;
@@ -154,25 +79,11 @@ const weatherSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchfields.fulfilled, (state, action) => { state.fields = action.payload; })
-      .addCase(fetchfields.rejected, (state, action) => { state.error = action.payload as string; })
-      .addCase(fetchWeatherByFields.pending, (state) => {
-        state.loadingWeather = true;
-        state.loadingAdvice = true;
-        state.error = null;
+      .addCase(fetchfields.fulfilled, (state, action) => {
+        state.fields = action.payload;
       })
-      .addCase(fetchWeatherByFields.fulfilled, (state, action) => {
-        state.weather = action.payload.weather;
-        state.advice = action.payload.advice;
-        state.FieldsName = action.payload.field.name || action.payload.field.locationName;
-        state.lastPickedLocation = null;
-        state.loadingWeather = false;
-        state.loadingAdvice = false;
-      })
-      .addCase(fetchWeatherByFields.rejected, (state, action) => {
+      .addCase(fetchfields.rejected, (state, action) => {
         state.error = action.payload as string;
-        state.loadingWeather = false;
-        state.loadingAdvice = false;
       });
   },
 });

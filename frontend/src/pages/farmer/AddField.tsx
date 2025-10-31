@@ -15,10 +15,11 @@ import {
   MenuItem
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '../../store';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '../../store';
 import { createFields, Fields } from '../../features/fields/fieldSlice';
 import Autocomplete from '@mui/material/Autocomplete';
+import { searchNominatim, type GeoSuggestion } from '../../services/field';
 
 /* --------------------- Helper Functions --------------------- */
 function mapIrrigationSystem(
@@ -72,19 +73,6 @@ function useDebouncedValue<T>(value: T, delay = 300) {
     return () => clearTimeout(t);
   }, [value, delay]);
   return v;
-}
-
-/* --------------------- Geolocation Search --------------------- */
-type GeoSuggestion = { display_name: string; lat: string; lon: string };
-
-async function searchNominatim(query: string, limit = 5): Promise<GeoSuggestion[]> {
-  if (!query.trim()) return [];
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-    query
-  )}&limit=${limit}&addressdetails=0`;
-  const res = await fetch(url, { headers: { Accept: 'application/json' } });
-  if (!res.ok) return [];
-  return (await res.json()) as GeoSuggestion[];
 }
 
 /* --------------------- Address Autocomplete --------------------- */
