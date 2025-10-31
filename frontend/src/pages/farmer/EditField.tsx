@@ -19,28 +19,22 @@ import {
   Container,
 } from '@mui/material';
 import Autocomplete from '@mui/material/Autocomplete';
+import { searchNominatim, type GeoSuggestion } from '../../services/field';
 
-// Helper function to map irrigation system types
+// --------------------- Helper mappings ---------------------
 function mapIrrigationSystem(
   system: string
 ): 'flood' | 'drip' | 'sprinkler' | 'none' | 'other' {
   switch (system?.toLowerCase()) {
-    case 'drip':
-      return 'drip';
-    case 'sprinkler':
-      return 'sprinkler';
-    case 'surface irrigation':
-      return 'flood';
-    case 'subsurface irrigation':
-      return 'other';
-    case 'none':
-      return 'none';
-    default:
-      return 'other';
+    case 'drip': return 'drip';
+    case 'sprinkler': return 'sprinkler';
+    case 'surface irrigation': return 'flood';
+    case 'subsurface irrigation': return 'other';
+    case 'none': return 'none';
+    default: return 'other';
   }
 }
 
-// Normalize backend <-> frontend
 const normalizeSoilType = (soil: string) => {
   if (!soil) return '';
   const mapping: Record<string, string> = {
@@ -80,7 +74,13 @@ const normalizeIrrigationType = (type: string) => {
 };
 
 const soilTypes = ['Clay', 'Sandy', 'Loam', 'Silty', 'Peaty', 'Chalky'];
-const irrigationTypes = ['Drip Irrigation', 'Sprinkler', 'Surface Irrigation', 'Subsurface Irrigation', 'None'];
+const irrigationTypes = [
+  'Drip Irrigation',
+  'Sprinkler',
+  'Surface Irrigation',
+  'Subsurface Irrigation',
+  'None',
+];
 
 interface FormDataType {
   name: string;
@@ -101,19 +101,6 @@ function useDebouncedValue<T>(value: T, delay = 300) {
     return () => clearTimeout(t);
   }, [value, delay]);
   return v;
-}
-
-/* --------------------- Geolocation Search --------------------- */
-type GeoSuggestion = { display_name: string; lat: string; lon: string };
-
-async function searchNominatim(query: string, limit = 5): Promise<GeoSuggestion[]> {
-  if (!query.trim()) return [];
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-    query
-  )}&limit=${limit}&addressdetails=0`;
-  const res = await fetch(url, { headers: { Accept: 'application/json' } });
-  if (!res.ok) return [];
-  return (await res.json()) as GeoSuggestion[];
 }
 
 /* --------------------- Address Autocomplete --------------------- */
@@ -195,7 +182,7 @@ const AddressAutocomplete: React.FC<{
                 {loading ? <CircularProgress size={18} /> : null}
                 {params.InputProps.endAdornment}
               </>
-            )
+            ),
           }}
         />
       )}
@@ -203,6 +190,7 @@ const AddressAutocomplete: React.FC<{
   );
 };
 
+/* --------------------- Main Component --------------------- */
 const EditField: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
@@ -222,8 +210,6 @@ const EditField: React.FC = () => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-
-  // useRef to prevent multiple calls
   const hasFetched = useRef(false);
 
   useEffect(() => {
@@ -254,7 +240,7 @@ const EditField: React.FC = () => {
   const handleChange = (key: keyof FormDataType) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | { value: unknown }>
   ) => {
-    setFormData((prev: FormDataType) => ({
+    setFormData((prev) => ({
       ...prev,
       [key]: e.target.value as string,
     }));
@@ -263,15 +249,13 @@ const EditField: React.FC = () => {
   const handleCoordChange = (coord: 'latitude' | 'longitude') => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    setFormData((prev: FormDataType) => ({
+    setFormData((prev) => ({
       ...prev,
       coordinates: { ...prev.coordinates, [coord]: e.target.value },
     }));
   };
 
-  const handleSelectChange = (key: keyof FormDataType) => (
-    e: { target: { value: unknown } }
-  ) => {
+  const handleSelectChange = (key: keyof FormDataType) => (e: { target: { value: unknown } }) => {
     setFormData((prev) => ({
       ...prev,
       [key]: e.target.value as string,
@@ -358,6 +342,7 @@ const EditField: React.FC = () => {
 
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
           <Grid container spacing={3}>
+            {/* Field Name, Size, Unit */}
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -405,6 +390,7 @@ const EditField: React.FC = () => {
               </FormControl>
             </Grid>
 
+            {/* Soil & Irrigation */}
             <Grid item xs={12} md={6}>
               <FormControl fullWidth error={!!formErrors.soilType}>
                 <InputLabel id="soilType-label">Soil Type</InputLabel>
@@ -463,15 +449,15 @@ const EditField: React.FC = () => {
                     location: address,
                     coordinates: {
                       latitude: lat.toString(),
-                      longitude: lon.toString()
-                    }
+                      longitude: lon.toString(),
+                    },
                   }))
                 }
                 label="Field Location"
               />
             </Grid>
 
-            {/* Latitude */}
+            {/* Latitude / Longitude */}
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -483,8 +469,6 @@ const EditField: React.FC = () => {
                 type="number"
               />
             </Grid>
-
-            {/* Longitude */}
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -497,6 +481,7 @@ const EditField: React.FC = () => {
               />
             </Grid>
 
+            {/* Description */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -508,12 +493,17 @@ const EditField: React.FC = () => {
               />
             </Grid>
 
+            {/* Buttons */}
             <Grid item xs={12}>
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Button type="submit" variant="contained" disabled={isSubmitting}>
                   {isSubmitting ? <CircularProgress size={20} /> : 'Update Field'}
                 </Button>
-                <Button variant="outlined" onClick={() => navigate('/farmer/fields')} disabled={isSubmitting}>
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate('/farmer/fields')}
+                  disabled={isSubmitting}
+                >
                   Cancel
                 </Button>
               </Box>

@@ -6,26 +6,23 @@ import {
 } from '@mui/material';
 import Autocomplete from '@mui/material/Autocomplete';
 import { Add, Edit, Delete, Visibility, Clear } from '@mui/icons-material';
-import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../store';
-import { getFields } from '../../features/fields/fieldSlice'
+import { getFields } from '../../features/fields/fieldSlice';
 import { getCrops, addCrop, updateCrop, deleteCrop, Crop } from '../../features/crops/cropSlice';
-
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000';
+import { fetchRefCrops, fetchRefVarieties } from '../../services/cropManagement';
 
 /* ============== Reference-service types ============== */
-type RefCrop = { _id: string; slug: string; commonName: string; scientificName: string; synonyms?: string[]; };
-type RefVariety = { _id: string; cropSlug: string; name: string; season?: string; zone?: string; type?: string; };
+type RefCrop = { _id: string; slug: string; commonName: string; scientificName: string; synonyms?: string[] };
+type RefVariety = { _id: string; cropSlug: string; name: string; season?: string; zone?: string; type?: string };
 
 /* ============== Helpers ============== */
-const authHeaders = () => {
-  const token = localStorage.getItem('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
 function useDebouncedValue<T>(value: T, delay = 300) {
   const [v, setV] = useState(value);
-  useEffect(() => { const t = setTimeout(() => setV(value), delay); return () => clearTimeout(t); }, [value, delay]);
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
   return v;
 }
 
@@ -33,14 +30,14 @@ const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 const lowercaseFirst = (str: string) => str.charAt(0).toLowerCase() + str.slice(1);
 
 /* ============== UI constants from Crop ============== */
-const SOIL_TYPES: Crop['soilType'][] = ['loam','clay','sandy','silty','peaty','chalky','alluvial'];
-const IRRIGATION: Crop['irrigationMethod'][] = ['drip','sprinkler','flood','rainfed','center-pivot'];
-const SEED_SOURCES: Crop['seedSource'][] = ['own','market','government','supplier'];
-const HEALTH: NonNullable<Crop['healthStatus']>[] = ['excellent','good','fair','poor','diseased'];
-const STAGES: NonNullable<Crop['growthStage']>[] = ['seedling','vegetative','flowering','fruiting','maturity','harvested','failed'];
+const SOIL_TYPES: Crop['soilType'][] = ['loam', 'clay', 'sandy', 'silty', 'peaty', 'chalky', 'alluvial'];
+const IRRIGATION: Crop['irrigationMethod'][] = ['drip', 'sprinkler', 'flood', 'rainfed', 'center-pivot'];
+const SEED_SOURCES: Crop['seedSource'][] = ['own', 'market', 'government', 'supplier'];
+const HEALTH: NonNullable<Crop['healthStatus']>[] = ['excellent', 'good', 'fair', 'poor', 'diseased'];
+const STAGES: NonNullable<Crop['growthStage']>[] = ['seedling', 'vegetative', 'flowering', 'fruiting', 'maturity', 'harvested', 'failed'];
 
-type FieldDoc = { _id: string; name?: string; description?: string; };
-const numericKeys = new Set<keyof Crop>(['plantedArea','expectedYield','actualYield','pricePerUnit','totalValue']);
+type FieldDoc = { _id: string; name?: string; description?: string };
+const numericKeys = new Set<keyof Crop>(['plantedArea', 'expectedYield', 'actualYield', 'pricePerUnit', 'totalValue']);
 
 /* ============== Component ============== */
 const CropManagement: React.FC = () => {
@@ -52,11 +49,9 @@ const CropManagement: React.FC = () => {
   const [filterHealth, setFilterHealth] = useState('');
   const [filterStage, setFilterStage] = useState('');
 
-  /* listing state */
   const [success, setSuccess] = useState(false);
   const [listingError, setListingError] = useState<string | null>(null);
 
-  /* fields */
   const [fields, setFields] = useState<FieldDoc[]>([]);
   const [fieldsLoading, setFieldsLoading] = useState(false);
 
@@ -98,7 +93,7 @@ const CropManagement: React.FC = () => {
     seedSource: 'own',
     healthStatus: 'good',
     growthStage: 'seedling',
-  } as Omit<Crop, 'location'>);
+  });
 
   /* load list + fields */
   useEffect(() => {
@@ -107,68 +102,105 @@ const CropManagement: React.FC = () => {
   }, [dispatch]);
 
   const loadFields = async () => {
-  try {
+    try {
       setFieldsLoading(true);
       const resultAction = await dispatch(getFields()).unwrap();
       setFields(resultAction as FieldDoc[]);
-      } catch (err: any) {
-        setListingError(
-          err?.response?.data?.message || err?.message || 'Failed to load fields'
-        );
-      } finally {
-        setFieldsLoading(false);
-      }
+    } catch (err: any) {
+      setListingError(err?.response?.data?.message || err?.message || 'Failed to load fields');
+    } finally {
+      setFieldsLoading(false);
+    }
   };
 
   /* reference-service crop options */
   useEffect(() => {
     const q = debouncedCropInput.trim();
-    if (!q) { setCropOptions([]); return; }
+    if (!q) {
+      setCropOptions([]);
+      return;
+    }
     const cacheHit = cropsCache.current.get(q);
-    if (cacheHit) { setCropOptions(cacheHit); return; }
+    if (cacheHit) {
+      setCropOptions(cacheHit);
+      return;
+    }
 
     let cancelled = false;
     (async () => {
       try {
         setCropOptionsLoading(true);
-        const res = await axios.get(`${API_BASE_URL}/api/ref/crops`, { params: { name: q }, headers: authHeaders() });
-        const list: RefCrop[] = Array.isArray(res.data?.data) ? res.data.data : [];
-        if (!cancelled) { cropsCache.current.set(q, list); setCropOptions(list); }
-      } catch { if (!cancelled) setCropOptions([]); }
-      finally { if (!cancelled) setCropOptionsLoading(false); }
+        const list: RefCrop[] = await fetchRefCrops(q);
+        if (!cancelled) {
+          cropsCache.current.set(q, list);
+          setCropOptions(list);
+        }
+      } catch {
+        if (!cancelled) setCropOptions([]);
+      } finally {
+        if (!cancelled) setCropOptionsLoading(false);
+      }
     })();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+    };
   }, [debouncedCropInput]);
 
   /* commit crop choice and load varieties */
   const commitCrop = async (crop: RefCrop | null, fallbackText?: string) => {
     if (crop) {
       setSelectedCrop(crop);
-      setFormData(prev => ({ ...prev, name: crop.commonName, scientificName: crop.scientificName || prev.scientificName || '' }));
+      setFormData(prev => ({
+        ...prev,
+        name: crop.commonName,
+        scientificName: crop.scientificName || prev.scientificName || '',
+      }));
       const slug = crop.slug;
       if (slug) {
         const cached = varietiesCache.current.get(slug);
         if (cached) {
           setVarietyOptions(cached);
-          setFormData(prev => ({ ...prev, variety: prev.variety && cached.includes(prev.variety) ? prev.variety : (cached[0] || '') }));
+          setFormData(prev => ({
+            ...prev,
+            variety:
+              prev.variety && cached.includes(prev.variety)
+                ? prev.variety
+                : cached[0] || '',
+          }));
           return;
         }
         try {
           setVarietiesLoading(true);
-          const res = await axios.get(`${API_BASE_URL}/api/ref/varieties`, { params: { crop: slug }, headers: authHeaders() });
-          const arr: string[] = (Array.isArray(res.data?.data) ? res.data.data : []).map((v: RefVariety) => v.name);
+          const arr: string[] = await fetchRefVarieties(slug);
           varietiesCache.current.set(slug, arr);
           setVarietyOptions(arr);
-          setFormData(prev => ({ ...prev, variety: prev.variety && arr.includes(prev.variety) ? prev.variety : (arr[0] || '') }));
-        } catch { setVarietyOptions([]); }
-        finally { setVarietiesLoading(false); }
-      } else { setVarietyOptions([]); }
+          setFormData(prev => ({
+            ...prev,
+            variety:
+              prev.variety && arr.includes(prev.variety)
+                ? prev.variety
+                : arr[0] || '',
+          }));
+        } catch {
+          setVarietyOptions([]);
+        } finally {
+          setVarietiesLoading(false);
+        }
+      } else {
+        setVarietyOptions([]);
+      }
     } else if (fallbackText) {
       setSelectedCrop(null);
-      setFormData(prev => ({ ...prev, name: fallbackText, scientificName: prev.scientificName || '' }));
+      setFormData(prev => ({
+        ...prev,
+        name: fallbackText,
+        scientificName: prev.scientificName || '',
+      }));
       setVarietyOptions([]);
     }
   };
+
   const handleCropBlur = () => {
     const text = cropInput.trim();
     if (!text) return;
@@ -186,10 +218,13 @@ const CropManagement: React.FC = () => {
   /* form handlers */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => numericKeys.has(name as keyof Crop)
-      ? { ...prev, [name]: value === '' ? ('' as any) : Number(value) }
-      : { ...prev, [name]: value });
+    setFormData(prev =>
+      numericKeys.has(name as keyof Crop)
+        ? { ...prev, [name]: value === '' ? ('' as any) : Number(value) }
+        : { ...prev, [name]: value }
+    );
   };
+
   const handleFieldSelect = (e: any) => {
     const selectedId = e.target.value as string;
     setFormData(prev => ({ ...prev, fieldId: selectedId }));
@@ -202,10 +237,19 @@ const CropManagement: React.FC = () => {
     setCropInput('');
     setVarietyOptions([]);
     setFormData({
-      name: '', scientificName: '', variety: '', fieldId: '', plantedArea: 0,
-      plantingDate: '', expectedHarvestDate: '', expectedYield: 0,
-      soilType: 'loam', irrigationMethod: 'drip', seedSource: 'own',
-      healthStatus: 'good', growthStage: 'seedling',
+      name: '',
+      scientificName: '',
+      variety: '',
+      fieldId: '',
+      plantedArea: 0,
+      plantingDate: '',
+      expectedHarvestDate: '',
+      expectedYield: 0,
+      soilType: 'loam',
+      irrigationMethod: 'drip',
+      seedSource: 'own',
+      healthStatus: 'good',
+      growthStage: 'seedling',
     });
     setDrawerOpen(true);
   };
@@ -231,24 +275,43 @@ const CropManagement: React.FC = () => {
       else (async () => {
         try {
           setVarietiesLoading(true);
-          const res = await axios.get(`${API_BASE_URL}/api/ref/varieties`, { params: { crop: slug }, headers: authHeaders() });
-          const arr: string[] = (Array.isArray(res.data?.data) ? res.data.data : []).map((v: RefVariety) => v.name);
+          const arr: string[] = await fetchRefVarieties(slug);
           varietiesCache.current.set(slug, arr);
           setVarietyOptions(arr);
-        } catch { setVarietyOptions([]); }
-        finally { setVarietiesLoading(false); }
+        } catch {
+          setVarietyOptions([]);
+        } finally {
+          setVarietiesLoading(false);
+        }
       })();
     }
   };
 
-  const openView = (row: Crop) => { setViewingCrop(row); setDialogOpen(true); };
+  const openView = (row: Crop) => {
+    setViewingCrop(row);
+    setDialogOpen(true);
+  };
 
-  const handleDeleteClick = (crop: Crop) => { setCropToDelete(crop); setDeleteDialogOpen(true); };
-  const handleDeleteCancel = () => { setDeleteDialogOpen(false); setCropToDelete(null); };
+  const handleDeleteClick = (crop: Crop) => {
+    setCropToDelete(crop);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setCropToDelete(null);
+  };
+
   const handleDeleteConfirm = async () => {
     if (cropToDelete) {
-      try { await dispatch(deleteCrop(cropToDelete._id!)).unwrap(); setDeleteSuccess(true); setTimeout(() => setDeleteSuccess(false), 3000); dispatch(getCrops()); }
-      catch (err: any) { setListingError(err?.response?.data?.message || err?.message || 'Failed to delete crop'); }
+      try {
+        await dispatch(deleteCrop(cropToDelete._id!)).unwrap();
+        setDeleteSuccess(true);
+        setTimeout(() => setDeleteSuccess(false), 3000);
+        dispatch(getCrops());
+      } catch (err: any) {
+        setListingError(err?.response?.data?.message || err?.message || 'Failed to delete crop');
+      }
     }
     setDeleteDialogOpen(false);
     setCropToDelete(null);
@@ -368,19 +431,18 @@ const CropManagement: React.FC = () => {
                 <TableCell>{c.plantingDate ? new Date(c.plantingDate).toLocaleDateString('en-GB') : '-'}</TableCell>
                 <TableCell>{c.expectedHarvestDate ? new Date(c.expectedHarvestDate).toLocaleDateString('en-GB') : '-'}</TableCell>
                 <TableCell align="center">
-                  <Stack direction="row" spacing={1} justifyContent="center">
-                    <Tooltip title="View"><IconButton size="small" onClick={() => openView(c)}><Visibility fontSize="small" /></IconButton></Tooltip>
-                    <Tooltip title="Edit"><IconButton size="small" onClick={() => openEdit(c)}><Edit fontSize="small" /></IconButton></Tooltip>
-                    <Tooltip title="Delete"><IconButton size="small" color="error" onClick={() => handleDeleteClick(c)}><Delete fontSize="small" /></IconButton></Tooltip>
-                  </Stack>
+                  <Tooltip title="View"><IconButton onClick={() => openView(c)}><Visibility /></IconButton></Tooltip>
+                  <Tooltip title="Edit"><IconButton onClick={() => openEdit(c)}><Edit /></IconButton></Tooltip>
+                  <Tooltip title="Delete"><IconButton color="error" onClick={() => handleDeleteClick(c)}><Delete /></IconButton></Tooltip>
                 </TableCell>
               </TableRow>
             ))}
-            {filteredCrops.length === 0 && (<TableRow><TableCell colSpan={7}><Typography color="text.secondary">No crops yet. Click “Add Crop”.</Typography></TableCell></TableRow>)}
+            {!filteredCrops.length && !anyLoading && (
+              <TableRow><TableCell colSpan={7} align="center">No crops found.</TableCell></TableRow>
+            )}
           </TableBody>
         </Table>
       </Box>
-
       <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)} PaperProps={{ sx: { width: { xs: '100%', sm: 560 } } }}>
         <Box component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom>{editingId ? 'Edit Crop' : 'Add Crop'}</Typography>

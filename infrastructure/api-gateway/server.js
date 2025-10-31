@@ -101,9 +101,6 @@ app.use('/api/suppliers',createServiceProxy('supplier-service','/api/suppliers')
 app.use('/api/ref', createServiceProxy('reference-data-service', '/api/ref'));
 
 
-
-
-
 // Error handling
 app.use((err, req, res, next) => {
   console.error(err.stack);
