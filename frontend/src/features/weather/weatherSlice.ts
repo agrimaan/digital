@@ -97,25 +97,30 @@ export const fetchWeatherByFields = createAsyncThunk(
 
       const res = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
-        `&current_weather=true` +
-        `&hourly=temperature_2m,relative_humidity_2m,precipitation,windspeed_10m` +
-        `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode,sunrise,sunset` +
-        `&timezone=${timezone}`
+          `&current_weather=true` +
+          `&hourly=temperature_2m,relative_humidity_2m,precipitation,windspeed_10m` +
+          `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode,sunrise,sunset` +
+          `&timezone=${timezone}`
       );
 
       const wx = await res.json();
 
-      const today = new Date().toISOString().split("T")[0];
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      const tomorrowISO = tomorrow.toISOString().split("T")[0];
 
-      const filteredDaily = wx.daily.time.map((date: string, i: number) => ({
-        date,
-        maxTemp: wx.daily.temperature_2m_max[i],
-        minTemp: wx.daily.temperature_2m_min[i],
-        totalRain: wx.daily.precipitation_sum[i],
-        weatherCode: wx.daily.weathercode[i],
-        sunrise: wx.daily.sunrise[i],
-        sunset: wx.daily.sunset[i],
-      })).filter((d: any) => d.date >= today);
+      const filteredDaily = wx.daily.time
+        .map((date: string, i: number) => ({
+          date,
+          maxTemp: wx.daily.temperature_2m_max[i],
+          minTemp: wx.daily.temperature_2m_min[i],
+          totalRain: wx.daily.precipitation_sum[i],
+          weatherCode: wx.daily.weathercode[i],
+          sunrise: wx.daily.sunrise[i],
+          sunset: wx.daily.sunset[i],
+        }))
+        .filter((d: any) => d.date >= tomorrowISO);
 
       const formattedWeather: WeatherResponse = {
         current_weather: wx.current_weather,
