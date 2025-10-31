@@ -81,7 +81,7 @@ const mainNavItems = [
 
 // Admin-specific navigation items
 const adminNavItems = [
-  { text: 'Admin Dashboard', icon: <AdminPanelSettingsIcon />, path: '/admin/dashboard' },
+  { text: 'Admin Dashboard', icon: <AdminPanelSettingsIcon />, path: '/admin' },
   { text: 'User Management', icon: <PeopleIcon />, path: '/admin/users' },
   { text: 'Bulk Uploads', icon: <UploadFileIcon />, path: '/admin/bulk-uploads' },
   { text: 'Token Management', icon: <TokenIcon />, path: '/admin/blockchain' },
