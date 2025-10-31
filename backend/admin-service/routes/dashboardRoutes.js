@@ -1,24 +1,8 @@
 const express = require('express');
-const { check } = require('express-validator');
+const { protect, authorize } = require('@agrimaan/shared').middleware;
 const dashboardController = require('../controllers/dashboardController');
-//const { protect, logAction, authorize } = require('@agrimaan/shared').middleware;
-//const { protect, logAction, authorize } = require('../middleware/auth');
-const { protect, authenticate, authorizeAdmin } = require('../middleware/auth');
-
 
 const router = express.Router();
-
-// Protect all routes
-//router.use(protect);
-
-
-// Admin/SuperAdmin only routes
-//router.use(authorize('admin'));
-
-// Apply authentication and authorization to all routes
-router.use(authenticate);
-router.use(authorizeAdmin);
-
 
 const {
   getDashboard,
@@ -29,42 +13,26 @@ const {
   getSystemHealth,
   getResources,
   getLandTokens,
-  getBulkUploads
-} = require('../controllers/dashboardController');
+  getBulkUploads,
+} = dashboardController;
 
 
-// Dashboard routes
-router
-.route('/')
-.get(protect, authorizeAdmin, getDashboard);
+router.get('/', protect, authorize('superadmin', 'admin'), getDashboard);
 
-router
-.route('/stats')
-.get(protect, authorizeAdmin, getDashboardStats);
-router
-.route('/users/recent')
-.get(protect, authorizeAdmin, getRecentUsers);
+router.get('/stats', protect, authorize('superadmin', 'admin'), getDashboardStats);
 
-router
-.route('/orders/recent')
-.get(protect, authorizeAdmin, getRecentOrders);
+router.get('/users/recent', protect, authorize('superadmin', 'admin'), getRecentUsers);
 
-router
-.route('/verification/pending')
-.get(protect, authorizeAdmin, getPendingVerifications);
-router
-.route('/system/health')
-.get(protect, authorizeAdmin, getSystemHealth);
+router.get('/orders/recent', protect, authorize('superadmin', 'admin'), getRecentOrders);
 
-router
-.route('/resources')
-.get(protect, authorizeAdmin, getResources);
-router
-.route('/land-tokens')
-.get(protect, authorizeAdmin, getLandTokens);
+router.get('/verification/pending', protect, authorize('superadmin', 'admin'), getPendingVerifications);
 
-router
-.route('/bulk-uploads')
-.get(protect, authorizeAdmin, getBulkUploads);
+router.get('/system/health', protect, authorize('superadmin', 'admin'), getSystemHealth);
+
+router.get('/resources', protect, authorize('superadmin', 'admin'), getResources);
+
+router.get('/land-tokens', protect, authorize('superadmin', 'admin'), getLandTokens);
+
+router.get('/bulk-uploads', protect, authorize('superadmin', 'admin'), getBulkUploads);
 
 module.exports = router;

@@ -50,7 +50,6 @@ mongoose.connect(process.env.MONGODB_URI, {
 .catch(err => logger.error('MongoDB connection error:', err));
 
 // Routes
-app.use('/api/admin', adminRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
 app.use('/api/admin/reports', reportRoutes);
 app.use('/api/admin/audit-logs', auditLogRoutes);
@@ -65,6 +64,7 @@ app.use('/api/admin/fields', fieldRoutes);
 app.use('/api/admin/crops', cropRoutes);
 app.use('/api/admin/orders', orderRoutes);
 app.use('/api/admin/sensors', sensorRoutes);
+app.use('/api/admin', adminRoutes);
 
 
 
