@@ -179,7 +179,7 @@ exports.createWallet = async (userId) => {
 };
 
 /**
- * Get user's tokens
+ * Get user's tokenswallet
  * @param {String} userId - User ID
  * @param {Object} options - Query options
  * @returns {Promise<Array>} User tokens

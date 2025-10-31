@@ -4,6 +4,7 @@
  * 
  * Uses independent service clients instead of shared dependencies
  */
+const getDashboardStats = require('../services/dashboardService');
 
 const asyncHandler = require('express-async-handler');
 const IndependentUserServiceClient = require('../utils/user-service-client');
@@ -12,6 +13,7 @@ const IndependentCropServiceClient = require('../utils/crop-service-client');
 const IndependentSensorServiceClient = require('../utils/sensor-service-client');
 const IndependentResourceServiceClient = require('../utils/resource-service-client');
 const bulkUploadService = require('../services/bulkUploadService');
+
 const Settings = require('../models/SystemSettings');
 
 // Initialize service clients
@@ -87,10 +89,12 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
 // Helper function to get user statistics
 async function getUserStats() {
   try {
-    const users = await userServiceClient.getAllUsers();
-    const totalUsers = users.length;
+    const dashboardStats = await getDashboardStats.getDashboardStats();
+    const users = dashboardStats.users;
+    const totalUsers = users.data;
     const usersByRole = {};
-    
+    console.log('dashboard stats:', dashboardStats);
+    console.log('users within getUserStats:', users);
     // Count pending verifications
     let pendingUsers = 0;
     const pendingVerifications = [];
@@ -146,7 +150,8 @@ async function getUserStats() {
 // Helper function to get field statistics
 async function getFieldStats() {
   try {
-    const fields = await fieldServiceClient.getAllFields();
+    const dashboardStats = await getDashboardStats.getDashboardStats();
+    const fields = dashboardStats.fields;
     const totalFields = fields.length;
     const fieldsByLocation = {};
     
@@ -174,8 +179,8 @@ async function getFieldStats() {
 // Helper function to get crop statistics
 async function getCropStats() {
   try {
-    const crops = await cropServiceClient.getAllCrops();
-    const totalCrops = crops.length;
+    const crops = await getDashboardStats.getCropStats;
+    const totalCrops = crops.data;
     const cropsByStatus = {};
     
     crops.forEach(crop => {
@@ -202,8 +207,9 @@ async function getCropStats() {
 // Helper function to get sensor statistics
 async function getSensorStats() {
   try {
-    const sensors = await sensorServiceClient.getAllSensors();
-    const totalSensors = sensors.length;
+    const dashboardStats = await getDashboardStats.getDashboardStats();
+    const sensors = dashboardStats.sensors;
+    const totalSensors = sensors.data;
     const sensorsByType = {};
     const sensorsByStatus = {};
     
@@ -249,8 +255,9 @@ async function getOrderStats() {
 // Helper function to get resource statistics
 async function getResourceStats() {
   try {
-    const resources = await resourceServiceClient.getAllResources();
-    const totalResources = resources.length;
+    const dashboardStats = await getDashboardStats.getDashboardStats();
+    const resources = dashboardStats.resources;
+    const totalResources = resources.data;
     
     const resourcesByType = {};
     const resourcesByStatus = {};

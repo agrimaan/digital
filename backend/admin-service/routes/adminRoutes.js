@@ -1,8 +1,8 @@
 const express = require('express');
 const { check } = require('express-validator');
 const adminController = require('../controllers/adminController');
-//const { protect, authorize, logAction } = require('@agrimaan/shared').middleware;
-const { protect, authorize, logAction } = require('../middleware/auth');
+const { protect, authorize, logAction } = require('@agrimaan/shared').middleware;
+//const { protect, authorize, logAction } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -34,7 +34,7 @@ router.post(
 );
 
 // Protected routes
-router.use(protect);
+//router.use(protect);
 router.get('/me', protect, authorize('superadmin', 'admin'), adminController.getMe);
 
 

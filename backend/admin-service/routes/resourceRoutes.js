@@ -1,27 +1,26 @@
 const express = require('express');
-const { check } = require('express-validator');
-const resourceController = require('../controllers/resourceController');
-const { protect, authorize } = require('../../user-service/middleware/auth');
-
 const router = express.Router();
+const {
+  getResources,
+  getResourceById,
+  createResource,
+  updateResource,
+  deleteResource
+} = require('../controllers/resourceController');
+const { authenticate, authorizeAdmin } = require('../middleware/auth');
 
-// All routes require admin authentication
-router.use(protect, authorize('admin', 'super-admin'));
+// Apply authentication and authorization to all routes
+router.use(authenticate);
+router.use(authorizeAdmin);
 
-// Resource management routes
-router.get('/', resourceController.getAllResources);
-router.get('/:id', resourceController.getResourceById);
-router.post('/', [
-  check('name', 'Resource name is required').not().isEmpty(),
-  check('type', 'Resource type is required').not().isEmpty()
-], resourceController.createResource);
-router.put('/:id', resourceController.updateResource);
-router.delete('/:id', resourceController.deleteResource);
+// Resource routes
+router.route('/')
+  .get(getResources)
+  .post(createResource);
 
-// Resource analytics
-router.get('/:id/analytics', resourceController.getResourceAnalytics);
-
-// Resource verification
-router.put('/:id/verify', resourceController.verifyResource);
+router.route('/:id')
+  .get(getResourceById)
+  .put(updateResource)
+  .delete(deleteResource);
 
 module.exports = router;

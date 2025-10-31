@@ -1,64 +1,38 @@
 const express = require('express');
-const { check } = require('express-validator');
+const { protect, authorize } = require('@agrimaan/shared').middleware;
 const dashboardController = require('../controllers/dashboardController');
-//const { protect, logAction, authorize } = require('@agrimaan/shared').middleware;
-const { protect, logAction, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Protect all routes
-router.use(protect);
+const {
+  getDashboard,
+  getDashboardStats,
+  getRecentUsers,
+  getRecentOrders,
+  getPendingVerifications,
+  getSystemHealth,
+  getResources,
+  getLandTokens,
+  getBulkUploads,
+} = dashboardController;
 
-// Admin/SuperAdmin only routes
-router.use(authorize('admin', 'super-admin'));
 
-// Get default dashboard
-router.get('/default', dashboardController.getDefaultDashboard);
+router.get('/', protect, authorize('superadmin', 'admin'), getDashboard);
 
-// Get all dashboards
-router.get('/', dashboardController.getAllDashboards);
+router.get('/stats', protect, authorize('superadmin', 'admin'), getDashboardStats);
 
-// Get dashboard by ID
-router.get('/:id', dashboardController.getDashboardById);
+router.get('/users/recent', protect, authorize('superadmin', 'admin'), getRecentUsers);
 
-// Get dashboard data
-router.get('/:id/data', dashboardController.getDashboardData);
+router.get('/orders/recent', protect, authorize('superadmin', 'admin'), getRecentOrders);
 
-// SuperAdmin only routes
-router.use(authorize('super-admin'));
+router.get('/verification/pending', protect, authorize('superadmin', 'admin'), getPendingVerifications);
 
-// Create a new dashboard
-router.post(
-  '/',
-  [
-    check('name', 'Name is required').not().isEmpty(),
-    check('isDefault', 'isDefault must be a boolean').optional().isBoolean(),
-    check('layout', 'Layout must be an array').optional().isArray(),
-    check('filters', 'Filters must be an object').optional().isObject(),
-    check('refreshInterval', 'Refresh interval must be a number').optional().isNumeric()
-  ],
-  logAction('create', 'dashboard'),
-  dashboardController.createDashboard
-);
+router.get('/system/health', protect, authorize('superadmin', 'admin'), getSystemHealth);
 
-// Update a dashboard
-router.put(
-  '/:id',
-  [
-    check('name', 'Name is required').optional(),
-    check('isDefault', 'isDefault must be a boolean').optional().isBoolean(),
-    check('layout', 'Layout must be an array').optional().isArray(),
-    check('filters', 'Filters must be an object').optional().isObject(),
-    check('refreshInterval', 'Refresh interval must be a number').optional().isNumeric()
-  ],
-  logAction('update', 'dashboard'),
-  dashboardController.updateDashboard
-);
+router.get('/resources', protect, authorize('superadmin', 'admin'), getResources);
 
-// Delete a dashboard
-router.delete('/:id', logAction('delete', 'dashboard'), dashboardController.deleteDashboard);
+router.get('/land-tokens', protect, authorize('superadmin', 'admin'), getLandTokens);
 
-// Set a dashboard as default
-router.put('/:id/default', logAction('update', 'dashboard'), dashboardController.setDefaultDashboard);
+router.get('/bulk-uploads', protect, authorize('superadmin', 'admin'), getBulkUploads);
 
 module.exports = router;

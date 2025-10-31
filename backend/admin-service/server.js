@@ -24,7 +24,7 @@ const resourcesRoutes = require('./routes/resourceRoutes');
 
 // Import logger
 const logger = require('./utils/logger');
-const { getSystemHealth } = require('./controllers/statsController');
+//const { getSystemHealth } = require('./controllers/statsController');
 
 // Initialize express app
 const app = express();
@@ -50,8 +50,6 @@ mongoose.connect(process.env.MONGODB_URI, {
 .catch(err => logger.error('MongoDB connection error:', err));
 
 // Routes
-app.use('/api/admin', adminRoutes);
-app.use('/api/admin/dashboards', dashboardRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
 app.use('/api/admin/reports', reportRoutes);
 app.use('/api/admin/audit-logs', auditLogRoutes);
@@ -66,6 +64,7 @@ app.use('/api/admin/fields', fieldRoutes);
 app.use('/api/admin/crops', cropRoutes);
 app.use('/api/admin/orders', orderRoutes);
 app.use('/api/admin/sensors', sensorRoutes);
+app.use('/api/admin', adminRoutes);
 
 
 
@@ -81,8 +80,12 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: [
       '/api/admins',
-      '/api/admin/dashboards',
       '/api/admin/dashboard',
+      '/api/admin/dashboard/stats',
+      '/api/admin/dashboard/users/stats',
+      '/api/admin/dashboard/fields/stats',
+      '/api/admin/dashboard/crops/stats',
+      '/api/admin/dashboard/sensors/stats',
       '/api/admin/reports',
       '/api/admin/audit-logs',
       '/api/admin/notifications',
@@ -97,11 +100,6 @@ app.get('/', (req, res) => {
       '/api/admin/orders/recent',
       '/api/admin/system/health',
       '/api/admin/bulk-uploads/stats',
-      '/api/admin/dashboard/stats',
-      '/api/admin/dashboard/users/stats',
-      '/api/admin/dashboard/fields/stats',
-      '/api/admin/dashboard/crops/stats',
-      '/api/admin/dashboard/sensors/stats',
 
       
       '/health',
@@ -110,18 +108,27 @@ app.get('/', (req, res) => {
   });
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  logger.error(err.stack);
-  res.status(500).json({
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : {}
+// Start server
+const server = app.listen(PORT, () => {
+  logger.info(`Admin BFF service running on port ${PORT}`);
+  logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    logger.info('HTTP server closed');
+    process.exit(0);
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  logger.info(`Admin service running on port ${PORT}`);
+process.on('SIGINT', () => {
+  logger.info('SIGINT signal received: closing HTTP server');
+  server.close(() => {
+    logger.info('HTTP server closed');
+    process.exit(0);
+  });
 });
 
 module.exports = app; // For testing purposes

@@ -1,242 +1,99 @@
 const asyncHandler = require('express-async-handler');
-const axios = require('axios');
+const { resourceService } = require('../services/serviceClient');
+const logger = require('../utils/logger');
 
-const RESOURCE_SVC = process.env.RESOURCE_SERVICE_URL || 'http://localhost:3014';
-const http = axios.create({ baseURL: RESOURCE_SVC, timeout: 8000 });
+/**
+ * @desc    Get all resources
+ * @route   GET /api/bff/resources
+ * @access  Private/Admin
+ */
+const getResources = asyncHandler(async (req, res) => {
+  logger.info('Getting all resources');
 
-function svcGet(path, { req, params = {} } = {}) {
-  const headers = {};
-  if (req?.headers?.authorization) headers.authorization = req.headers.authorization;
-  return http.get(path, { params, headers });
-}
+  const resources = await resourceService.getResources(req.query);
 
-function svcPost(path, { req, data = {} } = {}) {
-  const headers = {};
-  if (req?.headers?.authorization) headers.authorization = req.headers.authorization;
-  return http.post(path, data, { headers });
-}
-
-function svcPut(path, { req, data = {} } = {}) {
-  const headers = {};
-  if (req?.headers?.authorization) headers.authorization = req.headers.authorization;
-  return http.put(path, data, { headers });
-}
-
-function svcDelete(path, { req } = {}) {
-  const headers = {};
-  if (req?.headers?.authorization) headers.authorization = req.headers.authorization;
-  return http.delete(path, { headers });
-}
-
-// @desc    Get all resources (admin view)
-// @route   GET /api/admin/resources
-// @access  Private/Admin
-exports.getAllResources = asyncHandler(async (req, res) => {
-  try {
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
-    const search = req.query.search || '';
-    const type = req.query.type || '';
-    const status = req.query.status || '';
-
-    const { data } = await svcGet('/api/resources', {
-      req,
-      params: { page, limit, ...(search && { search }), ...(type && { type }), ...(status && { status }) }
-    });
-
-    // Normalize response for admin view
-    const resources = data?.data?.resources || data?.resources || data || [];
-    const pagination = data?.pagination || {
-      total: resources.length,
-      page,
-      limit,
-      pages: Math.ceil(resources.length / limit)
-    };
-
-    res.status(200).json({
-      success: true,
-      resources,
-      pagination
-    });
-  } catch (error) {
-    console.error('Error fetching resources:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching resources',
-      error: error.message
-    });
-  }
+  res.json({
+    success: true,
+    data: resources.data || resources
+  });
 });
 
-// @desc    Get resource by ID (admin view)
-// @route   GET /api/admin/resources/:id
-// @access  Private/Admin
-exports.getResourceById = asyncHandler(async (req, res) => {
-  try {
-    const { data } = await svcGet(`/api/resources/${req.params.id}`, { req });
+/**
+ * @desc    Get resource by ID
+ * @route   GET /api/bff/resources/:id
+ * @access  Private/Admin
+ */
+const getResourceById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  
+  logger.info(`Getting resource by ID: ${id}`);
 
-    const resource = data?.data?.resource || data?.resource || data;
-    if (!resource) {
-      return res.status(404).json({
-        success: false,
-        message: 'Resource not found'
-      });
-    }
+  const resource = await resourceService.getResourceById(id);
 
-    res.status(200).json({
-      success: true,
-      data: { resource }
-    });
-  } catch (error) {
-    const status = error.response?.status || 500;
-    if (status === 404) {
-      return res.status(404).json({
-        success: false,
-        message: 'Resource not found'
-      });
-    }
-    res.status(status).json({
-      success: false,
-      message: 'Error fetching resource',
-      error: error.message
-    });
-  }
+  res.json({
+    success: true,
+    data: resource.data || resource
+  });
 });
 
-// @desc    Create resource (admin operation)
-// @route   POST /api/admin/resources
-// @access  Private/Admin
-exports.createResource = asyncHandler(async (req, res) => {
-  try {
-    const resourceData = req.body;
-    
-    // Add admin context
-    resourceData.createdByAdmin = true;
-    resourceData.adminId = req.user.id;
+/**
+ * @desc    Create new resource
+ * @route   POST /api/bff/resources
+ * @access  Private/Admin
+ */
+const createResource = asyncHandler(async (req, res) => {
+  logger.info('Creating new resource');
 
-    const { data } = await svcPost('/api/resources', {
-      req,
-      data: resourceData
-    });
+  const resource = await resourceService.createResource(req.body);
 
-    const newResource = data?.data?.resource || data?.resource || data;
-
-    res.status(201).json({
-      success: true,
-      message: 'Resource created successfully',
-      data: { resource: newResource }
-    });
-  } catch (error) {
-    const status = error.response?.status || 500;
-    const message = error.response?.data?.message || 'Error creating resource';
-    res.status(status).json({
-      success: false,
-      message,
-      error: error.message
-    });
-  }
+  res.status(201).json({
+    success: true,
+    message: 'Resource created successfully',
+    data: resource.data || resource
+  });
 });
 
-// @desc    Update resource (admin operation)
-// @route   PUT /api/admin/resources/:id
-// @access  Private/Admin
-exports.updateResource = asyncHandler(async (req, res) => {
-  try {
-    const updateData = req.body;
-    updateData.updatedByAdmin = true;
-    updateData.adminId = req.user.id;
+/**
+ * @desc    Update resource
+ * @route   PUT /api/bff/resources/:id
+ * @access  Private/Admin
+ */
+const updateResource = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  
+  logger.info(`Updating resource: ${id}`);
 
-    const { data } = await svcPut(`/api/resources/${req.params.id}`, {
-      req,
-      data: updateData
-    });
+  const resource = await resourceService.updateResource(id, req.body);
 
-    const updatedResource = data?.data?.resource || data?.resource || data;
-
-    res.status(200).json({
-      success: true,
-      message: 'Resource updated successfully',
-      data: { resource: updatedResource }
-    });
-  } catch (error) {
-    const status = error.response?.status || 500;
-    const message = error.response?.data?.message || 'Error updating resource';
-    res.status(status).json({
-      success: false,
-      message,
-      error: error.message
-    });
-  }
+  res.json({
+    success: true,
+    message: 'Resource updated successfully',
+    data: resource.data || resource
+  });
 });
 
-// @desc    Delete resource (admin operation)
-// @route   DELETE /api/admin/resources/:id
-// @access  Private/Admin
-exports.deleteResource = asyncHandler(async (req, res) => {
-  try {
-    await svcDelete(`/api/resources/${req.params.id}`, { req });
+/**
+ * @desc    Delete resource
+ * @route   DELETE /api/bff/resources/:id
+ * @access  Private/Admin
+ */
+const deleteResource = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  
+  logger.info(`Deleting resource: ${id}`);
 
-    res.status(200).json({
-      success: true,
-      message: 'Resource deleted successfully'
-    });
-  } catch (error) {
-    const status = error.response?.status || 500;
-    const message = error.response?.data?.message || 'Error deleting resource';
-    res.status(status).json({
-      success: false,
-      message,
-      error: error.message
-    });
-  }
+  await resourceService.deleteResource(id);
+
+  res.json({
+    success: true,
+    message: 'Resource deleted successfully'
+  });
 });
 
-// @desc    Get resource analytics
-// @route   GET /api/admin/resources/:id/analytics
-// @access  Private/Admin
-exports.getResourceAnalytics = asyncHandler(async (req, res) => {
-  try {
-    const { data } = await svcGet(`/api/resources/${req.params.id}/analytics`, { req });
-
-    res.status(200).json({
-      success: true,
-      data: data?.data || data
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching resource analytics',
-      error: error.message
-    });
-  }
-});
-
-// @desc    Verify resource
-// @route   PUT /api/admin/resources/:id/verify
-// @access  Private/Admin
-exports.verifyResource = asyncHandler(async (req, res) => {
-  try {
-    const { data } = await svcPut(`/api/resources/${req.params.id}`, {
-      req,
-      data: {
-        isVerified: true,
-        verifiedAt: new Date(),
-        verifiedBy: req.user.id
-      }
-    });
-
-    const verifiedResource = data?.data?.resource || data?.resource || data;
-
-    res.status(200).json({
-      success: true,
-      message: 'Resource verified successfully',
-      data: { resource: verifiedResource }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error verifying resource',
-      error: error.message
-    });
-  }
-});
+module.exports = {
+  getResources,
+  getResourceById,
+  createResource,
+  updateResource,
+  deleteResource
+};
