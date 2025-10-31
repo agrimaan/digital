@@ -1,8 +1,8 @@
 
 const express = require('express');
 const statsController = require('../controllers/statsController');
-//const { protect, authorize, logAction } = require('@agrimaan/shared').middleware;
-const { protect, logAction, authorize } = require('../middleware/auth');
+const { protect, authorize, logAction } = require('@agrimaan/shared').middleware;
+//const { protect, logAction, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 

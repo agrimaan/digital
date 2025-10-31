@@ -1,221 +1,163 @@
+const asyncHandler = require('express-async-handler');
 const dashboardService = require('../services/dashboardService');
-const responseHandler = require('../utils/responseHandler');
-const { validationResult } = require('express-validator');
+const logger = require('../utils/logger');
 
 /**
- * @desc    Get default dashboard for an admin
- * @route   GET /api/dashboards/default
- * @access  Private
+ * @desc    Get complete dashboard data
+ * @route   GET /api/bff/dashboard
+ * @access  Private/Admin
  */
-exports.getDefaultDashboard = async (req, res) => {
-  try {
-    const dashboard = await dashboardService.getDefaultDashboard(req.admin.id);
+const getDashboard = asyncHandler(async (req, res) => {
+  logger.info('Getting complete dashboard data');
 
-    return responseHandler.success(
-      res,
-      200,
-      { dashboard },
-      'Default dashboard retrieved successfully'
-    );
-  } catch (error) {
-    return responseHandler.error(res, 500, error.message);
-  }
-};
+  const stats = await dashboardService.getDashboardStats();
+
+  res.json({
+    success: true,
+    data: stats
+  });
+});
 
 /**
- * @desc    Get dashboard by ID
- * @route   GET /api/dashboards/:id
- * @access  Private
+ * @desc    Get dashboard statistics
+ * @route   GET /api/bff/dashboard/stats
+ * @access  Private/Admin
  */
-exports.getDashboardById = async (req, res) => {
-  try {
-    const dashboard = await dashboardService.getDashboardById(req.params.id, req.admin.id);
+const getDashboardStats = asyncHandler(async (req, res) => {
+  logger.info('Getting dashboard statistics');
 
-    if (!dashboard) {
-      return responseHandler.notFound(res, 'Dashboard not found');
-    }
+  const stats = await dashboardService.getDashboardStats();
 
-    return responseHandler.success(
-      res,
-      200,
-      { dashboard },
-      'Dashboard retrieved successfully'
-    );
-  } catch (error) {
-    return responseHandler.error(res, 500, error.message);
-  }
-};
+  res.json({
+    success: true,
+    data: stats
+  });
+});
 
 /**
- * @desc    Get all dashboards for an admin
- * @route   GET /api/dashboards
- * @access  Private
+ * @desc    Get recent users
+ * @route   GET /api/bff/dashboard/users/recent
+ * @access  Private/Admin
  */
-exports.getAllDashboards = async (req, res) => {
-  try {
-    const dashboards = await dashboardService.getAllDashboards(req.admin.id);
+const getRecentUsers = asyncHandler(async (req, res) => {
+  const limit = parseInt(req.query.limit) || 10;
+  
+  logger.info(`Getting recent users (limit: ${limit})`);
 
-    return responseHandler.success(
-      res,
-      200,
-      { dashboards },
-      'Dashboards retrieved successfully'
-    );
-  } catch (error) {
-    return responseHandler.error(res, 500, error.message);
-  }
-};
+  const users = await dashboardService.getRecentUsers(limit);
+
+  res.json({
+    success: true,
+    data: users
+  });
+});
 
 /**
- * @desc    Create a new dashboard
- * @route   POST /api/dashboards
- * @access  Private
+ * @desc    Get recent orders
+ * @route   GET /api/bff/dashboard/orders/recent
+ * @access  Private/Admin
  */
-exports.createDashboard = async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return responseHandler.badRequest(res, 'Validation error', errors.array());
-    }
+const getRecentOrders = asyncHandler(async (req, res) => {
+  const limit = parseInt(req.query.limit) || 10;
+  
+  logger.info(`Getting recent orders (limit: ${limit})`);
 
-    const dashboardData = {
-      name: req.body.name,
-      isDefault: req.body.isDefault || false,
-      layout: req.body.layout || [],
-      filters: req.body.filters || {},
-      refreshInterval: req.body.refreshInterval || 0
-    };
+  const orders = await dashboardService.getRecentOrders(limit);
 
-    const adminData = {
-      id: req.admin.id,
-      name: req.admin.name,
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent']
-    };
-
-    const dashboard = await dashboardService.createDashboard(dashboardData, adminData);
-
-    return responseHandler.success(
-      res,
-      201,
-      { dashboard },
-      'Dashboard created successfully'
-    );
-  } catch (error) {
-    return responseHandler.error(res, 500, error.message);
-  }
-};
+  res.json({
+    success: true,
+    data: orders
+  });
+});
 
 /**
- * @desc    Update a dashboard
- * @route   PUT /api/dashboards/:id
- * @access  Private
+ * @desc    Get verification statistics
+ * @route   GET /api/bff/dashboard/verification/pending
+ * @access  Private/Admin
  */
-exports.updateDashboard = async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return responseHandler.badRequest(res, 'Validation error', errors.array());
-    }
+const getPendingVerifications = asyncHandler(async (req, res) => {
+  logger.info('Getting pending verifications');
 
-    const updateData = {
-      name: req.body.name,
-      isDefault: req.body.isDefault,
-      layout: req.body.layout,
-      filters: req.body.filters,
-      refreshInterval: req.body.refreshInterval
-    };
+  const verificationStats = await dashboardService.getVerificationStats();
 
-    const adminData = {
-      id: req.admin.id,
-      name: req.admin.name,
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent']
-    };
-
-    const dashboard = await dashboardService.updateDashboard(req.params.id, updateData, adminData);
-
-    return responseHandler.success(
-      res,
-      200,
-      { dashboard },
-      'Dashboard updated successfully'
-    );
-  } catch (error) {
-    return responseHandler.error(res, 500, error.message);
-  }
-};
+  res.json({
+    success: true,
+    data: verificationStats
+  });
+});
 
 /**
- * @desc    Delete a dashboard
- * @route   DELETE /api/dashboards/:id
- * @access  Private
+ * @desc    Get system health
+ * @route   GET /api/bff/dashboard/system/health
+ * @access  Private/Admin
  */
-exports.deleteDashboard = async (req, res) => {
-  try {
-    const adminData = {
-      id: req.admin.id,
-      name: req.admin.name,
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent']
-    };
+const getSystemHealth = asyncHandler(async (req, res) => {
+  logger.info('Getting system health');
 
-    const dashboard = await dashboardService.deleteDashboard(req.params.id, adminData);
+  const health = await dashboardService.getSystemHealth();
 
-    return responseHandler.success(
-      res,
-      200,
-      { dashboard },
-      'Dashboard deleted successfully'
-    );
-  } catch (error) {
-    return responseHandler.error(res, 500, error.message);
-  }
-};
+  res.json({
+    success: true,
+    data: health
+  });
+});
 
 /**
- * @desc    Set a dashboard as default
- * @route   PUT /api/dashboards/:id/default
- * @access  Private
+ * @desc    Get all resources
+ * @route   GET /api/bff/dashboard/resources
+ * @access  Private/Admin
  */
-exports.setDefaultDashboard = async (req, res) => {
-  try {
-    const adminData = {
-      id: req.admin.id,
-      name: req.admin.name,
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent']
-    };
+const getResources = asyncHandler(async (req, res) => {
+  logger.info('Getting all resources');
 
-    const dashboard = await dashboardService.setDefaultDashboard(req.params.id, adminData);
+  const resources = await dashboardService.getResources();
 
-    return responseHandler.success(
-      res,
-      200,
-      { dashboard },
-      'Dashboard set as default successfully'
-    );
-  } catch (error) {
-    return responseHandler.error(res, 500, error.message);
-  }
-};
+  res.json({
+    success: true,
+    data: resources
+  });
+});
 
 /**
- * @desc    Get dashboard data
- * @route   GET /api/dashboards/:id/data
- * @access  Private
+ * @desc    Get all land tokens
+ * @route   GET /api/bff/dashboard/land-tokens
+ * @access  Private/Admin
  */
-exports.getDashboardData = async (req, res) => {
-  try {
-    const dashboardWithData = await dashboardService.getDashboardData(req.params.id, req.admin.id);
+const getLandTokens = asyncHandler(async (req, res) => {
+  logger.info('Getting all land tokens');
 
-    return responseHandler.success(
-      res,
-      200,
-      { dashboard: dashboardWithData },
-      'Dashboard data retrieved successfully'
-    );
-  } catch (error) {
-    return responseHandler.error(res, 500, error.message);
-  }
+  const landTokens = await dashboardService.getLandTokens();
+
+  res.json({
+    success: true,
+    data: landTokens
+  });
+});
+
+/**
+ * @desc    Get all bulk uploads
+ * @route   GET /api/bff/dashboard/bulk-uploads
+ * @access  Private/Admin
+ */
+const getBulkUploads = asyncHandler(async (req, res) => {
+  logger.info('Getting all bulk uploads');
+
+  const bulkUploads = await dashboardService.getBulkUploads();
+
+  res.json({
+    success: true,
+    data: bulkUploads
+  });
+});
+
+module.exports = {
+  getDashboard,
+  getDashboardStats,
+  getRecentUsers,
+  getRecentOrders,
+  getPendingVerifications,
+  getSystemHealth,
+  getResources,
+  getLandTokens,
+  getBulkUploads
 };

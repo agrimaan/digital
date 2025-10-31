@@ -1,183 +1,345 @@
+const {
+  userService,
+  fieldService,
+  cropService,
+  iotService,
+  marketplaceService,
+  resourceService,
+  blockchainService,
+  adminService
+} = require('./serviceClient');
+const logger = require('../utils/logger');
 
-const axios = require('axios');
+/**
+ * Dashboard Service - Aggregates data from multiple services
+ */
+class DashboardService {
+  /**
+   * Get complete dashboard statistics
+   */
+  async getDashboardStats() {
+    try {
+      logger.info('Fetching dashboard statistics from all services');
 
-// Service URLs with fallbacks - now using API gateway
-const API_GATEWAY = process.env.API_GATEWAY_URL || 'http://localhost:3000';
-const USER_SVC = process.env.USER_SERVICE_URL || 'http://localhost:3002';
-const FIELD_SVC = process.env.FIELD_SERVICE_URL || 'http://localhost:3003';
-const CROP_SVC = process.env.CROP_SERVICE_URL || 'http://localhost:3005';
-const MARKETPLACE_SVC = process.env.MARKETPLACE_SERVICE_URL || 'http://localhost:3006';
-const IOT_SVC = process.env.IOT_SERVICE_URL || 'http://localhost:3004';
-const ANALYTICS_SVC = process.env.ANALYTICS_SERVICE_URL || 'http://localhost:3009';
-const RESOURCE_SVC = process.env.RESOURCE_SERVICE_URL || 'http://localhost:3014';
+      // Fetch data from all services in parallel with error handling
+      const [
+        usersResult,
+        fieldsResult,
+        cropsResult,
+        sensorsResult,
+        ordersResult,
+        resourcesResult,
+        landTokensResult,
+        bulkUploadsResult
+      ] = await Promise.allSettled([
+        this.getUsersStats(),
+        this.getFieldsCount(),
+        this.getCropsCount(),
+        this.getSensorsCount(),
+        this.getOrdersCount(),
+        this.getResourcesCount(),
+        this.getLandTokensCount(),
+        this.getBulkUploadsCount()
+      ]);
 
-// Helper function for HTTP requests via API gateway
-const httpRequest = async (serviceUrl, endpoint, method = 'GET', data = null, headers = {}) => {
-  try {
-    // Use API gateway URL for all requests
-    const gatewayEndpoint = `/api${endpoint}`;
-    
-    const config = {
-      method,
-      url: `${API_GATEWAY}${gatewayEndpoint}`,
-      headers: {
-        'Content-Type': 'application/json',
-        ...headers
-      },
-      timeout: 8000
-    };
+      // Extract values or use defaults
+      const usersStats = usersResult.status === 'fulfilled' ? usersResult.value : { total: 0, byRole: {} };
+      const fieldsCount = fieldsResult.status === 'fulfilled' ? fieldsResult.value : 0;
+      const cropsCount = cropsResult.status === 'fulfilled' ? cropsResult.value : 0;
+      const sensorsCount = sensorsResult.status === 'fulfilled' ? sensorsResult.value : 0;
+      const ordersCount = ordersResult.status === 'fulfilled' ? ordersResult.value : 0;
+      const resourcesCount = resourcesResult.status === 'fulfilled' ? resourcesResult.value : 0;
+      const landTokensCount = landTokensResult.status === 'fulfilled' ? landTokensResult.value : 0;
+      const bulkUploadsCount = bulkUploadsResult.status === 'fulfilled' ? bulkUploadsResult.value : 0;
 
-    if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-      config.data = data;
+      // Get verification stats
+      const verificationStats = await this.getVerificationStats();
+
+      return {
+        users: usersStats.total,
+        fields: fieldsCount,
+        crops: cropsCount,
+        sensors: sensorsCount,
+        orders: ordersCount,
+        resources: resourcesCount,
+        landTokens: landTokensCount,
+        bulkUploads: bulkUploadsCount,
+        usersByRole: usersStats.byRole,
+        verificationStats
+      };
+    } catch (error) {
+      logger.error('Error fetching dashboard stats:', error);
+      throw error;
     }
-
-    const response = await axios(config);
-    return response.data;
-  } catch (error) {
-    console.error(`HTTP request failed: ${method} ${API_GATEWAY}${endpoint}`, error.message);
-    throw new Error(`Service request failed: ${error.message}`);
   }
-};
 
-// Helper to get aggregated data from multiple services
-const getAggregatedData = async (requests) => {
-  try {
-    const results = await Promise.allSettled(requests);
-    
-    return results.map((result, index) => {
-      if (result.status === 'fulfilled') {
-        return result.value;
-      } else {
-        console.error(`Request ${index} failed:`, result.reason);
-        return { error: result.reason.message, data: null };
-      }
-    });
-  } catch (error) {
-    console.error('Aggregation error:', error);
-    throw new Error(`Data aggregation failed: ${error.message}`);
-  }
-};
+  /**
+   * Get users statistics including count by role
+   */
+  async getUsersStats() {
+    try {
+      const usersData = await userService.getUsers();
+      const users = usersData.data || usersData || [];
 
-/**
- * Get dashboard statistics from various services
- * @returns {Object} Aggregated dashboard statistics
- */
-exports.getDashboardStats = async () => {
-  try {
-    // Parallel requests to all services for dashboard statistics
-    const [
-      userStats,
-      fieldStats,
-      cropStats,
-      orderStats,
-      sensorStats,
-      resourceStats
-    ] = await getAggregatedData([
-      httpRequest(USER_SVC, '/api/analytics/users'),
-      httpRequest(FIELD_SVC, '/api/analytics/fields'),
-      httpRequest(CROP_SVC, '/api/analytics/crops'),
-      httpRequest(MARKETPLACE_SVC, '/api/analytics/orders'),
-      httpRequest(IOT_SVC, '/api/analytics/devices'),
-      httpRequest(RESOURCE_SVC, '/api/resources')
-    ]);
-
-    // Extract counts from service data
-    const usersCount = userStats.data?.totalUsers || 0;
-    const fieldsCount = fieldStats.data?.totalFields || 0;
-    const cropsCount = cropStats.data?.totalCrops || 0;
-    const ordersCount = orderStats.data?.totalOrders || 0;
-    const sensorsCount = sensorStats.data?.totalSensors || 0;
-    const resourcesCount = resourceStats.data?.count || 0;
-
-    // Construct dashboard stats object
-    const dashboardStats = {
-      users: usersCount,
-      fields: fieldsCount,
-      crops: cropsCount,
-      orders: ordersCount,
-      sensors: sensorsCount,
-      resources: resourcesCount,
-      usersByRole: userStats.data?.usersByRole || {
+      const usersByRole = {
         farmers: 0,
         buyers: 0,
         agronomists: 0,
         investors: 0,
         admins: 0
-      },
-      verificationStats: userStats.data?.verificationStats || {
+      };
+
+      users.forEach(user => {
+        if (usersByRole.hasOwnProperty(user.role + 's')) {
+          usersByRole[user.role + 's']++;
+        } else if (usersByRole.hasOwnProperty(user.role)) {
+          usersByRole[user.role]++;
+        }
+      });
+
+      return {
+        total: users.length,
+        byRole: usersByRole
+      };
+    } catch (error) {
+      logger.error('Error fetching users stats:', error);
+      return { total: 0, byRole: {} };
+    }
+  }
+
+  /**
+   * Get fields count
+   */
+  async getFieldsCount() {
+    try {
+      const response = await fieldService.getFields();
+      const fields = response.data || response || [];
+      return Array.isArray(fields) ? fields.length : 0;
+    } catch (error) {
+      logger.error('Error fetching fields count:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get crops count
+   */
+  async getCropsCount() {
+    try {
+      const response = await cropService.getCrops();
+      const crops = response.data || response || [];
+      return Array.isArray(crops) ? crops.length : 0;
+    } catch (error) {
+      logger.error('Error fetching crops count:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get sensors count
+   */
+  async getSensorsCount() {
+    try {
+      const response = await iotService.getSensors();
+      const sensors = response.data || response || [];
+      return Array.isArray(sensors) ? sensors.length : 0;
+    } catch (error) {
+      logger.error('Error fetching sensors count:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get orders count
+   */
+  async getOrdersCount() {
+    try {
+      const response = await marketplaceService.getOrders();
+      const orders = response.data || response || [];
+      return Array.isArray(orders) ? orders.length : 0;
+    } catch (error) {
+      logger.error('Error fetching orders count:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get resources count
+   */
+  async getResourcesCount() {
+    try {
+      const response = await resourceService.getResources();
+      const resources = response.data || response || [];
+      return Array.isArray(resources) ? resources.length : 0;
+    } catch (error) {
+      logger.error('Error fetching resources count:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get land tokens count
+   */
+  async getLandTokensCount() {
+    try {
+      const response = await blockchainService.getLandTokens({ tokenType: 'Fields' });
+      const tokens = response.data || response || [];
+      return Array.isArray(tokens) ? tokens.length : 0;
+    } catch (error) {
+      logger.error('Error fetching land tokens count:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get bulk uploads count
+   */
+  async getBulkUploadsCount() {
+    try {
+      const response = await adminService.getBulkUploads();
+      const uploads = response.data || response || [];
+      return Array.isArray(uploads) ? uploads.length : 0;
+    } catch (error) {
+      logger.error('Error fetching bulk uploads count:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get recent users
+   */
+  async getRecentUsers(limit = 10) {
+    try {
+      const response = await userService.getRecentUsers(limit);
+      return response.data || response || [];
+    } catch (error) {
+      logger.error('Error fetching recent users:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get recent orders
+   */
+  async getRecentOrders(limit = 10) {
+    try {
+      const response = await marketplaceService.getRecentOrders(limit);
+      return response.data || response || [];
+    } catch (error) {
+      logger.error('Error fetching recent orders:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get verification statistics
+   */
+  async getVerificationStats() {
+    try {
+      const [usersData, landTokensData, bulkUploadsData] = await Promise.allSettled([
+        userService.getUsers(),
+        blockchainService.getLandTokens({ tokenType: 'Fields' }),
+        adminService.getBulkUploads()
+      ]);
+
+      let pendingUsers = 0;
+      let pendingLandTokens = 0;
+      let pendingBulkUploads = 0;
+
+      // Count pending users
+      if (usersData.status === 'fulfilled') {
+        const users = usersData.value.data || usersData.value || [];
+        pendingUsers = users.filter(u => u.verificationStatus === 'pending').length;
+      }
+
+      // Count pending land tokens
+      if (landTokensData.status === 'fulfilled') {
+        const tokens = landTokensData.value.data || landTokensData.value || [];
+        pendingLandTokens = tokens.filter(t => t.verification?.status === 'pending').length;
+      }
+
+      // Count pending bulk uploads
+      if (bulkUploadsData.status === 'fulfilled') {
+        const uploads = bulkUploadsData.value.data || bulkUploadsData.value || [];
+        pendingBulkUploads = uploads.filter(u => u.status === 'pending').length;
+      }
+
+      return {
+        pendingUsers,
+        pendingLandTokens,
+        pendingBulkUploads
+      };
+    } catch (error) {
+      logger.error('Error fetching verification stats:', error);
+      return {
         pendingUsers: 0,
         pendingLandTokens: 0,
         pendingBulkUploads: 0
-      }
-    };
-
-    return dashboardStats;
-  } catch (error) {
-    console.error('Get dashboard stats error:', error);
-    // Return fallback dashboard stats with empty data
-    return {
-      users: 0,
-      fields: 0,
-      crops: 0,
-      orders: 0,
-      sensors: 0,
-      resources: 0,
-      usersByRole: {
-        farmers: 0,
-        buyers: 0,
-        agronomists: 0,
-        investors: 0,
-        admins: 0
-      },
-      verificationStats: {
-        pendingUsers: 0,
-        pendingLandTokens: 0,
-        pendingBulkUploads: 0
-      }
-    };
+      };
+    }
   }
-};
 
-/**
- * Get recent users
- * @param {number} limit - Number of recent users to retrieve
- * @returns {Array} List of recent users
- */
-exports.getRecentUsers = async (limit = 10) => {
-  try {
-    const response = await httpRequest(USER_SVC, `/api/users/recent?limit=${limit}`);
-    return response.data?.users || response.users || [];
-  } catch (error) {
-    console.error(`Get recent users error:`, error);
-    return [];
+  /**
+   * Get system health status
+   */
+  async getSystemHealth() {
+    try {
+      const response = await adminService.getSystemHealth();
+      return response.data || response || {
+        otpEnabled: false,
+        emailConfigured: false,
+        smsConfigured: false,
+        oauthConfigured: false
+      };
+    } catch (error) {
+      logger.error('Error fetching system health:', error);
+      return {
+        otpEnabled: false,
+        emailConfigured: false,
+        smsConfigured: false,
+        oauthConfigured: false
+      };
+    }
   }
-};
 
-/**
- * Get recent orders
- * @param {number} limit - Number of recent orders to retrieve
- * @returns {Array} List of recent orders
- */
-exports.getRecentOrders = async (limit = 10) => {
-  try {
-    const response = await httpRequest(MARKETPLACE_SVC, `/api/marketplace/orders/recent?limit=${limit}`);
-    return response.data?.orders || response.orders || [];
-  } catch (error) {
-    console.error(`Get recent orders error:`, error);
-    return [];
+  /**
+   * Get all resources
+   */
+  async getResources() {
+    try {
+      const response = await resourceService.getResources();
+      return response.data || response || [];
+    } catch (error) {
+      logger.error('Error fetching resources:', error);
+      return [];
+    }
   }
-};
 
-/**
- * Get system health status
- * @returns {Object} System health information
- */
-exports.getSystemHealth = async () => {
-  try {
-    const response = await httpRequest(ANALYTICS_SVC, '/api/analytics/health');
-    return response.data?.health || response.health || { status: 'unknown', services: [] };
-  } catch (error) {
-    console.error('Get system health error:', error);
-    return { status: 'unknown', services: [] };
+  /**
+   * Get all land tokens
+   */
+  async getLandTokens() {
+    try {
+      const response = await blockchainService.getLandTokens({ tokenType: 'Fields' });
+      return response.data || response || [];
+    } catch (error) {
+      logger.error('Error fetching land tokens:', error);
+      return [];
+    }
   }
-};
+
+  /**
+   * Get all bulk uploads
+   */
+  async getBulkUploads() {
+    try {
+      const response = await adminService.getBulkUploads();
+      return response.data || response || [];
+    } catch (error) {
+      logger.error('Error fetching bulk uploads:', error);
+      return [];
+    }
+  }
+}
+
+module.exports = new DashboardService();

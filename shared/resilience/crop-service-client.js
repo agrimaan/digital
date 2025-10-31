@@ -19,7 +19,12 @@ class CropServiceClient {
       }
     });
   }
-
+  /**
+   * Get Crop Statistics 
+   * 
+   * @param {string} fieldId - The crop ID
+   * @returns {Promise<Object>} Crop data
+   */
   async getCropStats() {
     try {
       const serviceUrl = await this.serviceDiscovery.getServiceUrl('crop-service');
@@ -35,6 +40,11 @@ class CropServiceClient {
     }
   }
 
+    /**
+   * Get all crops
+   * 
+   * @returns {Promise<Array>} List of crops
+   */
   async getAllCrops() {
     try {
       const serviceUrl = await this.serviceDiscovery.getServiceUrl('crop-service');
@@ -46,6 +56,12 @@ class CropServiceClient {
     }
   }
 
+  /**
+   * Get crop by ID
+   * 
+   * @param {string} cropId - The crop ID
+   * @returns {Promise<Object>} Crop data
+   */
   async getCropById(cropId) {
     try {
       const serviceUrl = await this.serviceDiscovery.getServiceUrl('crop-service');
