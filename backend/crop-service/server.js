@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 //Import service discovery components
 //Service Discovery Implementation
-const { ServiceRegistry, healthCheck } = require('@agrimaan/shared/service-discovery');
+const { ServiceRegistry, healthCheck } = require('@agrimaan/shared').serviceDiscovery;
  
  
  

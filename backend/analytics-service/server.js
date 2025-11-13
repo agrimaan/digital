@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 // Corrected import for ServiceRegistry and healthCheck
-const { ServiceRegistry, healthCheck } = require('@agrimaan/shared/service-discovery');
+const { ServiceRegistry, healthCheck } = require('@agrimaan/shared').serviceDiscovery;
 
 // Corrected import for the createLogger function
 const { createLogger } = require('@agrimaan/shared/logging');
@@ -37,7 +37,7 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch(err => logger.error('MongoDB connection error:', { error: err.message }));
 
 // --- Your Service-Specific Routes Would Go Here ---
-app.use('/api/analytics', require('./routes/analyticsRoutes'));
+app.use('/api/analytics', require('routes/analyticsRoutes'));
 
 
 // Error handling middleware

@@ -124,12 +124,12 @@ function demoAlertsFor(sensor) {
 async function findBySerial(serialNumber) {
   // Prefer a filtered endpoint if you have it: /api/sensors?serialNumber=...
   try {
-    const res = await api.get('/api/iot/devices', { params: { serialNumber } });
+    const res = await api.get('/api/sensors/devices', { params: { serialNumber } });
     const list = Array.isArray(res.data) ? res.data : res.data?.data || [];
     return list.find((s) => s.serialNumber === serialNumber) || null;
   } catch {
     // Fallback: fetch all and search locally (ok for small data sets)
-    const res = await api.get('/api/iot/devices');
+    const res = await api.get('/api/sensors/devices');
     const list = Array.isArray(res.data) ? res.data : res.data?.data || [];
     return list.find((s) => s.serialNumber === serialNumber) || null;
   }
@@ -139,11 +139,11 @@ async function createOrUpdateSensor(payload) {
   const existing = await findBySerial(payload.serialNumber);
   if (existing) {
     const { _id } = existing;
-    const res = await api.put(`/api/iot/devices/${_id}`, payload);
+    const res = await api.put(`/api/sensors/devices/${_id}`, payload);
     console.log(`↑ updated sensor ${payload.serialNumber} -> ${_id}`);
     return res.data?._id || _id;
   }
-  const res = await api.post('/api/iot/devices', payload);
+  const res = await api.post('/api/sensors/devices', payload);
   const created = res.data?.data || res.data;
   console.log(`+ created sensor ${payload.serialNumber} -> ${created._id}`);
   return created._id;
@@ -152,7 +152,7 @@ async function createOrUpdateSensor(payload) {
 async function addReadings(sensorId, readings) {
   if (!readings?.length) return;
   for (const r of readings) {
-    await api.post(`/api/iot/devices/${sensorId}/reading`, r);
+    await api.post(`/api/sensors/devices/${sensorId}/reading`, r);
   }
   console.log(`  • ${readings.length} readings added for ${sensorId}`);
 }
@@ -160,7 +160,7 @@ async function addReadings(sensorId, readings) {
 async function addAlerts(sensorId, alerts) {
   if (!alerts?.length) return;
   for (const a of alerts) {
-    await api.post(`/api/iot/devices/${sensorId}/alert`, a);
+    await api.post(`/api/sensors/devices/${sensorId}/alert`, a);
   }
   console.log(`  • ${alerts.length} alerts added for ${sensorId}`);
 }

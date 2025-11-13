@@ -4,7 +4,8 @@ const morgan = require('morgan');
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-const { ServiceRegistry, healthCheck } = require('@agrimaan/shared/service-discovery');
+const { ServiceRegistry, healthCheck } = require('@agrimaan/shared').serviceDiscovery;
+
 const { createLogger } = require('@agrimaan/shared/logging');
 
 const SERVICE_NAME = process.env.SERVICE_NAME || 'logistics-service';

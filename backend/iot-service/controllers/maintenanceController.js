@@ -3,7 +3,7 @@ const Device = require('../models/Device');
 const { validationResult } = require('express-validator');
 
 // @desc    Get all maintenance logs
-// @route   GET /api/iot/maintenance
+// @route   GET /api/sensors/maintenance
 // @access  Private
 exports.getMaintenanceLogs = async (req, res) => {
   try {
@@ -44,7 +44,7 @@ exports.getMaintenanceLogs = async (req, res) => {
 };
 
 // @desc    Get single maintenance log
-// @route   GET /api/iot/maintenance/:id
+// @route   GET /api/sensors/maintenance/:id
 // @access  Private
 exports.getMaintenanceLog = async (req, res) => {
   try {
@@ -64,7 +64,7 @@ exports.getMaintenanceLog = async (req, res) => {
 };
 
 // @desc    Create maintenance log
-// @route   POST /api/iot/maintenance
+// @route   POST /api/sensors/maintenance
 // @access  Private
 exports.createMaintenanceLog = async (req, res) => {
   try {
@@ -100,7 +100,7 @@ exports.createMaintenanceLog = async (req, res) => {
 };
 
 // @desc    Update maintenance log
-// @route   PUT /api/iot/maintenance/:id
+// @route   PUT /api/sensors/maintenance/:id
 // @access  Private
 exports.updateMaintenanceLog = async (req, res) => {
   try {
@@ -141,7 +141,7 @@ exports.updateMaintenanceLog = async (req, res) => {
 };
 
 // @desc    Delete maintenance log
-// @route   DELETE /api/iot/maintenance/:id
+// @route   DELETE /api/sensors/maintenance/:id
 // @access  Private
 exports.deleteMaintenanceLog = async (req, res) => {
   try {
@@ -161,7 +161,7 @@ exports.deleteMaintenanceLog = async (req, res) => {
 };
 
 // @desc    Get maintenance logs for a device
-// @route   GET /api/iot/maintenance/device/:deviceId
+// @route   GET /api/sensors/maintenance/device/:deviceId
 // @access  Private
 exports.getDeviceMaintenanceLogs = async (req, res) => {
   try {
@@ -177,7 +177,7 @@ exports.getDeviceMaintenanceLogs = async (req, res) => {
 };
 
 // @desc    Schedule maintenance log
-// @route   POST /api/iot/maintenance/schedule
+// @route   POST /api/sensors/maintenance/schedule
 // @access  Private
 exports.scheduleMaintenanceLog = async (req, res) => {
   try {

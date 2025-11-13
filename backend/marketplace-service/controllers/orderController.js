@@ -25,7 +25,7 @@ exports.getOrders = async (req, res) => {
     }
     
     const orders = await orderService.getAllOrders(filter);
-    
+    console.log("orders within getOrders of marketplace-service/orderController:", orders);
     return responseHandler.success(res, 200, orders, 'Orders retrieved successfully');
   } catch (error) {
     return responseHandler.error(res, 500, 'Error retrieving orders', error);

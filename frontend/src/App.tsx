@@ -39,7 +39,7 @@ import BuyerMarketplace from './pages/buyer/BuyerMarketplace';
 import OrderHistory from './pages/buyer/OrderHistory';
 
 // Admin pages
-import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminDashboard from './pages/admin/AdminDashboard_BFF';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminUserDetail from './pages/admin/AdminUserDetail';
 import AdminUserEdit from './pages/admin/AdminUserEdit';
@@ -201,6 +201,7 @@ const App: React.FC = () => {
                 <Layout>
                   <Routes>
                     <Route path="/" element={<AdminDashboard />} />
+                    <Route path="/bff" element={<AdminDashboard />} />
                     <Route path="users" element={<AdminUsers />} />
                     <Route path="users/new" element={<AdminUserCreate />} />
                     <Route path="users/:id" element={<AdminUserDetail />} />
@@ -218,8 +219,8 @@ const App: React.FC = () => {
                     <Route path="settings" element={<AdminSettings />} />
                     <Route path="verification" element={<AdminVerification />} />
                     <Route path="bulk-uploads" element={<AdminBulkUploads />} />
-<Route path="blockchain" element={<AdminBlockchainDashboard />} />
-<Route path="land-tokenization" element={<AdminLandTokenization />} />
+                    <Route path="blockchain" element={<AdminBlockchainDashboard />} />
+                    <Route path="land-tokenization" element={<AdminLandTokenization />} />
                     <Route path="profile" element={<Profile />} />
                   </Routes>
                 </Layout>

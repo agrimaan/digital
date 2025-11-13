@@ -1,7 +1,7 @@
 const express = require('express');
 const { check } = require('express-validator');
 const fieldController = require('../controllers/fieldController');
-const { protect, authorize } = require('../../user-service/middleware/auth');
+const { protect, authorize } = require('@agrimaan/shared').middleware;
 
 const router = express.Router();
 

@@ -83,7 +83,7 @@ const AdminReports: React.FC = () => {
   const fetchReportData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`/api/admin/reports/${selectedReport}`, {
+      const response = await axios.get(`/api/reports/${selectedReport}`, {
         params: filters,
         headers: {
           'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ const AdminReports: React.FC = () => {
 
   const handleExport = async () => {
     try {
-      const response = await axios.post('/api/admin/reports/export', {
+      const response = await axios.post('/api/reports/export', {
         report: selectedReport,
         format: exportFormat,
         filters

@@ -4,7 +4,7 @@ const Maintenance = require('../models/Maintenance');
 const mongoose = require('mongoose');
 
 // @desc    Get field IoT analytics
-// @route   GET /api/iot/analytics/fields/:fieldId
+// @route   GET /api/sensors/analytics/fields/:fieldId
 // @access  Private
 exports.getFieldAnalytics = async (req, res) => {
   try {
@@ -80,7 +80,7 @@ exports.getFieldAnalytics = async (req, res) => {
 };
 
 // @desc    Get device analytics
-// @route   GET /api/iot/analytics/devices/:deviceId
+// @route   GET /api/sensors/analytics/devices/:deviceId
 // @access  Private
 exports.getDeviceAnalytics = async (req, res) => {
   try {
@@ -158,7 +158,7 @@ exports.getDeviceAnalytics = async (req, res) => {
 };
 
 // @desc    Get device health score
-// @route   GET /api/iot/analytics/devices/:deviceId/health
+// @route   GET /api/sensors/analytics/devices/:deviceId/health
 // @access  Private
 exports.getDeviceHealthScore = async (req, res) => {
   try {
@@ -241,7 +241,7 @@ exports.getDeviceHealthScore = async (req, res) => {
 };
 
 // @desc    Get field IoT summary
-// @route   GET /api/iot/analytics/fields/:fieldId/summary
+// @route   GET /api/sensors/analytics/fields/:fieldId/summary
 // @access  Private
 exports.getFieldIoTSummary = async (req, res) => {
   try {
@@ -293,7 +293,7 @@ exports.getFieldIoTSummary = async (req, res) => {
 };
 
 // @desc    Get anomaly detection results
-// @route   GET /api/iot/analytics/devices/:deviceId/anomalies
+// @route   GET /api/sensors/analytics/devices/:deviceId/anomalies
 // @access  Private
 exports.getAnomalyDetection = async (req, res) => {
   try {
@@ -338,7 +338,7 @@ exports.getAnomalyDetection = async (req, res) => {
 };
 
 // @desc    Get predictive analytics
-// @route   GET /api/iot/analytics/fields/:fieldId/predictions
+// @route   GET /api/sensors/analytics/fields/:fieldId/predictions
 // @access  Private
 exports.getPredictiveAnalytics = async (req, res) => {
   try {

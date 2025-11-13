@@ -164,7 +164,7 @@ fi
 
 echo ""
 echo "\ud83c\udf10 Testing IoT..."
-iot_response=$(curl -s -X POST http://localhost:3008/api/iot/devices \
+iot_response=$(curl -s -X POST http://localhost:3008/api/sensors/devices \
   -H "Content-Type: application/json" \
   -d '{
     "farmerId": "'$user_id'",

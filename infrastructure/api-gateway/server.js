@@ -21,11 +21,12 @@ const serviceUrls = {
   'analytics-service': process.env.ANALYTICS_SERVICE_URL || 'http://analytics-service:3009',
   'notification-service': process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3010',
   'blockchain-service': process.env.BLOCKCHAIN_SERVICE_URL || 'http://blockchain-service:3011',
+  'admin-bff': process.env.ADMIN_BFF_SERVICE_URL || 'http://localhost:3017',
   'admin-service': process.env.ADMIN_SERVICE_URL || 'http://admin-service:3012',
   'reference-data-service': process.env.REFERENCE_DATA_SERVICE_URL || 'http://localhost:3013',
   'resource-service': process.env.RESOURCE_SERVICE_URL || 'http://localhost:3014',
   'supplier-service': process.env.SUPPLIER_SERVICE_URL || 'http://localhost:3015'
-    
+
 };
 
 // Middleware
@@ -81,7 +82,8 @@ const createServiceProxy = (serviceName, path) => createProxyMiddleware({
 });
 
 // Routes
-app.use('/api/admin/', createServiceProxy('admin-service', '/api/admin'));
+app.use('/api/admin/bff', createServiceProxy('admin-bff', '/api/admin/bff'));
+app.use('/api/admin', createServiceProxy('admin-service', '/api/admin'));
 app.use('/api/auth', createServiceProxy('user-service', '/api/auth'));
 app.use('/api/users', createServiceProxy('user-service', '/api/users'));
 app.use('/api/fields', createServiceProxy('field-service', '/api/fields'));
@@ -98,7 +100,6 @@ app.use('/api/reference', createServiceProxy('reference-data-service', '/api/ref
 app.use('/api/resources', createServiceProxy('resource-service', '/api/resources'));
 app.use('/api/bookings', createServiceProxy('resource-service', '/api/bookings'));
 app.use('/api/suppliers',createServiceProxy('supplier-service','/api/suppliers'));
-app.use('/api/ref', createServiceProxy('reference-data-service', '/api/ref'));
 
 
 // Error handling

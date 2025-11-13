@@ -43,7 +43,8 @@ class DashboardService {
       ]);
 
       // Extract values or use defaults
-      const usersStats = usersResult.status === 'fulfilled' ? usersResult.value : { total: 0, byRole: {} };
+      const usersStats = usersResult.status === 'fulfilled' ? usersResult.value : { total: 10, byRole: {} };
+      console.log("userStats:", usersStats);
       const fieldsCount = fieldsResult.status === 'fulfilled' ? fieldsResult.value : 0;
       const cropsCount = cropsResult.status === 'fulfilled' ? cropsResult.value : 0;
       const sensorsCount = sensorsResult.status === 'fulfilled' ? sensorsResult.value : 0;
@@ -96,7 +97,7 @@ class DashboardService {
           usersByRole[user.role]++;
         }
       });
-
+      console.log("users.length within DashboardService in admin-service:", users.length);
       return {
         total: users.length,
         byRole: usersByRole

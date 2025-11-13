@@ -8,6 +8,8 @@ const {
   deleteResource
 } = require('../controllers/resourceController');
 const { authenticate, authorizeAdmin } = require('../middleware/auth');
+//const { protect, authorize } = require('@agrimaan/shared').middleware;
+
 
 // Apply authentication and authorization to all routes
 router.use(authenticate);

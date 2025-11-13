@@ -4,7 +4,7 @@ const morgan = require('morgan');
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-const { ServiceRegistry, healthCheck } = require('@agrimaan/shared/service-discovery');
+const { ServiceRegistry, healthCheck } = require('@agrimaan/shared').serviceDiscovery;
 const { createLogger } = require('@agrimaan/shared/logging');
 
 const SERVICE_NAME = process.env.SERVICE_NAME || 'iot-service';
@@ -25,12 +25,12 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch(err => logger.error('MongoDB connection error:', { error: err.message }));
 
 // Routes
-app.use('/api/iot/devices', require('./routes/deviceRoutes'));
-app.use('/api/iot/telemetry', require('./routes/telemetryRoutes'));
-app.use('/api/iot/alerts', require('./routes/alertRoutes'));
-app.use('/api/iot/maintenance', require('./routes/maintenanceRoutes'));
-app.use('/api/iot/readings', require('./routes/readingRoutes'));
-app.use('/api/iot/analytics', require('./routes/analyticsRoutes'));
+app.use('/api/sensors/devices', require('./routes/deviceRoutes'));
+app.use('/api/sensors/telemetry', require('./routes/telemetryRoutes'));
+app.use('/api/sensors/alerts', require('./routes/alertRoutes'));
+app.use('/api/sensors/maintenance', require('./routes/maintenanceRoutes'));
+app.use('/api/sensors/readings', require('./routes/readingRoutes'));
+app.use('/api/sensors/analytics', require('./routes/analyticsRoutes'));
 
 
 // Health check endpoint

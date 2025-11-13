@@ -3,7 +3,7 @@
 import axios from "axios";
 import { API_BASE_URL } from "../config/apiConfig";
 
-const API_URL = `${API_BASE_URL}/api/admin`;
+const API_URL = `${API_BASE_URL}/api/admin/`;
 
 // Get auth token from localStorage or Redux store
 const getAuthToken = () => {
@@ -33,7 +33,7 @@ adminApi.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized access
+      // Handle unauthorized access+
       localStorage.removeItem("token");
       window.location.href = "/login";
     }

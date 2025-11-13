@@ -223,7 +223,7 @@ const fetchFields = async (ownerId?: string) => {
         const params: any = {};
         if (ownerId && key) params[key] = ownerId;
 
-        const res = await axios.get(`${API_BASE_URL}/api/admin/fields`, {
+        const res = await axios.get(`${API_BASE_URL}/api/fields`, {
           headers,
           params,
           cancelToken: source.token,
@@ -239,7 +239,7 @@ const fetchFields = async (ownerId?: string) => {
     }
 
     if (!serverList) {
-      const res = await axios.get(`${API_BASE_URL}/api/admin/fields`, {
+      const res = await axios.get(`${API_BASE_URL}/api/fields`, {
         headers,
         cancelToken: source.token,
       });
@@ -440,12 +440,12 @@ const handleFarmerChange = (_: any, newVal: Farmer | null) => {
       };
 
       if (editingField?._id) {
-        await axios.put(`${API_BASE_URL}/api/admin/fields/${editingField._id}`, payload, {
+        await axios.put(`${API_BASE_URL}/api/fields/${editingField._id}`, payload, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
         });
         setSuccessMessage('Field updated successfully');
       } else {
-        await axios.post(`${API_BASE_URL}/api/admin/fields`, payload, {
+        await axios.post(`${API_BASE_URL}/api/fields`, payload, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
         });
         setSuccessMessage('Field created successfully');
@@ -466,7 +466,7 @@ const handleFarmerChange = (_: any, newVal: Farmer | null) => {
   const confirmDeleteField = async () => {
     if (!fieldToDelete) return;
     try {
-      await axios.delete(`${API_BASE_URL}/api/admin/fields/${fieldToDelete}`, {
+      await axios.delete(`${API_BASE_URL}/api/fields/${fieldToDelete}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
       });
       setSuccessMessage('Field deleted successfully');

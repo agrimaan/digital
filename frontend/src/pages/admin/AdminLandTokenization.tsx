@@ -91,7 +91,7 @@ const AdminLandTokenization: React.FC = () => {
     setError(null);
     
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/admin/blockchain/land-tokens`, {
+      const response = await axios.get(`${API_BASE_URL}/admin/blockchain/land-tokens`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setTokens(response.data.tokens || []);
@@ -110,8 +110,8 @@ const AdminLandTokenization: React.FC = () => {
   const handleCreateToken = async () => {
     try {
       const endpoint = tokenType === 'Fields' 
-        ? `${API_BASE_URL}/api/admin/blockchain/tokens/Fields`
-        : `${API_BASE_URL}/api/admin/blockchain/tokens/farmhouse`;
+        ? `${API_BASE_URL}/api/blockchain/tokens/Fields`
+        : `${API_BASE_URL}/api/blockchain/tokens/farmhouse`;
       
       const data: any = {
         name: formData.name,

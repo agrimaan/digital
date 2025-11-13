@@ -52,7 +52,9 @@ import {
   Science as ScienceIcon
 } from '@mui/icons-material';
 import axios from 'axios';
-import { API_BASE_URL } from '../../config/apiConfig';
+//import { API_BASE_URL } from '../../config/apiConfig';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+
 
 // Define types
 interface Crop {

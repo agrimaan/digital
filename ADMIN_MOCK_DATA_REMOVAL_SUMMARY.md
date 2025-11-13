@@ -32,7 +32,7 @@
    - Integrated with marketplace service backend
 
 4. **AdminSensors.tsx** ✅
-   - Replaced mock sensor data with real API calls to `/api/iot`
+   - Replaced mock sensor data with real API calls to `/api/sensors`
    - Added proper authentication headers
    - Fixed TypeScript type safety issues
    - Integrated with IoT service backend
@@ -51,7 +51,7 @@
    - Proper error handling and loading states
 
 8. **AdminSensorDetail.tsx** ✅
-   - Replaced mock data with real API call to `/api/iot/{id}`
+   - Replaced mock data with real API call to `/api/sensors/{id}`
    - Proper error handling and loading states
 
 9. **AdminUserDetail.tsx** ✅
@@ -76,7 +76,7 @@
 - **Field Service** (Port 3003): `/api/fields/*`
 - **Crop Service** (Port 3005): `/api/crops/*`
 - **Marketplace Service** (Port 3006): `/api/marketplace/*`
-- **IoT Service** (Port 3004): `/api/iot/*`
+- **IoT Service** (Port 3004): `/api/sensors/*`
 - **Admin Service** (Port 3012): `/api/admin/*`
 - **User Service** (Port 3002): `/api/users/*`
 

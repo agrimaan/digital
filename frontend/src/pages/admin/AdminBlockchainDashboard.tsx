@@ -128,31 +128,31 @@ const AdminBlockchainDashboard: React.FC = () => {
     
     try {
       // Fetch wallet
-      const walletResponse = await axios.get(`${API_BASE_URL}/api/admin/blockchain/wallet`, {
+      const walletResponse = await axios.get(`${API_BASE_URL}/api/blockchain/wallet`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setWallet(walletResponse.data.data);
       
       // Fetch transactions
-      const transactionsResponse = await axios.get(`${API_BASE_URL}/api/admin/blockchain/transactions`, {
+      const transactionsResponse = await axios.get(`${API_BASE_URL}/api/blockchain/transactions`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setTransactions(transactionsResponse.data.transactions || []);
       
       // Fetch contracts
-      const contractsResponse = await axios.get(`${API_BASE_URL}/api/admin/blockchain/contracts`, {
+      const contractsResponse = await axios.get(`${API_BASE_URL}/api/blockchain/contracts`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setContracts(contractsResponse.data.contracts || []);
       
       // Fetch land tokens
-      const tokensResponse = await axios.get(`${API_BASE_URL}/api/admin/blockchain/land-tokens`, {
+      const tokensResponse = await axios.get(`${API_BASE_URL}/api/blockchain/land-tokens`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setLandTokens(tokensResponse.data.tokens || []);
       
       // Fetch marketplace data
-      const marketResponse = await axios.get(`${API_BASE_URL}/api/admin/blockchain/market`, {
+      const marketResponse = await axios.get(`${API_BASE_URL}/api/blockchain/market`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setMarketplaceData(marketResponse.data.data?.marketData || marketResponse.data.data || {});
@@ -179,7 +179,7 @@ const AdminBlockchainDashboard: React.FC = () => {
 
   const handleTransferSubmit = async () => {
     try {
-      await axios.post(`${API_BASE_URL}/api/admin/blockchain/transfer`, {
+      await axios.post(`${API_BASE_URL}/api/blockchain/transfer`, {
         toAddress: transferData.toAddress,
         amount: parseFloat(transferData.amount)
       }, {
@@ -197,8 +197,8 @@ const AdminBlockchainDashboard: React.FC = () => {
   const handleTokenSubmit = async () => {
     try {
       const endpoint = tokenType === 'Fields' 
-        ? `${API_BASE_URL}/api/admin/blockchain/tokens/Fields`
-        : `${API_BASE_URL}/api/admin/blockchain/tokens/farmhouse`;
+        ? `${API_BASE_URL}/api/blockchain/tokens/Fields`
+        : `${API_BASE_URL}/api/blockchain/tokens/farmhouse`;
       
       const data = tokenType === 'Fields' 
         ? {

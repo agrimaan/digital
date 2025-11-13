@@ -3,7 +3,7 @@ const Device = require('../models/Device');
 const { validationResult } = require('express-validator');
 
 // @desc    Get all readings
-// @route   GET /api/iot/readings
+// @route   GET /api/sensors/readings
 // @access  Private
 exports.getReadings = async (req, res) => {
   try {
@@ -43,7 +43,7 @@ exports.getReadings = async (req, res) => {
 };
 
 // @desc    Get single reading
-// @route   GET /api/iot/readings/:id
+// @route   GET /api/sensors/readings/:id
 // @access  Private
 exports.getReading = async (req, res) => {
   try {
@@ -62,7 +62,7 @@ exports.getReading = async (req, res) => {
 };
 
 // @desc    Create reading
-// @route   POST /api/iot/readings
+// @route   POST /api/sensors/readings
 // @access  Private
 exports.createReading = async (req, res) => {
   try {
@@ -97,7 +97,7 @@ exports.createReading = async (req, res) => {
 };
 
 // @desc    Delete reading
-// @route   DELETE /api/iot/readings/:id
+// @route   DELETE /api/sensors/readings/:id
 // @access  Private
 exports.deleteReading = async (req, res) => {
   try {
@@ -117,7 +117,7 @@ exports.deleteReading = async (req, res) => {
 };
 
 // @desc    Get readings for a device
-// @route   GET /api/iot/readings/device/:deviceId
+// @route   GET /api/sensors/readings/device/:deviceId
 // @access  Private
 exports.getDeviceReadings = async (req, res) => {
   try {
@@ -144,7 +144,7 @@ exports.getDeviceReadings = async (req, res) => {
 };
 
 // @desc    Get readings for a field
-// @route   GET /api/iot/readings/field/:fieldId
+// @route   GET /api/sensors/readings/field/:fieldId
 // @access  Private
 exports.getFieldReadings = async (req, res) => {
   try {
@@ -164,7 +164,7 @@ exports.getFieldReadings = async (req, res) => {
 };
 
 // @desc    Get readings by date range
-// @route   POST /api/iot/readings/date-range
+// @route   POST /api/sensors/readings/date-range
 // @access  Private
 exports.getReadingsByDateRange = async (req, res) => {
   try {
@@ -192,7 +192,7 @@ exports.getReadingsByDateRange = async (req, res) => {
 };
 
 // @desc    Get latest readings for a device
-// @route   GET /api/iot/readings/device/:deviceId/latest
+// @route   GET /api/sensors/readings/device/:deviceId/latest
 // @access  Private
 exports.getLatestReadings = async (req, res) => {
   try {
@@ -215,7 +215,7 @@ exports.getLatestReadings = async (req, res) => {
 };
 
 // @desc    Get reading statistics
-// @route   GET /api/iot/readings/device/:deviceId/stats
+// @route   GET /api/sensors/readings/device/:deviceId/stats
 // @access  Private
 exports.getReadingStats = async (req, res) => {
   try {

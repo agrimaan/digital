@@ -58,8 +58,8 @@ const AdminResources: React.FC = () => {
   const fetchResources = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_BASE_URL}/api/admin/resources`);
-      setResources(res.data.resources);
+      const res = await axios.get(`${API_BASE_URL}/api/resources`);
+      setResources(res.data);
       setLoading(false);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch resources');
@@ -100,9 +100,9 @@ const AdminResources: React.FC = () => {
   const handleSubmit = async () => {
     try {
       if (currentResource) {
-        await axios.put(`${API_BASE_URL}/api/admin/resources/${currentResource._id}`, formState);
+        await axios.put(`${API_BASE_URL}/api/resources/${currentResource._id}`, formState);
       } else {
-        await axios.post(`${API_BASE_URL}/api/admin/resources`, formState);
+        await axios.post(`${API_BASE_URL}/api/resources`, formState);
       }
       handleCloseDialog();
       fetchResources();
@@ -114,7 +114,7 @@ const AdminResources: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this resource?')) {
       try {
-        await axios.delete(`${API_BASE_URL}/api/admin/resources/${id}`);
+        await axios.delete(`${API_BASE_URL}/api/resources/${id}`);
         fetchResources();
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to delete resource');

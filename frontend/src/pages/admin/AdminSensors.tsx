@@ -51,7 +51,8 @@ import {
 } from '@mui/icons-material';
 import { RootState } from '../../store';
 import axios from 'axios';
-import { API_BASE_URL } from '../../config/apiConfig';
+//import { API_BASE_URL } from '../../config/apiConfig';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
 // Define types
 interface Sensor {
@@ -108,7 +109,7 @@ const AdminSensors: React.FC = () => {
       setLoading(true);
       try {
         // Real API call to fetch sensors/devices
-        const response = await axios.get(`${API_BASE_URL}/api/iot`, {
+        const response = await axios.get(`${API_BASE_URL}/api/sensors/devices`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }

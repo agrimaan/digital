@@ -122,8 +122,8 @@ const AdminCrops: React.FC = () => {
   const fetchCrops = async (farmerId: string = '') => {
     const headers = { Authorization: `Bearer ${tokenRef.current || ''}` };
     const url = farmerId
-      ? `${API_BASE_URL}/api/admin/crops?farmerId=${encodeURIComponent(farmerId)}`
-      : `${API_BASE_URL}/api/admin/crops`;
+      ? `${API_BASE_URL}/api/crops?farmerId=${encodeURIComponent(farmerId)}`
+      : `${API_BASE_URL}/api/crops`;
 
     const response = await axios.get(url, { headers });
     const data = response.data;

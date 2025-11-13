@@ -1,7 +1,9 @@
 const express = require('express');
 const { check } = require('express-validator');
 const cropController = require('../controllers/cropController');
-const { protect, authorize } = require('../../user-service/middleware/auth');
+//const { protect, authorize } = require('../../user-service/middleware/auth');
+const { protect, authorize } = require('@agrimaan/shared').middleware;
+
 
 const router = express.Router();
 

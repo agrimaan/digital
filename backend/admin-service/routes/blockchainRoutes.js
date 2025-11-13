@@ -1,7 +1,10 @@
 const express = require('express');
 const { body } = require('express-validator');
 const blockchainController = require('../controllers/blockchainController');
-const { protect, authorize } = require('../../user-service/middleware/auth');
+//const { protect, authorize } = require('../../user-service/middleware/auth');
+const { protect, authorize } = require('@agrimaan/shared').middleware;
+
+
 
 const router = express.Router();
 

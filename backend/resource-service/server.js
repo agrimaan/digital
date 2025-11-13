@@ -8,7 +8,7 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3014;
 
-const SERVICE_NAME = process.env.SERVICE_NAME || 'resource-service';
+const SERVICE_NAME = process.env.SERVICE_NAME || 'resource-service'; 
 // Using console.log for development instead of shared logger
 const logger = {
   info: (msg, meta = {}) => console.log(`[${SERVICE_NAME}] ${msg}`, meta),

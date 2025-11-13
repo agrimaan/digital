@@ -54,8 +54,8 @@ exports.getAllResources = asyncHandler(async (req, res) => {
 
   const total = await Resource.countDocuments(query);
   const resources = await Resource.find(query)
-    //.populate('owner', 'name email')
-    .populate('ownerEmail')
+    .populate('name type')
+    //.populate('ownerEmail')
     .sort(req.query.sort || '-createdAt')
     .skip(skip)
     .limit(limit);
