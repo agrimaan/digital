@@ -1,7 +1,7 @@
-const { validationResult } = require('express-validator');
 const cropService = require('../services/cropService');
 const responseHandler = require('../utils/responseHandler');
 const axios = require('axios');
+const { validationResult } = require('express-validator');
 
 const MARKETPLACE_SERVICE_URL = process.env.MARKETPLACE_SERVICE_URL || 'http://localhost:3006';
 

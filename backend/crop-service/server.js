@@ -14,6 +14,8 @@ const { ServiceRegistry, healthCheck } = require('@agrimaan/shared').serviceDisc
  const plantingRoutes = require('./routes/plantingRoutes');
  const harvestRoutes = require('./routes/harvestRoutes');
  const marketplaceRoutes = require('./routes/marketplaceRoutes');
+ const farmerMarketplaceRoutes = require('./routes/farmerMarketplaceRoutes');
+ const buyerMarketplaceRoutes = require('./routes/buyerMarketplaceRoutes');
  
 //Initialize express app
  const app = express();
@@ -40,6 +42,8 @@ const { ServiceRegistry, healthCheck } = require('@agrimaan/shared').serviceDisc
  app.use('/api/plantings', plantingRoutes);
  app.use('/api/harvests', harvestRoutes);
  app.use('/api/crops', marketplaceRoutes);
+ app.use('/api/farmer/marketplace', farmerMarketplaceRoutes);
+ app.use('/api/buyer/marketplace', buyerMarketplaceRoutes);
  
 //Health check endpoint
  app.get('/health', (req, res) => {
