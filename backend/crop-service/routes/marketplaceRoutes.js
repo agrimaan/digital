@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
 const marketplaceController = require('../controllers/marketplaceController');
-const auth = require('../middleware/auth');
+const {authorize } = require('@agrimaan/shared').middleware;
 
 // Validation rules
 const publishValidation = [
@@ -33,8 +33,8 @@ const publishValidation = [
 ];
 
 // Routes
-router.post('/:id/publish', auth, publishValidation, marketplaceController.publishCropToMarketplace);
-router.get('/marketplace/listings', auth, marketplaceController.getMarketplaceListings);
-router.delete('/:id/marketplace', auth, marketplaceController.unlistFromMarketplace);
+router.post('/:id/publish', authorize, publishValidation, marketplaceController.publishCropToMarketplace);
+router.get('/marketplace/listings', authorize, marketplaceController.getMarketplaceListings);
+router.delete('/:id/marketplace', authorize, marketplaceController.unlistFromMarketplace);
 
 module.exports = router;

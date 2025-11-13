@@ -55,19 +55,19 @@ export interface MarketplaceProduct {
 class MarketplaceService {
   // Publish crop to marketplace
   async publishCrop(cropId: string, data: PublishCropData): Promise<any> {
-    const response = await api.post(`/crops/${cropId}/publish`, data);
+    const response:any = await api.post(`/crops/${cropId}/publish`, data);
     return response.data;
   }
 
   // Get farmer's marketplace listings
   async getMyListings(): Promise<any> {
-    const response = await api.get('/crops/marketplace/listings');
+    const response:any = await api.get('/crops/marketplace/listings');
     return response.data;
   }
 
   // Unlist crop from marketplace
   async unlistCrop(cropId: string): Promise<any> {
-    const response = await api.delete(`/crops/${cropId}/marketplace`);
+    const response:any = await api.delete(`/crops/${cropId}/marketplace`);
     return response.data;
   }
 
@@ -90,25 +90,25 @@ class MarketplaceService {
       });
     }
 
-    const response = await api.get(`/marketplace/products?${params.toString()}`);
+    const response:any = await api.get(`/marketplace/products?${params.toString()}`);
     return response.data;
   }
 
   // Get single product
   async getProduct(productId: string): Promise<{ data: MarketplaceProduct }> {
-    const response = await api.get(`/marketplace/products/${productId}`);
+    const response:any = await api.get(`/marketplace/products/${productId}`);
     return response.data;
   }
 
   // Search products
   async searchProducts(query: string): Promise<{ data: MarketplaceProduct[] }> {
-    const response = await api.get(`/marketplace/products/search/${query}`);
+    const response:any = await api.get(`/marketplace/products/search/${query}`);
     return response.data;
   }
 
   // Get products by category
   async getProductsByCategory(category: string): Promise<{ data: MarketplaceProduct[] }> {
-    const response = await api.get(`/marketplace/products/category/${category}`);
+    const response:any = await api.get(`/marketplace/products/category/${category}`);
     return response.data;
   }
 
@@ -127,7 +127,7 @@ class MarketplaceService {
       params.append('distance', String(distance));
     }
 
-    const response = await api.get(`/marketplace/products/nearby?${params.toString()}`);
+    const response:any = await api.get(`/marketplace/products/nearby?${params.toString()}`);
     return response.data;
   }
 
@@ -137,7 +137,7 @@ class MarketplaceService {
     rating: number,
     comment: string
   ): Promise<any> {
-    const response = await api.post(`/marketplace/products/${productId}/reviews`, {
+    const response:any = await api.post(`/marketplace/products/${productId}/reviews`, {
       rating,
       comment,
     });
