@@ -22,12 +22,13 @@ import Fields from './pages/farmer/Fields';
 import FieldDetail from './pages/farmer/FieldDetail';
 import Crops from './pages/farmer/CropManagement';
 import Weather from './pages/farmer/Weather';
-import FarmerMarketplace from './pages/common/Marketplace';
+import FarmerMarketplace from './pages/farmer/FarmerMarketplace';
 import Analytics from './pages/farmer/Analytics';
 import AddField from './pages/farmer/AddField';
 import Sensors from './pages/farmer/Sensors';
 import SensorDetail from './pages/farmer/SensorDetail';
 import EditSensor from './pages/farmer/EditSensor';
+
 
 
 

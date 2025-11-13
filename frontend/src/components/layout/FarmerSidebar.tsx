@@ -26,6 +26,7 @@ import {
   Settings as SettingsIcon,
   Person as ProfileIcon,
   Help as HelpIcon,
+  Storefront as MarketplaceIcon
 } from '@mui/icons-material';
 
 const drawerWidth = 240;
@@ -50,6 +51,8 @@ const FarmerSidebar: React.FC<SidebarProps> = ({ open, toggleDrawer, user }) => 
     { title: 'Dashboard', path: '/farmer', icon: <DashboardIcon /> },
     { title: 'Fields', path: '/farmer/fields', icon: <LandscapeIcon /> },
     { title: 'Crops', path: '/farmer/crops', icon: <CropsIcon /> },
+    { title: 'Marketplace', path: '/farmer/marketplace', icon: <MarketplaceIcon /> },
+    
     { title: 'Sensors', path: '/farmer/sensors', icon: <SensorsIcon /> },
     { title: 'Analytics', path: '/farmer/analytics', icon: <AnalyticsIcon /> },
     { title: 'Weather', path: '/farmer/weather', icon: <WeatherIcon /> },

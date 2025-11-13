@@ -1,0 +1,238 @@
+import api from './api';
+
+// Types
+export interface MarketplaceListing {
+  _id: string;
+  farmer: string;
+  crop: {
+    _id: string;
+    name: string;
+    variety: string;
+    currentStage: string;
+  };
+  title: string;
+  description: string;
+  quantity: {
+    available: number;
+    reserved: number;
+    unit: string;
+    minimum?: number;
+  };
+  pricing: {
+    pricePerUnit: number;
+    currency: string;
+    negotiable: boolean;
+    bulkDiscounts?: Array<{
+      minQuantity: number;
+      discountPercentage: number;
+    }>;
+  };
+  harvestInfo: {
+    expectedDate: string;
+    actualDate?: string;
+    method?: string;
+  };
+  qualityAttributes: {
+    grade: string;
+    isOrganic: boolean;
+    certifications: string[];
+    appearance?: string;
+    taste?: string;
+    shelfLife?: number;
+  };
+  farmLocation: {
+    type: string;
+    coordinates: number[];
+    address?: {
+      village?: string;
+      district?: string;
+      state?: string;
+      pincode?: string;
+    };
+  };
+  images: string[];
+  status: 'active' | 'inactive' | 'sold' | 'expired';
+  statistics: {
+    views: number;
+    inquiries: number;
+    orders: number;
+  };
+  expiresAt?: string;
+  isPrivate: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateListingData {
+  cropId: string;
+  title: string;
+  description: string;
+  quantity: {
+    available: number;
+    unit: string;
+    minimum?: number;
+  };
+  pricing: {
+    pricePerUnit: number;
+    currency?: string;
+    negotiable?: boolean;
+    bulkDiscounts?: Array<{
+      minQuantity: number;
+      discountPercentage: number;
+    }>;
+  };
+  harvestInfo: {
+    expectedDate: string;
+    actualDate?: string;
+    method?: string;
+  };
+  qualityAttributes: {
+    grade: string;
+    isOrganic?: boolean;
+    certifications?: string[];
+    appearance?: string;
+    taste?: string;
+    shelfLife?: number;
+  };
+  images?: string[];
+  expiresAt?: string;
+  isPrivate?: boolean;
+}
+
+export interface UpdateListingData {
+  title?: string;
+  description?: string;
+  quantity?: {
+    available?: number;
+    unit?: string;
+    minimum?: number;
+  };
+  pricing?: {
+    pricePerUnit?: number;
+    currency?: string;
+    negotiable?: boolean;
+    bulkDiscounts?: Array<{
+      minQuantity: number;
+      discountPercentage: number;
+    }>;
+  };
+  harvestInfo?: {
+    expectedDate?: string;
+    actualDate?: string;
+    method?: string;
+  };
+  qualityAttributes?: {
+    grade?: string;
+    isOrganic?: boolean;
+    certifications?: string[];
+    appearance?: string;
+    taste?: string;
+    shelfLife?: number;
+  };
+  images?: string[];
+  expiresAt?: string;
+  isPrivate?: boolean;
+}
+
+export interface ReadyCrop {
+  _id: string;
+  name: string;
+  variety: string;
+  currentStage: string;
+  expectedYield: number;
+  yieldUnit: string;
+  plantingDate: string;
+  expectedHarvestDate: string;
+}
+
+export interface MarketplaceStatistics {
+  totalListings: number;
+  activeListings: number;
+  inactiveListings: number;
+  soldListings: number;
+  expiredListings: number;
+  totalViews: number;
+  totalInquiries: number;
+  totalOrders: number;
+  averagePrice: number;
+  totalQuantityListed: number;
+  totalQuantitySold: number;
+}
+
+class FarmerMarketplaceService  {  
+  private baseURL = '/crops/api/farmer/marketplace';
+
+  /**
+   * Create a new marketplace listing
+   */
+  async createListing(data: CreateListingData): Promise<{ success: boolean; data: MarketplaceListing }> {
+    const response:any = await api.post(`${this.baseURL}/listings`, data);
+    return response.data;
+  }
+
+  /**
+   * Get all listings for the authenticated farmer
+   */
+  async getMyListings(params?: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ success: boolean; data: MarketplaceListing[]; pagination?: any }> {
+    const response:any = await api.get(`${this.baseURL}/listings`);
+    return response.data;
+  }
+
+  /**
+   * Get a single listing by ID
+   */
+  async getListing(id: string): Promise<{ success: boolean; data: MarketplaceListing }> {
+    const response:any = await api.get(`${this.baseURL}/listings/${id}`);
+    return response.data;
+  }
+
+  /**
+   * Update a listing
+   */
+  async updateListing(
+    id: string,
+    data: UpdateListingData
+  ): Promise<{ success: boolean; data: MarketplaceListing }> {
+    const response:any = await api.put(`${this.baseURL}/listings/${id}`, data);
+    return response.data;
+  }
+
+  /**
+   * Deactivate a listing
+   */
+  async deactivateListing(id: string): Promise<{ success: boolean; message: string }> {
+    const response:any = await api.delete(`${this.baseURL}/listings/${id}`);
+    return response.data;
+  }
+
+  /**
+   * Reactivate a listing
+   */
+  async reactivateListing(id: string): Promise<{ success: boolean; data: MarketplaceListing }> {
+    const response:any = await api.post(`${this.baseURL}/listings/${id}/reactivate`);
+    return response.data;
+  }
+
+  /**
+   * Get ready-to-harvest crops
+   */
+  async getReadyCrops(): Promise<{ success: boolean; data: ReadyCrop[] }> {
+    const response:any = await api.get(`${this.baseURL}/ready-crops`);
+    return response.data;
+  }
+
+  /**
+   * Get marketplace statistics
+   */
+  async getStatistics(): Promise<{ success: boolean; data: MarketplaceStatistics }> {
+    const response:any = await api.get(`${this.baseURL}/statistics`);
+    return response.data;
+  }
+}
+
+export const farmerMarketplaceService = new FarmerMarketplaceService();
+export default farmerMarketplaceService;

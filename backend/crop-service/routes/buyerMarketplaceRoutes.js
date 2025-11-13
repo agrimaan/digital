@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const buyerMarketplaceController = require('../controllers/buyerMarketplaceController');
-const auth = require('../middleware/auth');
+const {authorize } = require('@agrimaan/shared').middleware;
 
 // Public routes (no authentication required)
 router.get('/listings', buyerMarketplaceController.getAllListings);
@@ -15,6 +15,6 @@ router.get('/crops', buyerMarketplaceController.getAvailableCrops);
 router.get('/statistics', buyerMarketplaceController.getMarketplaceStatistics);
 
 // Private routes (authentication required)
-router.post('/listings/:id/inquiry', auth, buyerMarketplaceController.recordInquiry);
+router.post('/listings/:id/inquiry', authorize, buyerMarketplaceController.recordInquiry);
 
 module.exports = router;
