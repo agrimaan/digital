@@ -122,6 +122,28 @@ const CropSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  marketplaceListing: {
+    productId: {
+      type: String // Product ID from marketplace-service
+    },
+    listedDate: {
+      type: Date
+    },
+    unlistedDate: {
+      type: Date
+    },
+    quantity: {
+      type: Number
+    },
+    pricePerUnit: {
+      type: Number
+    },
+    status: {
+      type: String,
+      enum: ['active', 'unlisted', 'sold'],
+      default: 'active'
+    }
+  },
   createdAt: {
     type: Date,
     default: Date.now

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Link as RouterLink } from 'react-router-dom';
+import marketplaceService, { MarketplaceProduct } from '../../services/marketplaceService';
 import {
   Box,
   Button,
