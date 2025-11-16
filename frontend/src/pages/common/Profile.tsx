@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '../../store';
+
 import {
   Box,
   Typography,
@@ -32,7 +35,9 @@ import EventIcon from '@mui/icons-material/Event';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import HistoryIcon from '@mui/icons-material/History';
 import SettingsIcon from '@mui/icons-material/Settings';
-
+import { getFields, Fields } from '../../features/fields/fieldSlice';
+import { getCrops, Crop } from '../../features/crops/cropSlice';
+import { getSensors, Sensor } from '../../features/sensors/sensorSlice';
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -60,6 +65,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const Profile: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const [tabValue, setTabValue] = useState(0);
   const [editMode, setEditMode] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -68,16 +74,44 @@ const Profile: React.FC = () => {
     email: 'john.farmer@example.com',
     phone: '(555) 123-4567',
     location: 'Farmville, CA',
-    farmName: 'Green Valley Farm',
-    farmSize: '250 acres',
     farmingExperience: '15 years',
     bio: 'Fourth-generation farmer specializing in sustainable crop production. Passionate about implementing innovative agricultural technologies to improve efficiency and reduce environmental impact.'
   });
+  const [fields, setFields] = useState<Fields[]>([]);
+  const [crops, setCrops] = useState<Crop[]>([]);
+  const [sensors, setSensors] = useState<Sensor[]>([]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
+  useEffect(() => {
+  dispatch(getFields() as any).then((res: any) => {
+    if (res?.payload) {
+      setFields(res.payload);
+    }
+    });
+  }, [dispatch]);
+
+  useEffect(() => {
+    dispatch(getCrops() as any).then((res: any) => {
+      if (res?.payload) {
+        setCrops(res.payload);
+      }
+    });
+  }, [dispatch]);
+
+  useEffect(() => {
+    dispatch(getSensors({}) as any).then((res: any) => {
+      if (res?.payload) {
+        setSensors(res.payload);
+      }
+    });
+  }, [dispatch]);
+
+  const activeFieldsCount = Array.isArray(fields) ? fields.filter((f: Fields) => f.status === 'active').length : 0;
+  const activeCropsCount = Array.isArray(crops) ? crops.filter((c: Crop) => c.growthStage !== 'harvested' && c.growthStage !== 'failed').length : 0;
+  const activeSensorsCount = Array.isArray(sensors) ? sensors.filter((s: Sensor) => s.status === 'active').length : 0;
   const handleEditToggle = () => {
     setEditMode(!editMode);
     if (editMode) {
@@ -104,8 +138,6 @@ const Profile: React.FC = () => {
       email: 'john.farmer@example.com',
       phone: '(555) 123-4567',
       location: 'Farmville, CA',
-      farmName: 'Green Valley Farm',
-      farmSize: '250 acres',
       farmingExperience: '15 years',
       bio: 'Fourth-generation farmer specializing in sustainable crop production. Passionate about implementing innovative agricultural technologies to improve efficiency and reduce environmental impact.'
     });
@@ -189,10 +221,6 @@ const Profile: React.FC = () => {
               </Typography>
             )}
             
-            <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-              {profileData.farmName}
-            </Typography>
-            
             <Box sx={{ mt: 2 }}>
               <Button
                 variant={editMode ? "contained" : "outlined"}
@@ -275,52 +303,6 @@ const Profile: React.FC = () => {
                   } 
                 />
               </ListItem>
-            </List>
-            
-            <Divider sx={{ my: 2 }} />
-            
-            <Typography variant="h6" gutterBottom align="left">
-              Farm Information
-            </Typography>
-            <List dense>
-              <ListItem>
-                <ListItemIcon>
-                  <WorkIcon />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Farm Name" 
-                  secondary={
-                    editMode ? (
-                      <TextField 
-                        value={profileData.farmName} 
-                        onChange={(e) => handleInputChange('farmName', e.target.value)}
-                        variant="standard"
-                        size="small"
-                        fullWidth
-                      />
-                    ) : profileData.farmName
-                  } 
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon>
-                  <LocationOnIcon />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Farm Size" 
-                  secondary={
-                    editMode ? (
-                      <TextField 
-                        value={profileData.farmSize} 
-                        onChange={(e) => handleInputChange('farmSize', e.target.value)}
-                        variant="standard"
-                        size="small"
-                        fullWidth
-                      />
-                    ) : profileData.farmSize
-                  } 
-                />
-              </ListItem>
               <ListItem>
                 <ListItemIcon>
                   <EventIcon />
@@ -390,7 +372,7 @@ const Profile: React.FC = () => {
                   <Card>
                     <CardContent>
                       <Typography variant="subtitle1">fields</Typography>
-                      <Typography variant="h4">4</Typography>
+                      <Typography variant="h4">{activeFieldsCount}</Typography>
                       <Typography variant="body2" color="text.secondary">
                         Total managed fields
                       </Typography>
@@ -401,7 +383,7 @@ const Profile: React.FC = () => {
                   <Card>
                     <CardContent>
                       <Typography variant="subtitle1">Crops</Typography>
-                      <Typography variant="h4">3</Typography>
+                      <Typography variant="h4">{activeCropsCount}</Typography>
                       <Typography variant="body2" color="text.secondary">
                         Current active crops
                       </Typography>
@@ -412,7 +394,7 @@ const Profile: React.FC = () => {
                   <Card>
                     <CardContent>
                       <Typography variant="subtitle1">Sensors</Typography>
-                      <Typography variant="h4">12</Typography>
+                      <Typography variant="h4">{activeSensorsCount}</Typography>
                       <Typography variant="body2" color="text.secondary">
                         Deployed monitoring sensors
                       </Typography>
