@@ -95,10 +95,8 @@ class ProfileService {
   /**
    * Upload profile image
    */
-  async uploadProfileImage(file: File): Promise<{ success: boolean; imageUrl: string }> {
-    const formData = new FormData();
-    formData.append('profileImage', file);
-    return apiService.uploadFile('/api/users/profile-image', formData);
+  async uploadProfileImage(base64: string): Promise<{ success: boolean; imageUrl: string }> {
+    return apiService.uploadFile('/api/users/profile-image', { image: base64 });
   }
 
   /**

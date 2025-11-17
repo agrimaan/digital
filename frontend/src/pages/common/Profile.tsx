@@ -103,8 +103,6 @@ const Profile: React.FC = () => {
         profileService.getProfile(),
         profileService.getProfileStats(),
       ]);
-      console.log('Profile Response:', profileResponse);
-      console.log('Stats Response:', statsResponse);
 
       if (profileResponse.success) {
         setProfile(profileResponse.user);
@@ -236,10 +234,21 @@ const Profile: React.FC = () => {
       return;
     }
 
+      // Convert to Base64
+    const toBase64 = (file: File): Promise<string> =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+      });
+
+    const base64 = await toBase64(file);
+
     setSaving(true);
     setError(null);
     try {
-      const response = await profileService.uploadProfileImage(file);
+      const response = await profileService.uploadProfileImage(base64);
       if (response.success) {
         setSuccess('Profile image updated successfully!');
         loadProfileData(); // Reload profile to get new image URL
@@ -467,7 +476,7 @@ const Profile: React.FC = () => {
                 </ListItemIcon>
                 <ListItemText 
                   primary="Member Since" 
-                  secondary={new Date(profile.createdAt).toLocaleDateString()}
+                  secondary={new Date(profile.createdAt).toLocaleDateString('en-GB')}
                 />
               </ListItem>
               <ListItem>
@@ -476,7 +485,7 @@ const Profile: React.FC = () => {
                 </ListItemIcon>
                 <ListItemText 
                   primary="Last Login" 
-                  secondary={profile.lastLogin ? new Date(profile.lastLogin).toLocaleString() : 'N/A'}
+                  secondary={profile.lastLogin ? new Date(profile.lastLogin).toLocaleDateString('en-GB') : 'N/A'}
                 />
               </ListItem>
             </List>

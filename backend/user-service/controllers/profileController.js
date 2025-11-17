@@ -40,49 +40,29 @@ const upload = multer({
 // @desc    Upload profile image
 // @route   POST /api/users/profile-image
 // @access  Private
-exports.uploadProfileImage = [
-  upload.single('profileImage'),
-  async (req, res) => {
-    try {
-      if (req.fileValidationError) {
-        return responseHandler.badRequest(res, req.fileValidationError);
-      }
+exports.uploadProfileImage = async (req, res) => {
+  try {
+    const { image } = req.body;
 
-      if (!req.file) {
-        return responseHandler.badRequest(res, 'Please upload an image file');
-      }
-
-      // Get the file path relative to the server
-      const imageUrl = `/uploads/profiles/${req.file.filename}`;
-
-      // Update user profile with new image URL
-      const user = await userService.updateUser(req.user.id, {
-        profileImage: imageUrl
-      });
-
-      // Delete old profile image if it exists and is not the default
-      if (user.profileImage && user.profileImage !== 'default-avatar.jpg' && user.profileImage !== imageUrl) {
-        const oldImagePath = path.join(__dirname, '..', user.profileImage);
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
-        }
-      }
-
-      return responseHandler.success(res, 200, {
-        imageUrl: imageUrl
-      }, 'Profile image uploaded successfully');
-    } catch (error) {
-      // Delete uploaded file if there's an error
-      if (req.file) {
-        const filePath = req.file.path;
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
-        }
-      }
-      return responseHandler.error(res, 500, 'Error uploading profile image', error);
+    if (!image) {
+      return responseHandler.badRequest(res, 'Base64 image is required');
     }
+
+    // Save base64 string directly into DB
+    const user = await userService.updateUser(req.user.id, {
+      profileImage: image
+    });
+
+    return responseHandler.success(
+      res,
+      200,
+      { profileImage: user.profileImage },
+      'Profile image updated successfully'
+    );
+  } catch (error) {
+    return responseHandler.error(res, 500, 'Error uploading profile image', error);
   }
-];
+};
 
 // @desc    Get user profile with stats
 // @route   GET /api/users/profile/stats
