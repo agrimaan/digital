@@ -39,11 +39,11 @@ const { ServiceRegistry, healthCheck } = require('@agrimaan/shared').serviceDisc
  
 //Routes
  app.use('/api/crops', cropRoutes);
- app.use('/api/plantings', plantingRoutes);
- app.use('/api/harvests', harvestRoutes);
- app.use('/api/crops', marketplaceRoutes);
- app.use('/api/farmer/marketplace', farmerMarketplaceRoutes);
- app.use('/api/buyer/marketplace', buyerMarketplaceRoutes);
+ app.use('/api/crops/plantings', plantingRoutes);
+ app.use('/api/crops/harvests', harvestRoutes);
+ //app.use('/api/crops', marketplaceRoutes);
+ app.use('/api/crops/farmer/marketplace', farmerMarketplaceRoutes);
+ app.use('/api/crops/buyer/marketplace', buyerMarketplaceRoutes);
  
 //Health check endpoint
  app.get('/health', (req, res) => {

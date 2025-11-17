@@ -108,9 +108,11 @@ const FarmerMarketplace: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     setError(null);
-    try {
-      if (tabValue === 0) {
+    try {    
+      if (tabValue == 0) {
         const data = await farmerMarketplaceService.getMyListings();
+        console.log(data);
+        
         setListings(data.data || []);
       } else if (tabValue === 1) {
         const data = await farmerMarketplaceService.getReadyCrops();

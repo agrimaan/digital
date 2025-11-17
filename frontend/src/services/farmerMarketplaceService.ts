@@ -1,4 +1,5 @@
 import api from './api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
 
 // Types
 export interface MarketplaceListing {
@@ -159,8 +160,17 @@ export interface MarketplaceStatistics {
   totalQuantitySold: number;
 }
 
-class FarmerMarketplaceService  {  
-  private baseURL = '/crops/api/farmer/marketplace';
+
+
+
+
+
+
+
+class FarmerMarketplaceService  
+{  
+  private baseURL = `${API_BASE_URL}/api/crops/farmer/marketplace`;
+  
 
   /**
    * Create a new marketplace listing

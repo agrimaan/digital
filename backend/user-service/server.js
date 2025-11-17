@@ -34,6 +34,7 @@ console.log("within user-server server.js" );
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/users', require('./routes/profileRoutes'));
 app.use('/api/admin/users', require('./routes/internalUsersRoute'));
 app.use('/api/internal/users', require('./routes/internalUsersRoute')); 
 

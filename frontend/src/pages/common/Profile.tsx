@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '../../store';
 
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -21,7 +19,12 @@ import {
   Tab,
   IconButton,
   Badge,
-  Alert
+  Alert,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
@@ -35,9 +38,9 @@ import EventIcon from '@mui/icons-material/Event';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import HistoryIcon from '@mui/icons-material/History';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { getFields, Fields } from '../../features/fields/fieldSlice';
-import { getCrops, Crop } from '../../features/crops/cropSlice';
-import { getSensors, Sensor } from '../../features/sensors/sensorSlice';
+import LockIcon from '@mui/icons-material/Lock';
+import { profileService, UserProfile, UpdateProfileData, ChangePasswordData } from '../../services/profileService';
+
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -65,107 +68,224 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const Profile: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
   const [tabValue, setTabValue] = useState(0);
   const [editMode, setEditMode] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [profileData, setProfileData] = useState({
-    name: 'John Farmer',
-    email: 'john.farmer@example.com',
-    phone: '(555) 123-4567',
-    location: 'Farmville, CA',
-    farmingExperience: '15 years',
-    bio: 'Fourth-generation farmer specializing in sustainable crop production. Passionate about implementing innovative agricultural technologies to improve efficiency and reduce environmental impact.'
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  
+  // Profile data
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [originalProfile, setOriginalProfile] = useState<UserProfile | null>(null);
+  const [profileStats, setProfileStats] = useState<any>({ fields: 0, crops: 0, sensors: 0 });
+  
+  // Edit form data
+  const [formData, setFormData] = useState<UpdateProfileData>({});
+  
+  // Password change dialog
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [passwordData, setPasswordData] = useState<ChangePasswordData>({
+    currentPassword: '',
+    newPassword: '',
   });
-  const [fields, setFields] = useState<Fields[]>([]);
-  const [crops, setCrops] = useState<Crop[]>([]);
-  const [sensors, setSensors] = useState<Sensor[]>([]);
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  useEffect(() => {
+    loadProfileData();
+  }, []);
+
+  const loadProfileData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [profileResponse, statsResponse] = await Promise.all([
+        profileService.getProfile(),
+        profileService.getProfileStats(),
+      ]);
+
+      if (profileResponse.success) {
+        setProfile(profileResponse.user);
+        setOriginalProfile(profileResponse.user);
+        setFormData({
+          firstName: profileResponse.user.firstName,
+          lastName: profileResponse.user.lastName,
+          phoneNumber: profileResponse.user.phoneNumber,
+          address: profileResponse.user.address,
+          preferences: profileResponse.user.preferences,
+        });
+      }
+
+      if (statsResponse.success) {
+        setProfileStats(statsResponse.data);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to load profile data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
-  useEffect(() => {
-  dispatch(getFields() as any).then((res: any) => {
-    if (res?.payload) {
-      setFields(res.payload);
-    }
-    });
-  }, [dispatch]);
-
-  useEffect(() => {
-    dispatch(getCrops() as any).then((res: any) => {
-      if (res?.payload) {
-        setCrops(res.payload);
-      }
-    });
-  }, [dispatch]);
-
-  useEffect(() => {
-    dispatch(getSensors({}) as any).then((res: any) => {
-      if (res?.payload) {
-        setSensors(res.payload);
-      }
-    });
-  }, [dispatch]);
-
-  const activeFieldsCount = Array.isArray(fields) ? fields.filter((f: Fields) => f.status === 'active').length : 0;
-  const activeCropsCount = Array.isArray(crops) ? crops.filter((c: Crop) => c.growthStage !== 'harvested' && c.growthStage !== 'failed').length : 0;
-  const activeSensorsCount = Array.isArray(sensors) ? sensors.filter((s: Sensor) => s.status === 'active').length : 0;
   const handleEditToggle = () => {
-    setEditMode(!editMode);
     if (editMode) {
-      // In a real app, this would save the profile data to the backend
-      setSaveSuccess(true);
-      setTimeout(() => {
-        setSaveSuccess(false);
-      }, 3000);
+      handleSaveProfile();
+    } else {
+      setEditMode(true);
     }
   };
 
-  const handleInputChange = (Fields: string, value: string) => {
-    setProfileData({
-      ...profileData,
-      [Fields]: value
-    });
+  const handleSaveProfile = async () => {
+    if (!profile) return;
+
+    setSaving(true);
+    setError(null);
+    try {
+      const response = await profileService.updateProfile(profile._id, formData);
+      if (response.success) {
+        setProfile(response.data);
+        setOriginalProfile(response.data);
+        setSuccess('Profile updated successfully!');
+        setEditMode(false);
+        setTimeout(() => setSuccess(null), 3000);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to update profile');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancelEdit = () => {
+    if (originalProfile) {
+      setFormData({
+        firstName: originalProfile.firstName,
+        lastName: originalProfile.lastName,
+        phoneNumber: originalProfile.phoneNumber,
+        address: originalProfile.address,
+        preferences: originalProfile.preferences,
+      });
+    }
     setEditMode(false);
-    // Reset to original data
-    setProfileData({
-      name: 'John Farmer',
-      email: 'john.farmer@example.com',
-      phone: '(555) 123-4567',
-      location: 'Farmville, CA',
-      farmingExperience: '15 years',
-      bio: 'Fourth-generation farmer specializing in sustainable crop production. Passionate about implementing innovative agricultural technologies to improve efficiency and reduce environmental impact.'
-    });
   };
 
-  // Mock activity data
-  const recentActivities = [
-    { action: 'Updated sensor settings', target: 'Soil Moisture Sensor 1', date: 'Today, 9:30 AM' },
-    { action: 'Added new crop', target: 'Soybeans in East Fields', date: 'Yesterday, 2:15 PM' },
-    { action: 'Generated report', target: 'Monthly Yield Analysis', date: 'May 28, 2025' },
-    { action: 'Calibrated sensors', target: 'All Weather Sensors', date: 'May 25, 2025' },
-    { action: 'Updated irrigation schedule', target: 'North Fields', date: 'May 22, 2025' }
-  ];
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
-  // Mock notification data
-  const notifications = [
-    { type: 'alert', message: 'Low soil moisture detected in South Fields', date: 'Today, 8:45 AM', read: false },
-    { type: 'system', message: 'System update available', date: 'Yesterday, 10:30 AM', read: true },
-    { type: 'weather', message: 'Weather alert: Heavy rain expected tomorrow', date: 'Yesterday, 9:15 AM', read: false },
-    { type: 'task', message: 'Scheduled task: Fertilizer application due', date: 'May 28, 2025', read: true },
-    { type: 'alert', message: 'Battery low on Temperature Sensor 2', date: 'May 26, 2025', read: true }
-  ];
+  const handleAddressChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      const response = await profileService.changePassword(passwordData);
+      if (response.success) {
+        setSuccess('Password changed successfully!');
+        setPasswordDialogOpen(false);
+        setPasswordData({ currentPassword: '', newPassword: '' });
+        setConfirmPassword('');
+        setTimeout(() => setSuccess(null), 3000);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to change password');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image size must be less than 5MB');
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      const response = await profileService.uploadProfileImage(file);
+      if (response.success) {
+        setSuccess('Profile image updated successfully!');
+        loadProfileData(); // Reload profile to get new image URL
+        setTimeout(() => setSuccess(null), 3000);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to upload image');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">Failed to load profile data</Alert>
+      </Box>
+    );
+  }
+
+  const getFullName = () => `${profile.firstName} ${profile.lastName}`;
+  const getInitials = () => `${profile.firstName[0]}${profile.lastName[0]}`;
+  const getLocation = () => {
+    if (profile.address?.city && profile.address?.state) {
+      return `${profile.address.city}, ${profile.address.state}`;
+    }
+    return 'Location not set';
+  };
 
   return (
     <Box sx={{ flexGrow: 1, p: 3 }}>
-      {saveSuccess && (
-        <Alert severity="success" sx={{ mb: 3 }}>
-          Profile updated successfully!
+      {error && (
+        <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert severity="success" onClose={() => setSuccess(null)} sx={{ mb: 3 }}>
+          {success}
         </Alert>
       )}
 
@@ -178,6 +298,7 @@ const Profile: React.FC = () => {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 badgeContent={
                   <IconButton 
+                    component="label"
                     sx={{ 
                       bgcolor: 'primary.main', 
                       color: 'white',
@@ -188,12 +309,20 @@ const Profile: React.FC = () => {
                       height: 32
                     }}
                     size="small"
+                    disabled={saving}
                   >
                     <PhotoCameraIcon fontSize="small" />
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                    />
                   </IconButton>
                 }
               >
                 <Avatar 
+                  src={profile.profileImage}
                   sx={{ 
                     width: 120, 
                     height: 120,
@@ -202,24 +331,38 @@ const Profile: React.FC = () => {
                     borderColor: 'primary.main'
                   }}
                 >
-                  {profileData.name.split(' ').map(n => n[0]).join('')}
+                  {getInitials()}
                 </Avatar>
               </Badge>
             </Box>
             
             {editMode ? (
-              <TextField 
-                value={profileData.name} 
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                variant="standard"
-                fullWidth
-                sx={{ mb: 1 }}
-              />
+              <Box sx={{ mb: 2 }}>
+                <TextField 
+                  value={formData.firstName || ''} 
+                  onChange={(e) => handleInputChange('firstName', e.target.value)}
+                  variant="standard"
+                  label="First Name"
+                  fullWidth
+                  sx={{ mb: 1 }}
+                />
+                <TextField 
+                  value={formData.lastName || ''} 
+                  onChange={(e) => handleInputChange('lastName', e.target.value)}
+                  variant="standard"
+                  label="Last Name"
+                  fullWidth
+                />
+              </Box>
             ) : (
               <Typography variant="h5" gutterBottom>
-                {profileData.name}
+                {getFullName()}
               </Typography>
             )}
+            
+            <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+              {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}
+            </Typography>
             
             <Box sx={{ mt: 2 }}>
               <Button
@@ -227,9 +370,10 @@ const Profile: React.FC = () => {
                 color={editMode ? "success" : "primary"}
                 startIcon={editMode ? <SaveIcon /> : <EditIcon />}
                 onClick={handleEditToggle}
+                disabled={saving}
                 sx={{ mr: 1 }}
               >
-                {editMode ? "Save Profile" : "Edit Profile"}
+                {saving ? <CircularProgress size={24} /> : editMode ? "Save Profile" : "Edit Profile"}
               </Button>
               {editMode && (
                 <Button
@@ -237,6 +381,7 @@ const Profile: React.FC = () => {
                   color="error"
                   startIcon={<CancelIcon />}
                   onClick={handleCancelEdit}
+                  disabled={saving}
                 >
                   Cancel
                 </Button>
@@ -252,17 +397,7 @@ const Profile: React.FC = () => {
                 </ListItemIcon>
                 <ListItemText 
                   primary="Email" 
-                  secondary={
-                    editMode ? (
-                      <TextField 
-                        value={profileData.email} 
-                        onChange={(e) => handleInputChange('email', e.target.value)}
-                        variant="standard"
-                        size="small"
-                        fullWidth
-                      />
-                    ) : profileData.email
-                  } 
+                  secondary={profile.email}
                 />
               </ListItem>
               <ListItem>
@@ -274,13 +409,14 @@ const Profile: React.FC = () => {
                   secondary={
                     editMode ? (
                       <TextField 
-                        value={profileData.phone} 
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        value={formData.phoneNumber || ''} 
+                        onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
                         variant="standard"
                         size="small"
                         fullWidth
+                        placeholder="Enter phone number"
                       />
-                    ) : profileData.phone
+                    ) : (profile.phoneNumber || 'Not set')
                   } 
                 />
               </ListItem>
@@ -292,15 +428,44 @@ const Profile: React.FC = () => {
                   primary="Location" 
                   secondary={
                     editMode ? (
-                      <TextField 
-                        value={profileData.location} 
-                        onChange={(e) => handleInputChange('location', e.target.value)}
-                        variant="standard"
-                        size="small"
-                        fullWidth
-                      />
-                    ) : profileData.location
+                      <Box>
+                        <TextField 
+                          value={formData.address?.city || ''} 
+                          onChange={(e) => handleAddressChange('city', e.target.value)}
+                          variant="standard"
+                          size="small"
+                          fullWidth
+                          placeholder="City"
+                          sx={{ mb: 1 }}
+                        />
+                        <TextField 
+                          value={formData.address?.state || ''} 
+                          onChange={(e) => handleAddressChange('state', e.target.value)}
+                          variant="standard"
+                          size="small"
+                          fullWidth
+                          placeholder="State"
+                        />
+                      </Box>
+                    ) : getLocation()
                   } 
+                />
+              </ListItem>
+            </List>
+            
+            <Divider sx={{ my: 2 }} />
+            
+            <Typography variant="h6" gutterBottom align="left">
+              Account Information
+            </Typography>
+            <List dense>
+              <ListItem>
+                <ListItemIcon>
+                  <WorkIcon />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="Member Since" 
+                  secondary={new Date(profile.createdAt).toLocaleDateString()}
                 />
               </ListItem>
               <ListItem>
@@ -308,18 +473,8 @@ const Profile: React.FC = () => {
                   <EventIcon />
                 </ListItemIcon>
                 <ListItemText 
-                  primary="Farming Experience" 
-                  secondary={
-                    editMode ? (
-                      <TextField 
-                        value={profileData.farmingExperience} 
-                        onChange={(e) => handleInputChange('farmingExperience', e.target.value)}
-                        variant="standard"
-                        size="small"
-                        fullWidth
-                      />
-                    ) : profileData.farmingExperience
-                  } 
+                  primary="Last Login" 
+                  secondary={profile.lastLogin ? new Date(profile.lastLogin).toLocaleString() : 'N/A'}
                 />
               </ListItem>
             </List>
@@ -330,12 +485,12 @@ const Profile: React.FC = () => {
           <Paper sx={{ width: '100%' }}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <Tabs value={tabValue} onChange={handleTabChange} aria-label="profile tabs">
-                <Tab label="About" />
+                <Tab label="Overview" />
                 <Tab label="Activity" icon={<HistoryIcon />} iconPosition="start" />
                 <Tab 
                   label="Notifications" 
                   icon={
-                    <Badge badgeContent={notifications.filter(n => !n.read).length} color="error">
+                    <Badge badgeContent={0} color="error">
                       <NotificationsIcon />
                     </Badge>
                   } 
@@ -344,35 +499,26 @@ const Profile: React.FC = () => {
                 <Tab label="Settings" icon={<SettingsIcon />} iconPosition="start" />
               </Tabs>
             </Box>
+            
             <TabPanel value={tabValue} index={0}>
               <Typography variant="h6" gutterBottom>
-                About Me
+                Profile Overview
               </Typography>
-              {editMode ? (
-                <TextField 
-                  value={profileData.bio} 
-                  onChange={(e) => handleInputChange('bio', e.target.value)}
-                  variant="outlined"
-                  fullWidth
-                  multiline
-                  rows={4}
-                  sx={{ mb: 3 }}
-                />
-              ) : (
-                <Typography variant="body1" paragraph>
-                  {profileData.bio}
-                </Typography>
-              )}
+              
+              <Typography variant="body1" paragraph>
+                Welcome to your profile dashboard. Here you can view and manage your account information,
+                track your activities, and configure your preferences.
+              </Typography>
               
               <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-                Farm Overview
+                Statistics
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6} md={4}>
                   <Card>
                     <CardContent>
-                      <Typography variant="subtitle1">fields</Typography>
-                      <Typography variant="h4">{activeFieldsCount}</Typography>
+                      <Typography variant="subtitle1">Fields</Typography>
+                      <Typography variant="h4">{profileStats.fields || 0}</Typography>
                       <Typography variant="body2" color="text.secondary">
                         Total managed fields
                       </Typography>
@@ -383,7 +529,7 @@ const Profile: React.FC = () => {
                   <Card>
                     <CardContent>
                       <Typography variant="subtitle1">Crops</Typography>
-                      <Typography variant="h4">{activeCropsCount}</Typography>
+                      <Typography variant="h4">{profileStats.crops || 0}</Typography>
                       <Typography variant="body2" color="text.secondary">
                         Current active crops
                       </Typography>
@@ -394,7 +540,7 @@ const Profile: React.FC = () => {
                   <Card>
                     <CardContent>
                       <Typography variant="subtitle1">Sensors</Typography>
-                      <Typography variant="h4">{activeSensorsCount}</Typography>
+                      <Typography variant="h4">{profileStats.sensors || 0}</Typography>
                       <Typography variant="body2" color="text.secondary">
                         Deployed monitoring sensors
                       </Typography>
@@ -402,97 +548,56 @@ const Profile: React.FC = () => {
                   </Card>
                 </Grid>
               </Grid>
-              
-              <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-                Current Season Summary
-              </Typography>
-              <Box sx={{ 
-                height: 200, 
-                bgcolor: 'grey.100', 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center',
-                mt: 2
-              }}>
-                <Typography>Season Summary Chart Would Go Here</Typography>
-              </Box>
             </TabPanel>
+            
             <TabPanel value={tabValue} index={1}>
               <Typography variant="h6" gutterBottom>
                 Recent Activity
               </Typography>
-              <List>
-                {recentActivities.map((activity, index) => (
-                  <React.Fragment key={index}>
-                    <ListItem>
-                      <ListItemText 
-                        primary={activity.action} 
-                        secondary={
-                          <>
-                            <Typography component="span" variant="body2">
-                              {activity.target}
-                            </Typography>
-                            <Typography component="span" variant="body2" color="text.secondary">
-                              {` — ${activity.date}`}
-                            </Typography>
-                          </>
-                        } 
-                      />
-                    </ListItem>
-                    {index < recentActivities.length - 1 && <Divider />}
-                  </React.Fragment>
-                ))}
-              </List>
-              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
-                <Button variant="outlined">
-                  View All Activity
-                </Button>
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body1" color="text.secondary">
+                  Activity tracking coming soon
+                </Typography>
               </Box>
             </TabPanel>
+            
             <TabPanel value={tabValue} index={2}>
               <Typography variant="h6" gutterBottom>
                 Notifications
               </Typography>
-              <List>
-                {notifications.map((notification, index) => (
-                  <React.Fragment key={index}>
-                    <ListItem 
-                      sx={{ 
-                        bgcolor: notification.read ? 'transparent' : 'action.hover',
-                        borderLeft: notification.read ? 'none' : '4px solid',
-                        borderColor: 'primary.main',
-                        pl: notification.read ? 2 : 1
-                      }}
-                    >
-                      <ListItemText 
-                        primary={notification.message} 
-                        secondary={notification.date} 
-                      />
-                      {!notification.read && (
-                        <Button size="small">
-                          Mark as Read
-                        </Button>
-                      )}
-                    </ListItem>
-                    {index < notifications.length - 1 && <Divider />}
-                  </React.Fragment>
-                ))}
-              </List>
-              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
-                <Button variant="outlined">
-                  Mark All as Read
-                </Button>
-                <Button variant="outlined">
-                  View All Notifications
-                </Button>
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body1" color="text.secondary">
+                  No new notifications
+                </Typography>
               </Box>
             </TabPanel>
+            
             <TabPanel value={tabValue} index={3}>
               <Typography variant="h6" gutterBottom>
-                Profile Settings
+                Account Settings
               </Typography>
               <List>
                 <ListItem>
+                  <ListItemIcon>
+                    <LockIcon />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Change Password" 
+                    secondary="Update your account password" 
+                  />
+                  <Button 
+                    variant="outlined" 
+                    size="small"
+                    onClick={() => setPasswordDialogOpen(true)}
+                  >
+                    Change
+                  </Button>
+                </ListItem>
+                <Divider />
+                <ListItem>
+                  <ListItemIcon>
+                    <NotificationsIcon />
+                  </ListItemIcon>
                   <ListItemText 
                     primary="Email Notifications" 
                     secondary="Receive updates and alerts via email" 
@@ -503,6 +608,9 @@ const Profile: React.FC = () => {
                 </ListItem>
                 <Divider />
                 <ListItem>
+                  <ListItemIcon>
+                    <SettingsIcon />
+                  </ListItemIcon>
                   <ListItemText 
                     primary="Privacy Settings" 
                     secondary="Manage your data and privacy preferences" 
@@ -511,36 +619,52 @@ const Profile: React.FC = () => {
                     Configure
                   </Button>
                 </ListItem>
-                <Divider />
-                <ListItem>
-                  <ListItemText 
-                    primary="Account Security" 
-                    secondary="Password and authentication settings" 
-                  />
-                  <Button variant="outlined" size="small">
-                    Configure
-                  </Button>
-                </ListItem>
-                <Divider />
-                <ListItem>
-                  <ListItemText 
-                    primary="Connected Accounts" 
-                    secondary="Manage linked services and applications" 
-                  />
-                  <Button variant="outlined" size="small">
-                    Configure
-                  </Button>
-                </ListItem>
               </List>
-              <Box sx={{ mt: 3 }}>
-                <Button variant="contained" color="primary">
-                  Go to Settings
-                </Button>
-              </Box>
             </TabPanel>
           </Paper>
         </Grid>
       </Grid>
+
+      {/* Change Password Dialog */}
+      <Dialog open={passwordDialogOpen} onClose={() => setPasswordDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Change Password</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <TextField
+              label="Current Password"
+              type="password"
+              fullWidth
+              value={passwordData.currentPassword}
+              onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+            />
+            <TextField
+              label="New Password"
+              type="password"
+              fullWidth
+              value={passwordData.newPassword}
+              onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+              helperText="Password must be at least 6 characters"
+            />
+            <TextField
+              label="Confirm New Password"
+              type="password"
+              fullWidth
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPasswordDialogOpen(false)}>Cancel</Button>
+          <Button 
+            onClick={handleChangePassword} 
+            variant="contained"
+            disabled={saving || !passwordData.currentPassword || !passwordData.newPassword || !confirmPassword}
+          >
+            {saving ? <CircularProgress size={24} /> : 'Change Password'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
