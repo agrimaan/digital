@@ -72,7 +72,7 @@ export const getSensors = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-  let url = `${API_BASE_URL}/api/sensors`;
+  let url = `${API_BASE_URL}/api/sensors/devices`;
       const params = [];
       
       if (FieldsId) params.push(`FieldsId=${FieldsId}`);
@@ -96,7 +96,7 @@ export const getSensorById = createAsyncThunk(
   'sensor/getSensorById',
   async (id: string, { rejectWithValue }) => {
     try {
-  const res = await axios.get(`${API_BASE_URL}/api/sensors/${id}`);
+  const res = await axios.get(`${API_BASE_URL}/api/sensors/devices/${id}`);
       return res.data;
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || 'Failed to fetch sensor');
@@ -109,7 +109,7 @@ export const createSensor = createAsyncThunk(
   'sensor/createSensor',
   async (formData: Partial<Sensor>, { dispatch, rejectWithValue }) => {
     try {
-  const res = await axios.post(`${API_BASE_URL}/api/sensors`, formData);
+  const res = await axios.post(`${API_BASE_URL}/api/sensors/devices`, formData);
       
       dispatch(setAlert({
         message: 'Sensor created successfully',
@@ -128,7 +128,7 @@ export const updateSensor = createAsyncThunk(
   'sensor/updateSensor',
   async ({ id, formData }: { id: string; formData: Partial<Sensor> }, { dispatch, rejectWithValue }) => {
     try {
-  const res = await axios.put(`${API_BASE_URL}/api/sensors/${id}`, formData);
+  const res = await axios.put(`${API_BASE_URL}/api/sensors/devices/${id}`, formData);
       
       dispatch(setAlert({
         message: 'Sensor updated successfully',
@@ -147,7 +147,7 @@ export const deleteSensor = createAsyncThunk(
   'sensor/deleteSensor',
   async (id: string, { dispatch, rejectWithValue }) => {
     try {
-  await axios.delete(`${API_BASE_URL}/api/sensors/${id}`);
+  await axios.delete(`${API_BASE_URL}/api/sensors/devices/${id}`);
       
       dispatch(setAlert({
         message: 'Sensor deleted successfully',
@@ -166,7 +166,7 @@ export const addSensorReading = createAsyncThunk(
   'sensor/addSensorReading',
   async ({ sensorId, reading }: { sensorId: string; reading: Partial<Reading> }, { dispatch, rejectWithValue }) => {
     try {
-  const res = await axios.post(`${API_BASE_URL}/api/sensors/${sensorId}/reading`, reading);
+  const res = await axios.post(`${API_BASE_URL}/api/sensors/devices/${sensorId}/reading`, reading);
       
       dispatch(setAlert({
         message: 'Sensor reading added successfully',
@@ -185,7 +185,7 @@ export const addSensorAlert = createAsyncThunk(
   'sensor/addSensorAlert',
   async ({ sensorId, alert }: { sensorId: string; alert: Partial<Alert> }, { dispatch, rejectWithValue }) => {
     try {
-  const res = await axios.post(`${API_BASE_URL}/api/sensors/${sensorId}/alert`, alert);
+  const res = await axios.post(`${API_BASE_URL}/api/sensors/devices/${sensorId}/alert`, alert);
       
       dispatch(setAlert({
         message: 'Sensor alert added successfully',
@@ -204,7 +204,7 @@ export const resolveSensorAlert = createAsyncThunk(
   'sensor/resolveSensorAlert',
   async ({ sensorId, alertId }: { sensorId: string; alertId: string }, { dispatch, rejectWithValue }) => {
     try {
-  const res = await axios.put(`${API_BASE_URL}/api/sensors/${sensorId}/alert/${alertId}`);
+  const res = await axios.put(`${API_BASE_URL}/api/sensors/devices/${sensorId}/alert/${alertId}`);
       
       dispatch(setAlert({
         message: 'Sensor alert resolved successfully',
@@ -223,7 +223,7 @@ export const getNearbySensors = createAsyncThunk(
   'sensor/getNearbySensors',
   async ({ lng, lat, distance }: { lng: number; lat: number; distance: number }, { rejectWithValue }) => {
     try {
-  const res = await axios.get(`${API_BASE_URL}/api/sensors/nearby/${distance}?lng=${lng}&lat=${lat}`);
+  const res = await axios.get(`${API_BASE_URL}/api/sensors/devices/nearby/${distance}?lng=${lng}&lat=${lat}`);
       return res.data;
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || 'Failed to fetch nearby sensors');

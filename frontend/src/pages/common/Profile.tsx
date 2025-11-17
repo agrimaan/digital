@@ -103,6 +103,8 @@ const Profile: React.FC = () => {
         profileService.getProfile(),
         profileService.getProfileStats(),
       ]);
+      console.log('Profile Response:', profileResponse);
+      console.log('Stats Response:', statsResponse);
 
       if (profileResponse.success) {
         setProfile(profileResponse.user);

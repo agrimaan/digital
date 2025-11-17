@@ -143,7 +143,7 @@ const AdminSensorDetail: React.FC = () => {
       setLoading(true);
       try {
         // Real API call to fetch details
-        const response = await axios.get(`${API_BASE_URL}/api/sensors/${id}`, {
+        const response = await axios.get(`${API_BASE_URL}/api/sensors/devices/${id}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }

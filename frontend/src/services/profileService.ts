@@ -75,21 +75,21 @@ class ProfileService {
    * Get current user profile
    */
   async getProfile(): Promise<{ success: boolean; user: UserProfile }> {
-    return apiService.get('/users/api/auth/me');
+    return apiService.get('/api/auth/me');
   }
 
   /**
    * Update user profile
    */
   async updateProfile(userId: string, data: UpdateProfileData): Promise<{ success: boolean; data: UserProfile }> {
-    return apiService.put(`/users/api/users/${userId}`, data);
+    return apiService.put(`/api/users/${userId}`, data);
   }
 
   /**
    * Change password
    */
   async changePassword(data: ChangePasswordData): Promise<{ success: boolean; message: string }> {
-    return apiService.put('/users/api/auth/change-password', data);
+    return apiService.put('/api/auth/change-password', data);
   }
 
   /**
@@ -98,7 +98,7 @@ class ProfileService {
   async uploadProfileImage(file: File): Promise<{ success: boolean; imageUrl: string }> {
     const formData = new FormData();
     formData.append('profileImage', file);
-    return apiService.uploadFile('/users/api/users/profile-image', formData);
+    return apiService.uploadFile('/api/users/profile-image', formData);
   }
 
   /**
@@ -108,9 +108,9 @@ class ProfileService {
     try {
       // This will aggregate data from multiple services
       const [fieldsResponse, cropsResponse, sensorsResponse] = await Promise.allSettled([
-        apiService.get<any>('/fields/api/fields').catch(() => ({ data: [] })),
-        apiService.get<any>('/crops/api/crops').catch(() => ({ data: [] })),
-        apiService.get<any>('/iot/api/sensors').catch(() => ({ data: [] })),
+        apiService.get<any>('/api/fields').catch(() => ({ data: [] })),
+        apiService.get<any>('/api/crops').catch(() => ({ data: [] })),
+        apiService.get<any>('/api/sensors/devices').catch(() => ({ data: [] })),
       ]);
 
       const stats: ProfileStats = {

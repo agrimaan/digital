@@ -20,7 +20,7 @@ describe('Dashboard Page', () => {
       ]
     }).as('getCrops');
     
-    cy.intercept('GET', '/api/sensors', { 
+    cy.intercept('GET', '/api/sensors/devices', { 
       statusCode: 200, 
       body: [
         { id: 'sensor-1', name: 'Soil Moisture 1', status: 'active', Fields: 'Fields-1' },
