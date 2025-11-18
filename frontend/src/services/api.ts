@@ -24,7 +24,7 @@ class ApiService {
   }
 
   async get<T>(endpoint: string): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(`${endpoint}`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });

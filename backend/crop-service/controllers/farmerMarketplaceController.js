@@ -335,6 +335,8 @@ exports.getReadyCrops = async (req, res) => {
         { marketplaceListing: { $exists: false } }
       ]
     }).select('name variety growthStage expectedHarvestDate actualHarvestDate actualYield unit');
+    console.log("crops within getReadyCrops:",crops);
+
 
     return responseHandler.success(
       res,
