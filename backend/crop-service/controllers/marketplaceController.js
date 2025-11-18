@@ -3,7 +3,7 @@ const responseHandler = require('../utils/responseHandler');
 const axios = require('axios');
 const { validationResult } = require('express-validator');
 
-const MARKETPLACE_SERVICE_URL = process.env.MARKETPLACE_SERVICE_URL || 'http://localhost:3006';
+const MARKETPLACE_SERVICE_URL = process.env.MARKETPLACE_SERVICE_URL || 'http://localhost:3000';
 
 // @desc    Publish crop to marketplace
 // @route   POST /api/crops/:id/publish
@@ -17,7 +17,7 @@ exports.publishCropToMarketplace = async (req, res) => {
   try {
     const { id } = req.params;
     const crop = await cropService.getCropById({ _id: id, farmerId: req.user.id });
-
+    console.log('Crop within publishCropToMarketplace:', crop);
     if (!crop) {
       return responseHandler.notFound(res, 'Crop not found');
     }
