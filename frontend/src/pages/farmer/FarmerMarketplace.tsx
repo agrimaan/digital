@@ -110,9 +110,7 @@ const FarmerMarketplace: React.FC = () => {
     setError(null);
     try {    
       if (tabValue == 0) {
-        const data = await farmerMarketplaceService.getMyListings();
-        console.log(data);
-        
+        const data = await farmerMarketplaceService.getMyListings();       
         setListings(data.data || []);
       } else if (tabValue === 1) {
         const data = await farmerMarketplaceService.getReadyCrops();
@@ -122,6 +120,7 @@ const FarmerMarketplace: React.FC = () => {
         setStatistics(data.data || {});
       }
     } catch (err: any) {
+      console.log(err);
       setError(err.response?.data?.message || 'Failed to load data');
     } finally {
       setLoading(false);

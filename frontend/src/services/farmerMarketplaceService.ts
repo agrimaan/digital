@@ -176,6 +176,8 @@ class FarmerMarketplaceService
    * Create a new marketplace listing
    */
   async createListing(data: CreateListingData): Promise<{ success: boolean; data: MarketplaceListing }> {
+    console.log("data within createListing:", data);
+    console.log("baseURL within createListing:", this.baseURL);
     const response:any = await api.post(`${this.baseURL}/listings`, data);
     return response.data;
   }
