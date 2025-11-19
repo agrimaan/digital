@@ -141,7 +141,7 @@ const CropSchema = new mongoose.Schema({
     status: {
       type: String,
       enum: ['active', 'unlisted', 'sold'],
-      default: 'active'
+      default: 'unlisted'
     }
   },
   createdAt: {

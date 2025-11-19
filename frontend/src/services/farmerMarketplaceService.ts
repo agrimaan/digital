@@ -1,5 +1,7 @@
+import axios from "axios";
 import api from './api';
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
+
 
 // Types
 export interface MarketplaceListing {
@@ -178,7 +180,7 @@ class FarmerMarketplaceService
   async createListing(data: CreateListingData): Promise<{ success: boolean; data: MarketplaceListing }> {
     console.log("data within createListing:", data);
     console.log("baseURL within createListing:", this.baseURL);
-    const response:any = await api.post(`${this.baseURL}/listings`, data);
+    const response:any = await axios.post(`${this.baseURL}/listings`, data);
     return response.data;
   }
 
@@ -190,7 +192,7 @@ class FarmerMarketplaceService
     page?: number;
     limit?: number;
   }): Promise<{ success: boolean; data: MarketplaceListing[]; pagination?: any }> {
-    const response:any = await api.get(`${this.baseURL}/listings`);
+    const response:any = await axios.get(`${this.baseURL}/listings`);
     return response.data;
   }
 
@@ -198,7 +200,7 @@ class FarmerMarketplaceService
    * Get a single listing by ID
    */
   async getListing(id: string): Promise<{ success: boolean; data: MarketplaceListing }> {
-    const response:any = await api.get(`${this.baseURL}/listings/${id}`);
+    const response:any = await axios.get(`${this.baseURL}/listings/${id}`);
     return response.data;
   }
 
@@ -209,7 +211,7 @@ class FarmerMarketplaceService
     id: string,
     data: UpdateListingData
   ): Promise<{ success: boolean; data: MarketplaceListing }> {
-    const response:any = await api.put(`${this.baseURL}/listings/${id}`, data);
+    const response:any = await axios.put(`${this.baseURL}/listings/${id}`, data);
     return response.data;
   }
 
@@ -217,7 +219,7 @@ class FarmerMarketplaceService
    * Deactivate a listing
    */
   async deactivateListing(id: string): Promise<{ success: boolean; message: string }> {
-    const response:any = await api.delete(`${this.baseURL}/listings/${id}`);
+    const response:any = await axios.delete(`${this.baseURL}/listings/${id}`);
     return response.data;
   }
 
@@ -225,7 +227,7 @@ class FarmerMarketplaceService
    * Reactivate a listing
    */
   async reactivateListing(id: string): Promise<{ success: boolean; data: MarketplaceListing }> {
-    const response:any = await api.post(`${this.baseURL}/listings/${id}/reactivate`);
+    const response:any = await axios.post(`${this.baseURL}/listings/${id}/reactivate`);
     return response.data;
   }
 
@@ -233,7 +235,7 @@ class FarmerMarketplaceService
    * Get ready-to-harvest crops
    */
   async getReadyCrops(): Promise<{ success: boolean; data: ReadyCrop[] }> {
-    const response:any = await api.get(`${this.baseURL}/ready-crops`);
+    const response:any = await axios.get(`${this.baseURL}/ready-crops`);
     return response.data;
   }
 
@@ -241,7 +243,7 @@ class FarmerMarketplaceService
    * Get marketplace statistics
    */
   async getStatistics(): Promise<{ success: boolean; data: MarketplaceStatistics }> {
-    const response:any = await api.get(`${this.baseURL}/statistics`);
+    const response:any = await axios.get(`${this.baseURL}/statistics`);
     return response.data;
   }
 }

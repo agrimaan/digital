@@ -29,11 +29,6 @@ import Sensors from './pages/farmer/Sensors';
 import SensorDetail from './pages/farmer/SensorDetail';
 import EditSensor from './pages/farmer/EditSensor';
 
-
-
-
-
-
 // Buyer pages
 import BuyerDashboard from './pages/buyer/BuyerDashboard';
 import BuyerMarketplace from './pages/buyer/BuyerMarketplace';

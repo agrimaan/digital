@@ -111,7 +111,7 @@ const FarmerMarketplace: React.FC = () => {
     try {    
       if (tabValue == 0) {
         const data = await farmerMarketplaceService.getMyListings();       
-        setListings(data.data || []);
+        setListings(data.data || ['1']);
       } else if (tabValue === 1) {
         const data = await farmerMarketplaceService.getReadyCrops();
         setReadyCrops(data.data || []);

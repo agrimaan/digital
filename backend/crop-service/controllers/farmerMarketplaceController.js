@@ -29,7 +29,9 @@ exports.createListing = async (req, res) => {
     } = req.body;
 
     // Fetch the crop
-    const crop = await Crop.findOne({ _id: cropId, farmerId: req.user.id });
+    console.log("cropId within createListing:",cropId);
+    console.log("req.user.id within createListing:",req.user.id);
+    const crop = await Crop.findOne({ _id: "cropId", farmerId: req.user.id });
     
     if (!crop) {
       return responseHandler.notFound(res, 'Crop not found or you do not have permission');
@@ -326,6 +328,8 @@ exports.reactivateListing = async (req, res) => {
 exports.getReadyCrops = async (req, res) => {
   try {
     // Find crops that are ready for harvest and not already listed
+    console.log("req.user.id within getReadyCrops:",req.user.id);
+   
     const crops = await Crop.find({
       farmerId: req.user.id,
       growthStage: { $in: ['maturity', 'harvested'] },
