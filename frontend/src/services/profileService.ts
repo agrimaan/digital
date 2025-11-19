@@ -8,17 +8,7 @@ export interface UserProfile {
   email: string;
   phoneNumber?: string;
   role: string;
-  address?: {
-    street?: string;
-    city?: string;
-    state?: string;
-    country?: string;
-    postalCode?: string;
-    coordinates?: {
-      latitude?: number;
-      longitude?: number;
-    };
-  };
+  address?: string;
   profileImage?: string;
   isVerified: boolean;
   preferences?: {
@@ -39,13 +29,7 @@ export interface UpdateProfileData {
   firstName?: string;
   lastName?: string;
   phoneNumber?: string;
-  address?: {
-    street?: string;
-    city?: string;
-    state?: string;
-    country?: string;
-    postalCode?: string;
-  };
+  address?: string;
   preferences?: {
     notifications?: {
       email?: boolean;

@@ -16,12 +16,10 @@ import {
 import {
   ChevronLeft as ChevronLeftIcon,
   Dashboard as DashboardIcon,
-  AccountBalance as AccountBalanceIcon,
   Assessment as AssessmentIcon,
   Agriculture as AgricultureIcon,
   MonetizationOn as MonetizationOnIcon,
   TrendingUp as TrendingUpIcon,
-  Settings as SettingsIcon,
   Person as ProfileIcon,
   Help as HelpIcon
 } from '@mui/icons-material';
@@ -76,11 +74,6 @@ const InvestorSidebar: React.FC<SidebarProps> = ({ open, toggleDrawer, user }) =
       title: 'Profile',
       path: '/investor/profile',
       icon: <ProfileIcon />
-    },
-    {
-      title: 'Settings',
-      path: '/investor/settings',
-      icon: <SettingsIcon />
     },
     {
       title: 'Help',

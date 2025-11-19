@@ -22,7 +22,6 @@ import {
   Storefront as StorefrontIcon,
   Bookmark as BookmarkIcon,
   LocalShipping as LocalShippingIcon,
-  Settings as SettingsIcon,
   Person as ProfileIcon,
   Help as HelpIcon,
   Notifications as NotificationsIcon,
@@ -98,11 +97,6 @@ const BuyerSidebar: React.FC<SidebarProps> = ({ open, toggleDrawer, user }) => {
       title: 'Profile',
       path: '/buyer/profile',
       icon: <ProfileIcon />
-    },
-    {
-      title: 'Settings',
-      path: '/buyer/settings',
-      icon: <SettingsIcon />
     },
     {
       title: 'Help',

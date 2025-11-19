@@ -22,7 +22,6 @@ import {
   BugReport as CropIssuesIcon,
   EventNote as ConsultationsIcon,
   Analytics as AnalyticsIcon,
-  Settings as SettingsIcon,
   Person as ProfileIcon,
   Help as HelpIcon
 } from '@mui/icons-material';
@@ -82,11 +81,6 @@ const AgronomistSidebar: React.FC<SidebarProps> = ({ open, toggleDrawer, user })
       title: 'Profile',
       path: '/agronomist/profile',
       icon: <ProfileIcon />
-    },
-    {
-      title: 'Settings',
-      path: '/agronomist/settings',
-      icon: <SettingsIcon />
     },
     {
       title: 'Help',

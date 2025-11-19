@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -13,8 +12,6 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  Card,
-  CardContent,
   Tabs,
   Tab,
   IconButton,
@@ -40,6 +37,7 @@ import HistoryIcon from '@mui/icons-material/History';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LockIcon from '@mui/icons-material/Lock';
 import { profileService, UserProfile, UpdateProfileData, ChangePasswordData } from '../../services/profileService';
+import AddressAutocomplete from '../common/AddressAutocomplete';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -74,16 +72,12 @@ const Profile: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
-  // Profile data
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [originalProfile, setOriginalProfile] = useState<UserProfile | null>(null);
-  const [profileStats, setProfileStats] = useState<any>({ fields: 0, crops: 0, sensors: 0 });
-  
-  // Edit form data
+
   const [formData, setFormData] = useState<UpdateProfileData>({});
-  
-  // Password change dialog
+
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [passwordData, setPasswordData] = useState<ChangePasswordData>({
     currentPassword: '',
@@ -115,10 +109,6 @@ const Profile: React.FC = () => {
           preferences: profileResponse.user.preferences,
         });
       }
-
-      if (statsResponse.success) {
-        setProfileStats(statsResponse.data);
-      }
     } catch (err: any) {
       setError(err.message || 'Failed to load profile data');
     } finally {
@@ -144,7 +134,15 @@ const Profile: React.FC = () => {
     setSaving(true);
     setError(null);
     try {
-      const response = await profileService.updateProfile(profile._id, formData);
+      const dataToSend: UpdateProfileData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phoneNumber: formData.phoneNumber,
+        address: formData.address,
+        preferences: formData.preferences,
+      };
+
+      const response = await profileService.updateProfile(profile._id, dataToSend);
       if (response.success) {
         setProfile(response.data);
         setOriginalProfile(response.data);
@@ -179,16 +177,6 @@ const Profile: React.FC = () => {
     }));
   };
 
-  const handleAddressChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      address: {
-        ...prev.address,
-        [field]: value,
-      },
-    }));
-  };
-
   const handleChangePassword = async () => {
     if (passwordData.newPassword !== confirmPassword) {
       setError('Passwords do not match');
@@ -216,6 +204,13 @@ const Profile: React.FC = () => {
     } finally {
       setSaving(false);
     }
+  };
+  
+  const handleAddressPicked = (fullAddress: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      address: fullAddress, 
+    }));
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -279,9 +274,10 @@ const Profile: React.FC = () => {
 
   const getFullName = () => `${profile.firstName} ${profile.lastName}`;
   const getInitials = () => `${profile.firstName[0]}${profile.lastName[0]}`;
+  
   const getLocation = () => {
-    if (profile.address?.city && profile.address?.state) {
-      return `${profile.address.city}, ${profile.address.state}`;
+    if (profile.address) {
+      return profile.address;
     }
     return 'Location not set';
   };
@@ -346,13 +342,13 @@ const Profile: React.FC = () => {
                 </Avatar>
               </Badge>
             </Box>
-            
+
             {editMode ? (
               <Box sx={{ mb: 2 }}>
                 <TextField 
                   value={formData.firstName || ''} 
                   onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  variant="standard"
+                  variant="outlined" 
                   label="First Name"
                   fullWidth
                   sx={{ mb: 1 }}
@@ -360,7 +356,7 @@ const Profile: React.FC = () => {
                 <TextField 
                   value={formData.lastName || ''} 
                   onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  variant="standard"
+                  variant="outlined" 
                   label="Last Name"
                   fullWidth
                 />
@@ -370,11 +366,11 @@ const Profile: React.FC = () => {
                 {getFullName()}
               </Typography>
             )}
-            
+
             <Typography variant="subtitle1" color="text.secondary" gutterBottom>
               {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}
             </Typography>
-            
+
             <Box sx={{ mt: 2 }}>
               <Button
                 variant={editMode ? "contained" : "outlined"}
@@ -398,9 +394,9 @@ const Profile: React.FC = () => {
                 </Button>
               )}
             </Box>
-            
+
             <Divider sx={{ my: 2 }} />
-            
+
             <List dense>
               <ListItem>
                 <ListItemIcon>
@@ -422,7 +418,7 @@ const Profile: React.FC = () => {
                       <TextField 
                         value={formData.phoneNumber || ''} 
                         onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                        variant="standard"
+                        variant="outlined"
                         size="small"
                         fullWidth
                         placeholder="Enter phone number"
@@ -435,37 +431,27 @@ const Profile: React.FC = () => {
                 <ListItemIcon>
                   <LocationOnIcon />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Location" 
+                <ListItemText
+                  primary="Address"
                   secondary={
                     editMode ? (
-                      <Box>
-                        <TextField 
-                          value={formData.address?.city || ''} 
-                          onChange={(e) => handleAddressChange('city', e.target.value)}
-                          variant="standard"
-                          size="small"
-                          fullWidth
-                          placeholder="City"
-                          sx={{ mb: 1 }}
-                        />
-                        <TextField 
-                          value={formData.address?.state || ''} 
-                          onChange={(e) => handleAddressChange('state', e.target.value)}
-                          variant="standard"
-                          size="small"
-                          fullWidth
-                          placeholder="State"
+                      <Box sx={{ mt: 1 }}>
+                        <AddressAutocomplete
+                          value={formData.address || ''} 
+                          onPicked={handleAddressPicked}
+                          label=''
                         />
                       </Box>
-                    ) : getLocation()
-                  } 
+                    ) : (
+                      getLocation()
+                    )
+                  }
                 />
               </ListItem>
             </List>
-            
+
             <Divider sx={{ my: 2 }} />
-            
+
             <Typography variant="h6" gutterBottom align="left">
               Account Information
             </Typography>
@@ -491,12 +477,11 @@ const Profile: React.FC = () => {
             </List>
           </Paper>
         </Grid>
-        
+
         <Grid item xs={12} md={8}>
           <Paper sx={{ width: '100%' }}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <Tabs value={tabValue} onChange={handleTabChange} aria-label="profile tabs">
-                <Tab label="Overview" />
                 <Tab label="Activity" icon={<HistoryIcon />} iconPosition="start" />
                 <Tab 
                   label="Notifications" 
@@ -510,58 +495,8 @@ const Profile: React.FC = () => {
                 <Tab label="Settings" icon={<SettingsIcon />} iconPosition="start" />
               </Tabs>
             </Box>
-            
+
             <TabPanel value={tabValue} index={0}>
-              <Typography variant="h6" gutterBottom>
-                Profile Overview
-              </Typography>
-              
-              <Typography variant="body1" paragraph>
-                Welcome to your profile dashboard. Here you can view and manage your account information,
-                track your activities, and configure your preferences.
-              </Typography>
-              
-              <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-                Statistics
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6} md={4}>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="subtitle1">Fields</Typography>
-                      <Typography variant="h4">{profileStats.fields || 0}</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Total managed fields
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4}>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="subtitle1">Crops</Typography>
-                      <Typography variant="h4">{profileStats.crops || 0}</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Current active crops
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4}>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="subtitle1">Sensors</Typography>
-                      <Typography variant="h4">{profileStats.sensors || 0}</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Deployed monitoring sensors
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
-            </TabPanel>
-            
-            <TabPanel value={tabValue} index={1}>
               <Typography variant="h6" gutterBottom>
                 Recent Activity
               </Typography>
@@ -571,8 +506,8 @@ const Profile: React.FC = () => {
                 </Typography>
               </Box>
             </TabPanel>
-            
-            <TabPanel value={tabValue} index={2}>
+
+            <TabPanel value={tabValue} index={1}>
               <Typography variant="h6" gutterBottom>
                 Notifications
               </Typography>
@@ -582,8 +517,8 @@ const Profile: React.FC = () => {
                 </Typography>
               </Box>
             </TabPanel>
-            
-            <TabPanel value={tabValue} index={3}>
+
+            <TabPanel value={tabValue} index={2}>
               <Typography variant="h6" gutterBottom>
                 Account Settings
               </Typography>
@@ -647,6 +582,7 @@ const Profile: React.FC = () => {
               fullWidth
               value={passwordData.currentPassword}
               onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+              variant="outlined"
             />
             <TextField
               label="New Password"
@@ -655,6 +591,7 @@ const Profile: React.FC = () => {
               value={passwordData.newPassword}
               onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
               helperText="Password must be at least 6 characters"
+              variant="outlined"
             />
             <TextField
               label="Confirm New Password"
@@ -662,6 +599,7 @@ const Profile: React.FC = () => {
               fullWidth
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              variant="outlined"
             />
           </Box>
         </DialogContent>

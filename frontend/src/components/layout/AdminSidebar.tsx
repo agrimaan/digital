@@ -33,7 +33,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ onNavigate }) => {
     { text: 'User Management', icon: <PeopleIcon />, path: '/admin/users' },
     { text: 'Bulk Uploads', icon: <UploadIcon />, path: '/admin/bulk-uploads' },
     { text: 'Blockchain Dashboard', icon: <TokenIcon />, path: '/admin/blockchain' },
-{ text: 'Land Tokenization', icon: <TokenIcon />, path: '/admin/land-tokenization' },
+    { text: 'Land Tokenization', icon: <TokenIcon />, path: '/admin/land-tokenization' },
     { text: 'Verification Queue', icon: <CheckCircleIcon />, path: '/admin/verification-queue' },
     { text: 'Terms Management', icon: <DescriptionIcon />, path: '/admin/terms' },
     { text: 'Reports', icon: <BarChartIcon />, path: '/admin/reports' },

@@ -23,7 +23,6 @@ import {
   Sensors as SensorsIcon,
   Analytics as AnalyticsIcon,
   WbSunny as WeatherIcon,
-  Settings as SettingsIcon,
   Person as ProfileIcon,
   Help as HelpIcon,
   Storefront as MarketplaceIcon
@@ -63,7 +62,6 @@ const FarmerSidebar: React.FC<SidebarProps> = ({ open, toggleDrawer, user }) => 
 
   const secondaryNavItems: NavItem[] = [
     { title: 'Profile', path: '/farmer/profile', icon: <ProfileIcon /> },
-    { title: 'Settings', path: '/farmer/settings', icon: <SettingsIcon /> },
     { title: 'Help', path: '/farmer/help', icon: <HelpIcon /> },
   ];
 

@@ -20,7 +20,6 @@ import {
   Inventory as AvailableRequestsIcon,
   AttachMoney as EarningsIcon,
   Star as ReviewsIcon,
-  Settings as SettingsIcon,
   Person as ProfileIcon,
   Help as HelpIcon
 } from '@mui/icons-material';
@@ -75,11 +74,6 @@ const LogisticsSidebar: React.FC<SidebarProps> = ({ open, toggleDrawer, user }) 
       title: 'Profile',
       path: '/logistics/profile',
       icon: <ProfileIcon />
-    },
-    {
-      title: 'Settings',
-      path: '/logistics/settings',
-      icon: <SettingsIcon />
     },
     {
       title: 'Help',

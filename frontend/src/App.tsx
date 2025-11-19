@@ -13,7 +13,6 @@ import Login from './pages/common/Login';
 import Register from './pages/common/Register';
 import NotFound from './pages/common/NotFound';
 import Unauthorized from './pages/common/Unauthorized';
-import Settings from './pages/common/Settings';
 import Profile from './pages/common/Profile';
 
 // Farmer pages
@@ -158,7 +157,6 @@ const App: React.FC = () => {
                     <Route path="marketplace" element={<FarmerMarketplace />} />
                     <Route path="analytics" element={<Analytics />} />
                     <Route path="profile" element={<Profile />} />
-                    <Route path="settings" element={<Settings />} />
                   </Routes>
                 </Layout>
               }
@@ -179,7 +177,6 @@ const App: React.FC = () => {
                     <Route path="marketplace" element={<BuyerMarketplace />} />
                     <Route path="orders" element={<OrderHistory />} />
                     <Route path="profile" element={<Profile />} />
-                    <Route path="settings" element={<Settings />} />
                   </Routes>
                 </Layout>
               }
@@ -236,7 +233,6 @@ const App: React.FC = () => {
                   <Routes>
                     <Route path="/" element={<AgronomistDashboard />} />
                     <Route path="profile" element={<Profile />} />
-                    <Route path="settings" element={<Settings />} />
                   </Routes>
                 </Layout>
               }
@@ -255,7 +251,6 @@ const App: React.FC = () => {
                   <Routes>
                     <Route path="/" element={<InvestorDashboard />} />
                     <Route path="profile" element={<Profile />} />
-                    <Route path="settings" element={<Settings />} />
                   </Routes>
                 </Layout>
               }
@@ -274,7 +269,6 @@ const App: React.FC = () => {
                   <Routes>
                     <Route path="/" element={<LogisticsDashboard />} />
                     <Route path="profile" element={<Profile />} />
-                    <Route path="settings" element={<Settings />} />
                   </Routes>
                 </Layout>
               }
@@ -300,7 +294,6 @@ const App: React.FC = () => {
                       <Route path="dashboard" element={<SupplierDashboard />} />
                       <Route path="products" element={<SupplierProducts />} />
                       <Route path="profile" element={<Profile />} />
-                      <Route path="settings" element={<Settings />} />
                     </Routes>
                   </SupplierLayout>
                 }

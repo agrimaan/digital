@@ -17,7 +17,6 @@ import {
   LocalOffer as PromotionsIcon,
   BarChart as AnalyticsIcon,
   Person as ProfileIcon,
-  Settings as SettingsIcon,
   Business as BusinessIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -31,7 +30,6 @@ const menuItems = [
   { text: 'Promotions', icon: <PromotionsIcon />, path: '/supplier/promotions' },
   { text: 'Analytics', icon: <AnalyticsIcon />, path: '/supplier/analytics' },
   { text: 'Profile', icon: <ProfileIcon />, path: '/supplier/profile' },
-  { text: 'Settings', icon: <SettingsIcon />, path: '/supplier/settings' },
 ];
 
 const SupplierSidebar: React.FC = () => {
