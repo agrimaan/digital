@@ -13,7 +13,7 @@ exports.register = async (req, res) => {
     return responseHandler.badRequest(res, 'Validation error', errors.array());
   }
 
-  const { firstName, lastName, email, password, role, phoneNumber } = req.body;
+  const { firstName, lastName, email, password, role, phoneNumber, address } = req.body;
 
   try {
     // Check if user already exists
@@ -30,11 +30,11 @@ exports.register = async (req, res) => {
       email,
       password,
       role: role || 'farmer',
-      phoneNumber
+      phoneNumber,
+      address
     };
-    console.log('userData:', userData);
+
     const result = await authService.registerUser(userData);
-    console.log('result:', result);
     return responseHandler.success(res, 201, {
       token: result.token,
       user: result.user

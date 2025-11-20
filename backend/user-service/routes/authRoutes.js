@@ -12,6 +12,8 @@ const authController = require('../controllers/authController');
 router.post('/register', [
   check('firstName', 'First name is required').not().isEmpty().trim(),
   check('lastName', 'Last name is required').not().isEmpty().trim(),
+  check('phoneNumber', 'Phone number is required').not().isEmpty().trim(),
+  check('address', 'Address is required').not().isEmpty().trim(),
   check('email', 'Please include a valid email').isEmail().normalizeEmail(),
   check('password', 'Please enter a password with 6 or more characters').isLength({ min: 7 }),
   check('role', 'Role must be one of: farmer, buyer, logistics, investor, agronomist, admin, supplier')

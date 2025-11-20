@@ -12,22 +12,28 @@ import {
   Select,
   MenuItem,
   SelectChangeEvent,
+  FormHelperText,
 } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
-import { register, loadUser } from '../../features/auth/authSlice'; // Import loadUser
-import { ThemeContext } from '@emotion/react';
+import { register, loadUser } from '../../features/auth/authSlice';
+import AddressAutocomplete from '../common/AddressAutocomplete';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css'; 
 
 const Register: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   
   const { loading, error, isAuthenticated, user } = useSelector((state: RootState) => state.auth);
-  
+  const [isPhoneFocused, setIsPhoneFocused] = useState(false);
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    phoneNumber: '', 
+    address: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -37,16 +43,17 @@ const Register: React.FC = () => {
   const [formErrors, setFormErrors] = useState({
     firstName: '',
     lastName: '',
+    phoneNumber: '',
+    address: '', 
     email: '',
     password: '',
     confirmPassword: '',
     role: ''
   });
 
-  const { firstName, lastName, email, password, confirmPassword, role } = formData;
+  const { firstName, lastName, phoneNumber, address, email, password, confirmPassword, role } = formData;
 
   useEffect(() => {
-    // Redirect if already authenticated
     if (isAuthenticated && user) {
       switch (user.role) {
         case 'farmer':
@@ -83,11 +90,23 @@ const Register: React.FC = () => {
       [name]: value
     }));
     
-    // Clear error when user starts typing
     if (formErrors[name as keyof typeof formErrors]) {
       setFormErrors(prev => ({
         ...prev,
         [name]: ''
+      }));
+    }
+  };
+
+  const handlePhoneNumberChange = (value: string | undefined) => {
+    setFormData(prev => ({
+      ...prev,
+      phoneNumber: value || ''
+    }));
+    if (formErrors.phoneNumber) {
+      setFormErrors(prev => ({
+        ...prev,
+        phoneNumber: ''
       }));
     }
   };
@@ -98,7 +117,6 @@ const Register: React.FC = () => {
       role: event.target.value
     }));
     
-    // Clear role error
     if (formErrors.role) {
       setFormErrors(prev => ({
         ...prev,
@@ -110,7 +128,9 @@ const Register: React.FC = () => {
   const validateForm = () => {
     const errors = {
       firstName: '',
-      lastName: '',      
+      lastName: '',
+      phoneNumber: '',
+      address: '', 
       email: '',
       password: '',
       confirmPassword: '',
@@ -127,7 +147,19 @@ const Register: React.FC = () => {
       errors.lastName = 'Last Name is required';
       isValid = false;
     }
+
+    if (!phoneNumber) {
+      errors.phoneNumber = 'Phone Number is required';
+      isValid = false;
+    } else if (phoneNumber.length < 8) { 
+      errors.phoneNumber = 'Phone Number appears too short';
+      isValid = false;
+    }
     
+    if (!address.trim()) {
+      errors.address = 'Address is required';
+      isValid = false;
+    }
     if (!email.trim()) {
       errors.email = 'Email is required';
       isValid = false;
@@ -158,28 +190,35 @@ const Register: React.FC = () => {
     return isValid;
   };
 
+  const handleAddressPicked = (fullAddress: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      address: fullAddress, 
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
       return;
     }
+    
+    const registrationData = { ...formData };
 
     try 
     {
-      await dispatch(register(formData) as any).unwrap();
-      // Dispatch loadUser after successful registration to update isAuthenticated state
+      await dispatch(register(registrationData) as any).unwrap();
       dispatch(loadUser() as any); 
       
-      if(formData.role == 'supplier') {
+      if(formData.role === 'supplier') {
         navigate('/supplier/register');
       }
       else
       {
-      // This redirect will now work as the state is correct.
-      navigate('/login');
-    } 
-  }catch (error) {
+        navigate('/login');
+      } 
+    }catch (error) {
       console.error('Registration error:', error);
     }
   };
@@ -213,7 +252,7 @@ const Register: React.FC = () => {
               id="firstName"
               label="First Name"
               name="firstName"
-              autoComplete="first name"
+              autoComplete="given-name"
               autoFocus
               value={firstName}
               onChange={handleChange}
@@ -227,12 +266,52 @@ const Register: React.FC = () => {
               id="lastName"
               label="Last Name"
               name="lastName"
-              autoComplete="last name"
-              autoFocus
+              autoComplete="family-name"
               value={lastName}
               onChange={handleChange}
               error={!!formErrors.lastName}
               helperText={formErrors.lastName}
+            />
+            
+            <FormControl
+              fullWidth
+              margin="normal"
+              variant="outlined"
+              error={!!formErrors.phoneNumber}
+              focused={isPhoneFocused}
+              sx={{
+                mt: 2,
+                mb: 1,
+              }}
+            >
+              <InputLabel
+                htmlFor="phone-input"
+                shrink={!!phoneNumber || isPhoneFocused}
+              >
+                Phone Number *
+              </InputLabel>
+
+              <PhoneInput
+                id="phone-input"
+                placeholder="Enter phone number"
+                value={phoneNumber}
+                onChange={handlePhoneNumberChange}
+                onFocus={() => setIsPhoneFocused(true)}
+                onBlur={() => setIsPhoneFocused(false)}
+                defaultCountry="IN"
+                international
+                limitMaxLength
+                className={`${formErrors.phoneNumber ? 'Mui-error' : ''}`}
+                inputClassName="MuiOutlinedInput-input"
+              />
+              {formErrors.phoneNumber && (
+                <FormHelperText>{formErrors.phoneNumber}</FormHelperText>
+              )}
+            </FormControl>
+
+            <AddressAutocomplete
+              value={address} 
+              onPicked={handleAddressPicked}
             />
             
             <TextField
@@ -248,7 +327,6 @@ const Register: React.FC = () => {
               error={!!formErrors.email}
               helperText={formErrors.email}
             />
-            
             <TextField
               margin="normal"
               required
@@ -263,7 +341,6 @@ const Register: React.FC = () => {
               error={!!formErrors.password}
               helperText={formErrors.password}
             />
-            
             <TextField
               margin="normal"
               required
@@ -273,8 +350,6 @@ const Register: React.FC = () => {
               type="password"
               id="confirmPassword"
               value={confirmPassword}
-
-              
               onChange={handleChange}
               error={!!formErrors.confirmPassword}
               helperText={formErrors.confirmPassword}
@@ -298,9 +373,7 @@ const Register: React.FC = () => {
                 
               </Select>
               {formErrors.role && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 2 }}>
-                  {formErrors.role}
-                </Typography>
+                <FormHelperText>{formErrors.role}</FormHelperText>
               )}
             </FormControl>
 

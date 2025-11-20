@@ -33,7 +33,7 @@ const UserSchema = new mongoose.Schema({
   phoneNumber: {
     type: String,
     trim: true,
-    match: [/^[+]?[0-9]{10,15}$/, 'Please provide a valid phone number']
+    match: [/^[+]?[0-9]{3,14}$/, 'Please provide a valid phone number']
   },
   role: {
     type: String,
@@ -41,15 +41,10 @@ const UserSchema = new mongoose.Schema({
     default: 'farmer'
   },
   address: {
-    street: { type: String, trim: true },
-    city: { type: String, trim: true },
-    state: { type: String, trim: true },
-    country: { type: String, trim: true },
-    postalCode: { type: String, trim: true },
-    coordinates: {
-      latitude: { type: Number },
-      longitude: { type: Number }
-    }
+    type: String,
+    required: [true, 'Address is required'],
+    trim: true,
+    maxlength: [200, 'Address cannot exceed 200 characters']
   },
   profileImage: {
     type: String,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -38,6 +38,9 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import LockIcon from '@mui/icons-material/Lock';
 import { profileService, UserProfile, UpdateProfileData, ChangePasswordData } from '../../services/profileService';
 import AddressAutocomplete from '../common/AddressAutocomplete';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css'; 
+import { parsePhoneNumberFromString } from 'libphonenumber-js'; 
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -85,6 +88,14 @@ const Profile: React.FC = () => {
   });
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  const parsedCountryCode = useMemo(() => {
+    if (formData.phoneNumber) {
+      const phoneNumber = parsePhoneNumberFromString(formData.phoneNumber);
+      return phoneNumber?.country
+    }
+    return undefined;
+  }, [formData.phoneNumber]);
+
   useEffect(() => {
     loadProfileData();
   }, []);
@@ -104,7 +115,7 @@ const Profile: React.FC = () => {
         setFormData({
           firstName: profileResponse.user.firstName,
           lastName: profileResponse.user.lastName,
-          phoneNumber: profileResponse.user.phoneNumber,
+          phoneNumber: profileResponse.user.phoneNumber, 
           address: profileResponse.user.address,
           preferences: profileResponse.user.preferences,
         });
@@ -177,6 +188,13 @@ const Profile: React.FC = () => {
     }));
   };
 
+  const handlePhoneNumberChange = (value: string | undefined) => {
+    setFormData(prev => ({
+      ...prev,
+      phoneNumber: value || '' 
+    }));
+  };
+  
   const handleChangePassword = async () => {
     if (passwordData.newPassword !== confirmPassword) {
       setError('Passwords do not match');
@@ -415,14 +433,22 @@ const Profile: React.FC = () => {
                   primary="Phone" 
                   secondary={
                     editMode ? (
-                      <TextField 
-                        value={formData.phoneNumber || ''} 
-                        onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                        placeholder="Enter phone number"
-                      />
+                      <Box 
+                          className="phone-input-mui-wrapper" 
+                          sx={{ mt: 1, mb: 1, width: '100%' }}
+                      >
+                        <PhoneInput 
+                          placeholder="Enter phone number"
+                          value={formData.phoneNumber || ''} 
+                          onChange={handlePhoneNumberChange}
+                          country={parsedCountryCode}
+                          defaultCountry="IN"
+                          international
+                          limitMaxLength
+                          className="PhoneInput" 
+                          inputClassName="PhoneInputInput"
+                        />
+                      </Box>
                     ) : (profile.phoneNumber || 'Not set')
                   } 
                 />
