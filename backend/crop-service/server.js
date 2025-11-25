@@ -38,13 +38,13 @@ const { ServiceRegistry, healthCheck } = require('@agrimaan/shared').serviceDisc
  .catch(err => console.error('MongoDB connection error:', err));
  
 //Routes
- app.use('/api/crops', cropRoutes);
  app.use('/api/crops/plantings', plantingRoutes);
  app.use('/api/crops/harvests', harvestRoutes);
  //app.use('/api/crops', marketplaceRoutes);
  app.use('/api/crops/farmer/marketplace', farmerMarketplaceRoutes);
  app.use('/api/crops/buyer/marketplace', buyerMarketplaceRoutes);
- 
+ app.use('/api/crops', cropRoutes);
+
 //Health check endpoint
  app.get('/health', (req, res) => {
    res.status(200).json({ status: 'UP', service: 'crop-service' });

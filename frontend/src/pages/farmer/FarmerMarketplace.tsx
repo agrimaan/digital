@@ -110,11 +110,12 @@ const FarmerMarketplace: React.FC = () => {
     setError(null);
     try {    
       if (tabValue == 0) {
-        const data = await farmerMarketplaceService.getMyListings();       
-        setListings(data.data || ['1']);
+        const data = await farmerMarketplaceService.getMyListings(); 
+        console.log("data within loadData:", data);      
+        setListings(data.data.listings || ['1']);
       } else if (tabValue === 1) {
         const data = await farmerMarketplaceService.getReadyCrops();
-        setReadyCrops(data.data || []);
+        setReadyCrops(data.data.crops || []);
       } else if (tabValue === 2) {
         const data = await farmerMarketplaceService.getStatistics();
         setStatistics(data.data || {});
@@ -324,8 +325,10 @@ const FarmerMarketplace: React.FC = () => {
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
           {!isEdit && (
             <FormControl fullWidth>
-              <InputLabel>Select Crop</InputLabel>
+              <InputLabel id="select-crop">Select Crop</InputLabel>
               <Select
+                labelId="select-crop"
+                label="Select Crop"
                 value={formData.cropId}
                 onChange={(e) => setFormData({ ...formData, cropId: e.target.value })}
               >
@@ -338,6 +341,9 @@ const FarmerMarketplace: React.FC = () => {
             </FormControl>
           )}
           <TextField
+            margin="normal"
+            id="title"
+            name="title"
             label="Title"
             fullWidth
             value={formData.title}
@@ -345,6 +351,9 @@ const FarmerMarketplace: React.FC = () => {
           />
           <TextField
             label="Description"
+            margin="normal"
+            id="description"
+            name="description"
             fullWidth
             multiline
             rows={3}
@@ -368,8 +377,10 @@ const FarmerMarketplace: React.FC = () => {
             </Grid>
             <Grid item xs={6}>
               <FormControl fullWidth>
-                <InputLabel>Unit</InputLabel>
+                <InputLabel id="unit-label">Unit</InputLabel>
                 <Select
+                  labelId="unit-label"
+                  label="Unit"
                   value={formData.quantity.unit}
                   onChange={(e) =>
                     setFormData({
@@ -401,8 +412,10 @@ const FarmerMarketplace: React.FC = () => {
             }}
           />
           <FormControl fullWidth>
-            <InputLabel>Grade</InputLabel>
+            <InputLabel id="grade">Grade</InputLabel>
             <Select
+              labelId="grade"
+              label="Grade"
               value={formData.qualityAttributes.grade}
               onChange={(e) =>
                 setFormData({

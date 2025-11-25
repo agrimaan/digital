@@ -418,6 +418,7 @@ const CropManagement: React.FC = () => {
               <TableCell>Field</TableCell>
               <TableCell>Planting</TableCell>
               <TableCell>Harvest (exp.)</TableCell>
+              <TableCell>Growth Stage</TableCell>
               <TableCell align="center">Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -430,6 +431,7 @@ const CropManagement: React.FC = () => {
                 <TableCell>{fields.find(f => f._id === c.fieldId)?.name || '-'}</TableCell>
                 <TableCell>{c.plantingDate ? new Date(c.plantingDate).toLocaleDateString('en-GB') : '-'}</TableCell>
                 <TableCell>{c.expectedHarvestDate ? new Date(c.expectedHarvestDate).toLocaleDateString('en-GB') : '-'}</TableCell>
+                <TableCell>{capitalize(c.growthStage || '')}</TableCell>
                 <TableCell align="center">
                   <Tooltip title="View"><IconButton onClick={() => openView(c)}><Visibility /></IconButton></Tooltip>
                   <Tooltip title="Edit"><IconButton onClick={() => openEdit(c)}><Edit /></IconButton></Tooltip>

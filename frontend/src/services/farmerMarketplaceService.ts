@@ -188,10 +188,17 @@ class FarmerMarketplaceService
    * Get all listings for the authenticated farmer
    */
   async getMyListings(params?: {
-    status?: string;
-    page?: number;
-    limit?: number;
-  }): Promise<{ success: boolean; data: MarketplaceListing[]; pagination?: any }> {
+  status?: string;
+  page?: number;
+  limit?: number;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      count: number;
+      listings: MarketplaceListing[];
+    };
+  }>  {
     const response:any = await axios.get(`${this.baseURL}/listings`);
     return response.data;
   }
@@ -234,11 +241,18 @@ class FarmerMarketplaceService
   /**
    * Get ready-to-harvest crops
    */
-  async getReadyCrops(): Promise<{ success: boolean; data: ReadyCrop[] }> {
+  async getReadyCrops(): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      count: number;
+      crops: ReadyCrop[];
+    };
+  }> {
     const response:any = await axios.get(`${this.baseURL}/ready-crops`);
     return response.data;
   }
-
+    
   /**
    * Get marketplace statistics
    */

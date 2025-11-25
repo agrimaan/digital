@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
 const farmerMarketplaceController = require('../controllers/farmerMarketplaceController');
-const {authorize } = require('@agrimaan/shared').middleware;
+const { protect } = require('@agrimaan/shared').middleware;
 
 // Validation rules for creating listing
 const createListingValidation = [
@@ -100,13 +100,13 @@ const updateListingValidation = [
 ];
 
 // Routes
-router.post('/listings', authorize, createListingValidation, farmerMarketplaceController.createListing);
-router.get('/listings', authorize, farmerMarketplaceController.getMyListings);
-router.get('/listings/:id', authorize, farmerMarketplaceController.getMyListing);
-router.put('/listings/:id', authorize, updateListingValidation, farmerMarketplaceController.updateListing);
-router.delete('/listings/:id', authorize, farmerMarketplaceController.deactivateListing);
-router.post('/listings/:id/reactivate', authorize, farmerMarketplaceController.reactivateListing);
-router.get('/ready-crops', authorize, farmerMarketplaceController.getReadyCrops);
-router.get('/statistics', authorize, farmerMarketplaceController.getStatistics);
+router.post('/listings', protect, createListingValidation, farmerMarketplaceController.createListing);
+router.get('/listings', protect, farmerMarketplaceController.getMyListings);
+router.get('/listings/:id', protect, farmerMarketplaceController.getMyListing);
+router.put('/listings/:id', protect, updateListingValidation, farmerMarketplaceController.updateListing);
+router.delete('/listings/:id', protect, farmerMarketplaceController.deactivateListing);
+router.post('/listings/:id/reactivate', protect, farmerMarketplaceController.reactivateListing);
+router.get('/ready-crops', protect, farmerMarketplaceController.getReadyCrops);
+router.get('/statistics', protect, farmerMarketplaceController.getStatistics);
 
 module.exports = router;
