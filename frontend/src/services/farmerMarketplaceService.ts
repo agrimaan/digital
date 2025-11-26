@@ -35,7 +35,7 @@ export interface MarketplaceListing {
     actualDate?: string;
     method?: string;
   };
-  qualityAttributes: {
+  quality: {
     grade: string;
     isOrganic: boolean;
     certifications: string[];

@@ -15,6 +15,10 @@ const MarketplaceListingSchema = new mongoose.Schema({
     required: [true, 'Crop name is required'],
     trim: true
   },
+  title: {
+    type: String,
+    trim: true
+  },
   variety: {
     type: String,
     trim: true
@@ -77,8 +81,8 @@ const MarketplaceListingSchema = new mongoose.Schema({
   quality: {
     grade: {
       type: String,
-      enum: ['A', 'B', 'C', 'Premium', 'Standard'],
-      default: 'Standard'
+      enum: ['A', 'B', 'C', 'premium', 'standard'],
+      default: 'standard'
     },
     isOrganic: {
       type: Boolean,

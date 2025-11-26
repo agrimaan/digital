@@ -15,24 +15,19 @@ exports.createListing = async (req, res) => {
   try {
     const {
       cropId,
-      quantity: { available: quantity },
-      pricing: { pricePerUnit },
+      quantity,
+      pricing,
       negotiable,
       minimumOrderQuantity,
-      grade,
-      isOrganic,
-      certifications,
+      qualityAttributes,
       description,
       images,
       visibility,
-      expiresInDays
+      expiresInDays,
+      title
     } = req.body;
 
-    // Fetch the crop
-    console.log("cropId within createListing:",cropId);
-    console.log("req.user.id within createListing:",req.user.id);
     const crop = await Crop.findOne({ _id: cropId, farmerId: req.user.id });
-    
     if (!crop) {
       return responseHandler.notFound(res, 'Crop not found or you do not have permission');
     }
@@ -78,28 +73,15 @@ exports.createListing = async (req, res) => {
       cropName: crop.name,
       variety: crop.variety,
       scientificName: crop.scientificName,
-      quantity: {
-        available: quantity,
-        unit: crop.unit,
-        reserved: 0
-      },
-      pricing: {
-        pricePerUnit: pricePerUnit,
-        currency: 'INR',
-        negotiable: negotiable || false,
-        minimumOrderQuantity: minimumOrderQuantity || 1
-      },
+      title: title,
+      quantity: quantity,
+      pricing: pricing,
       harvestInfo: {
         expectedHarvestDate: crop.expectedHarvestDate,
         actualHarvestDate: crop.actualHarvestDate,
         harvestStatus: crop.growthStage === 'harvested' ? 'completed' : 'ready'
       },
-      quality: {
-        grade: grade || 'Standard',
-        isOrganic: isOrganic || false,
-        certifications: certifications || [],
-        healthStatus: crop.healthStatus || 'good'
-      },
+      quality: qualityAttributes,
       farmInfo: {
         fieldId: crop.fieldId,
         soilType: crop.soilType,
@@ -116,8 +98,8 @@ exports.createListing = async (req, res) => {
     crop.marketplaceListing = {
       productId: listing._id,
       listedDate: new Date(),
-      quantity: quantity,
-      pricePerUnit: pricePerUnit,
+      quantity: quantity.available,
+      pricePerUnit: pricing.pricePerUnit,
       status: 'active'
     };
     await crop.save();
@@ -326,10 +308,7 @@ exports.reactivateListing = async (req, res) => {
 // @route   GET /api/farmer/marketplace/ready-crops
 // @access  Private (Farmer only)
 exports.getReadyCrops = async (req, res) => {
-  try {
-    // Find crops that are ready for harvest and not already listed
-    console.log("req.user.id within getReadyCrops:",req.user.id);
-   
+  try {   
     const crops = await Crop.find({
       farmerId: req.user.id,
       growthStage: { $in: ['maturity', 'harvested'] },
@@ -339,8 +318,6 @@ exports.getReadyCrops = async (req, res) => {
         { marketplaceListing: { $exists: false } }
       ]
     }).select('name variety growthStage expectedHarvestDate actualHarvestDate actualYield unit');
-    console.log("crops within getReadyCrops:",crops);
-
 
     return responseHandler.success(
       res,

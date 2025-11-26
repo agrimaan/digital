@@ -104,6 +104,7 @@ const FarmerMarketplace: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [tabValue]);
+  const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
   const loadData = async () => {
     setLoading(true);
@@ -192,6 +193,7 @@ const FarmerMarketplace: React.FC = () => {
   };
 
   const handleEditClick = (listing: MarketplaceListing) => {
+    console.log(listing);
     setSelectedListing(listing);
     setFormData({
       cropId: listing.crop._id,
@@ -200,7 +202,7 @@ const FarmerMarketplace: React.FC = () => {
       quantity: listing.quantity,
       pricing: listing.pricing,
       harvestInfo: listing.harvestInfo,
-      qualityAttributes: listing.qualityAttributes,
+      qualityAttributes: listing.quality,
       images: listing.images,
     });
     setEditDialogOpen(true);
@@ -252,15 +254,15 @@ const FarmerMarketplace: React.FC = () => {
           </Typography>
           <Box sx={{ my: 1 }}>
             <Chip
-              label={listing.status}
+              label={capitalize(listing.status)}
               color={listing.status === 'active' ? 'success' : 'default'}
               size="small"
               sx={{ mr: 1 }}
             />
-            {listing.qualityAttributes?.isOrganic && (
+            {listing.quality?.isOrganic && (
               <Chip label="Organic" color="success" size="small" sx={{ mr: 1 }} />
             )}
-            <Chip label={`Grade ${listing.qualityAttributes?.grade}`} size="small" />
+            <Chip label={`Grade ${listing.quality?.grade}`} size="small" />
           </Box>
           <Typography variant="h6" color="primary" gutterBottom>
             ₹{listing.pricing.pricePerUnit}/{listing.quantity.unit}
@@ -430,6 +432,8 @@ const FarmerMarketplace: React.FC = () => {
               <MenuItem value="A">Grade A</MenuItem>
               <MenuItem value="B">Grade B</MenuItem>
               <MenuItem value="C">Grade C</MenuItem>
+              <MenuItem value="premium">Premium</MenuItem>
+              <MenuItem value="standard">Standard</MenuItem>
             </Select>
           </FormControl>
         </Box>
