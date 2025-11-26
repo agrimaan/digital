@@ -75,7 +75,7 @@ const resourceSchema = new mongoose.Schema({
     fuelType: String,
     condition: {
       type: String,
-      enum: ['Excellent', 'Good', 'Fair', 'Poor'],
+      enum: ['excellent', 'good', 'fair', 'poor', 'diseased'],
       default: 'Good'
     }
   },

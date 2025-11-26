@@ -65,7 +65,7 @@ const validatePlantingUpdate = [
 const validateGrowthObservation = [
   check('stage', 'Growth stage is required').not().isEmpty(),
   check('healthStatus', 'Health status is required')
-    .isIn(['excellent', 'good', 'fair', 'poor', 'critical']),
+    .isIn(['excellent', 'good', 'fair', 'poor', 'diseased']),
   check('date', 'Date must be a valid date if provided')
     .optional()
     .isISO8601()

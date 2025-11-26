@@ -219,9 +219,12 @@ exports.getDeviceHealthScore = async (req, res) => {
     
     // Determine health status
     let healthStatus = 'excellent';
-    if (healthScore < 50) healthStatus = 'poor';
+    if (healthScore < 40) healthStatus = 'diseased';
+    else if (healthScore < 50) healthStatus = 'poor';
     else if (healthScore < 70) healthStatus = 'fair';
     else if (healthScore < 90) healthStatus = 'good';
+    else if (healthScore >= 90) healthStatus = 'excellent';
+
     
     res.json({
       success: true,

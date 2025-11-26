@@ -113,7 +113,7 @@ const PlantingSchema = new mongoose.Schema({
     height: Number, // in cm
     healthStatus: {
       type: String,
-      enum: ['excellent', 'good', 'fair', 'poor', 'critical'],
+      enum: ['excellent', 'good', 'fair', 'poor', 'diseased'],
       required: true
     },
     issues: [String],

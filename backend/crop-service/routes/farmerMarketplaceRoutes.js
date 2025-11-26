@@ -11,12 +11,12 @@ const createListingValidation = [
     .withMessage('Crop ID is required')
     .isMongoId()
     .withMessage('Invalid crop ID'),
-  body('quantity')
+  body('quantity.available')
     .isFloat({ min: 0.01 })
     .withMessage('Quantity must be a positive number'),
-  body('pricePerUnit')
+  body('pricing.pricePerUnit')
     .isFloat({ min: 0.01 })
-    .withMessage('Price per unit must be a positive number'),
+    .withMessage('Price per unit must be a positive number1'),
   body('negotiable')
     .optional()
     .isBoolean()
@@ -59,11 +59,11 @@ const createListingValidation = [
 
 // Validation rules for updating listing
 const updateListingValidation = [
-  body('quantity.available')
+  body('available')
     .optional()
     .isFloat({ min: 0 })
     .withMessage('Available quantity must be a positive number'),
-  body('pricing.pricePerUnit')
+  body('pricePerUnit')
     .optional()
     .isFloat({ min: 0.01 })
     .withMessage('Price per unit must be a positive number'),

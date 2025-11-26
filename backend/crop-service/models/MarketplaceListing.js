@@ -87,7 +87,7 @@ const MarketplaceListingSchema = new mongoose.Schema({
     certifications: [String],
     healthStatus: {
       type: String,
-      enum: ['excellent', 'good', 'fair'],
+      enum: ['excellent', 'good', 'fair', 'poor', 'diseased'],
       default: 'good'
     }
   },

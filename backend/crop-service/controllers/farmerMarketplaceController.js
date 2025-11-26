@@ -15,8 +15,8 @@ exports.createListing = async (req, res) => {
   try {
     const {
       cropId,
-      quantity,
-      pricePerUnit,
+      quantity: { available: quantity },
+      pricing: { pricePerUnit },
       negotiable,
       minimumOrderQuantity,
       grade,
@@ -31,7 +31,7 @@ exports.createListing = async (req, res) => {
     // Fetch the crop
     console.log("cropId within createListing:",cropId);
     console.log("req.user.id within createListing:",req.user.id);
-    const crop = await Crop.findOne({ _id: "cropId", farmerId: req.user.id });
+    const crop = await Crop.findOne({ _id: cropId, farmerId: req.user.id });
     
     if (!crop) {
       return responseHandler.notFound(res, 'Crop not found or you do not have permission');

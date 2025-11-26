@@ -257,10 +257,10 @@ const FarmerMarketplace: React.FC = () => {
               size="small"
               sx={{ mr: 1 }}
             />
-            {listing.qualityAttributes.isOrganic && (
+            {listing.qualityAttributes?.isOrganic && (
               <Chip label="Organic" color="success" size="small" sx={{ mr: 1 }} />
             )}
-            <Chip label={`Grade ${listing.qualityAttributes.grade}`} size="small" />
+            <Chip label={`Grade ${listing.qualityAttributes?.grade}`} size="small" />
           </Box>
           <Typography variant="h6" color="primary" gutterBottom>
             ₹{listing.pricing.pricePerUnit}/{listing.quantity.unit}
@@ -416,7 +416,7 @@ const FarmerMarketplace: React.FC = () => {
             <Select
               labelId="grade"
               label="Grade"
-              value={formData.qualityAttributes.grade}
+              value={formData.qualityAttributes?.grade}
               onChange={(e) =>
                 setFormData({
                   ...formData,

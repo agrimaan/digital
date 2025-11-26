@@ -56,7 +56,7 @@ const ReadingSchema = new mongoose.Schema({
   },
   quality: {
     type: String,
-    enum: ['good', 'fair', 'poor', 'unknown'],
+    enum: ['excellent', 'good', 'fair', 'poor', 'diseased'],
     default: 'good'
   },
   metadata: {
