@@ -43,6 +43,12 @@ const MarketplaceListingSchema = new mongoose.Schema({
       default: 0,
       min: [0, 'Reserved quantity must be positive']
     }
+    ,
+    minimum: {
+      type: Number,
+      default: 1,
+      min: [0, 'Minimum order quantity must be positive']
+    }
   },
   pricing: {
     pricePerUnit: {
@@ -57,11 +63,6 @@ const MarketplaceListingSchema = new mongoose.Schema({
     negotiable: {
       type: Boolean,
       default: false
-    },
-    minimumOrderQuantity: {
-      type: Number,
-      default: 1,
-      min: [0, 'Minimum order quantity must be positive']
     }
   },
   harvestInfo: {
@@ -123,11 +124,7 @@ const MarketplaceListingSchema = new mongoose.Schema({
     type: String,
     maxlength: [1000, 'Description cannot exceed 1000 characters']
   },
-  images: [{
-    url: String,
-    caption: String,
-    isPrimary: Boolean
-  }],
+  images: [],
   status: {
     type: String,
     enum: ['active', 'inactive', 'sold_out', 'expired'],

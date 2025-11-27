@@ -31,7 +31,7 @@ exports.createListing = async (req, res) => {
     if (!crop) {
       return responseHandler.notFound(res, 'Crop not found or you do not have permission');
     }
-
+    console.log('Test is', quantity);  
     // Validate crop is ready for harvest
     if (!['maturity', 'harvested'].includes(crop.growthStage)) {
       return responseHandler.badRequest(
@@ -65,7 +65,6 @@ exports.createListing = async (req, res) => {
     // Calculate expiration date
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + (expiresInDays || 30));
-
     // Create marketplace listing
     const listing = await MarketplaceListing.create({
       crop: cropId,

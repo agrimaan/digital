@@ -42,6 +42,7 @@ export interface MarketplaceListing {
     appearance?: string;
     taste?: string;
     shelfLife?: number;
+    healthStatus?: string;
   };
   farmLocation: {
     type: string;
@@ -96,6 +97,7 @@ export interface CreateListingData {
     appearance?: string;
     taste?: string;
     shelfLife?: number;
+    healthStatus?: string;
   };
   images?: string[];
   expiresAt?: string;
@@ -131,6 +133,7 @@ export interface UpdateListingData {
     appearance?: string;
     taste?: string;
     shelfLife?: number;
+    healthStatus?: string;
   };
   images?: string[];
   expiresAt?: string;

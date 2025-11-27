@@ -26,6 +26,9 @@ import {
   MenuItem,
   InputAdornment,
   Tooltip,
+  List,
+  ListItem,
+  ListItemText
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -37,9 +40,14 @@ import {
   TrendingUp as TrendingUpIcon,
   ShoppingCart as ShoppingCartIcon,
   LocalShipping as LocalShippingIcon,
+  Image as ImageIcon,
+  FileUpload as FileUploadIcon,
+  Description as DescriptionIcon
 } from '@mui/icons-material';
 import { farmerMarketplaceService, MarketplaceListing, CreateListingData } from '../../services/farmerMarketplaceService';
-
+interface CustomCreateListingData extends CreateListingData {
+    images: string[];
+}
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -71,19 +79,18 @@ const FarmerMarketplace: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Dialog states
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedListing, setSelectedListing] = useState<MarketplaceListing | null>(null);
 
-  // Form states
-  const [formData, setFormData] = useState<CreateListingData>({
+  const [formData, setFormData] = useState<CustomCreateListingData>({
     cropId: '',
     title: '',
     description: '',
     quantity: {
       available: 0,
       unit: 'kg',
+      minimum: 1, 
     },
     pricing: {
       pricePerUnit: 0,
@@ -97,23 +104,30 @@ const FarmerMarketplace: React.FC = () => {
     qualityAttributes: {
       grade: 'A',
       isOrganic: false,
+      healthStatus: 'good',
       certifications: [],
     },
+    images: [],
   });
+  
+  const [selectedImageFiles, setSelectedImageFiles] = useState<FileList | null>(null);
+  const [selectedCertFiles, setSelectedCertFiles] = useState<FileList | null>(null);
+  
+  const [isProcessing, setIsProcessing] = useState(false); 
 
   useEffect(() => {
     loadData();
   }, [tabValue]);
+
   const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
   const loadData = async () => {
     setLoading(true);
     setError(null);
-    try {    
-      if (tabValue == 0) {
-        const data = await farmerMarketplaceService.getMyListings(); 
-        console.log("data within loadData:", data);      
-        setListings(data.data.listings || ['1']);
+    try {
+      if (tabValue === 0) {
+        const data = await farmerMarketplaceService.getMyListings();
+        setListings(data.data.listings || []);
       } else if (tabValue === 1) {
         const data = await farmerMarketplaceService.getReadyCrops();
         setReadyCrops(data.data.crops || []);
@@ -132,8 +146,9 @@ const FarmerMarketplace: React.FC = () => {
   const handleCreateListing = async () => {
     setLoading(true);
     setError(null);
+
     try {
-      await farmerMarketplaceService.createListing(formData);
+      await farmerMarketplaceService.createListing(formData); 
       setSuccess('Listing created successfully!');
       setCreateDialogOpen(false);
       resetForm();
@@ -193,22 +208,33 @@ const FarmerMarketplace: React.FC = () => {
   };
 
   const handleEditClick = (listing: MarketplaceListing) => {
-    console.log(listing);
     setSelectedListing(listing);
     setFormData({
       cropId: listing.crop._id,
       title: listing.title,
       description: listing.description,
-      quantity: listing.quantity,
+      quantity: {
+          available: listing.quantity.available,
+          unit: listing.quantity.unit,
+          minimum: listing.quantity.minimum || 1 
+      },
       pricing: listing.pricing,
       harvestInfo: listing.harvestInfo,
-      qualityAttributes: listing.quality,
-      images: listing.images,
+      qualityAttributes: {
+          grade: listing.quality?.grade || 'A',
+          isOrganic: listing.quality?.isOrganic || false,
+          healthStatus: listing.quality?.healthStatus || 'good',
+          certifications: listing.quality?.certifications || [],
+      },
+      images: listing.images || [], 
     });
     setEditDialogOpen(true);
   };
 
   const resetForm = () => {
+    setSelectedImageFiles(null);
+    setSelectedCertFiles(null);
+    setIsProcessing(false);
     setFormData({
       cropId: '',
       title: '',
@@ -216,6 +242,7 @@ const FarmerMarketplace: React.FC = () => {
       quantity: {
         available: 0,
         unit: 'kg',
+        minimum: 1,
       },
       pricing: {
         pricePerUnit: 0,
@@ -229,229 +256,576 @@ const FarmerMarketplace: React.FC = () => {
       qualityAttributes: {
         grade: 'A',
         isOrganic: false,
+        healthStatus: 'good',
         certifications: [],
       },
+      images: [],
     });
   };
 
-  const renderListingCard = (listing: MarketplaceListing) => (
-    <Grid item xs={12} sm={6} md={4} key={listing._id}>
-      <Card>
-        {listing.images && listing.images.length > 0 && (
-          <CardMedia
-            component="img"
-            height="200"
-            image={listing.images[0]}
-            alt={listing.title}
-          />
-        )}
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            {listing.title}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            {listing.crop.name} - {listing.crop.variety}
-          </Typography>
-          <Box sx={{ my: 1 }}>
-            <Chip
-              label={capitalize(listing.status)}
-              color={listing.status === 'active' ? 'success' : 'default'}
-              size="small"
-              sx={{ mr: 1 }}
-            />
-            {listing.quality?.isOrganic && (
-              <Chip label="Organic" color="success" size="small" sx={{ mr: 1 }} />
-            )}
-            <Chip label={`Grade ${listing.quality?.grade}`} size="small" />
-          </Box>
-          <Typography variant="h6" color="primary" gutterBottom>
-            ₹{listing.pricing.pricePerUnit}/{listing.quantity.unit}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Available: {listing.quantity.available} {listing.quantity.unit}
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-            <Tooltip title="Views">
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <VisibilityIcon fontSize="small" sx={{ mr: 0.5 }} />
-                <Typography variant="caption">{listing.statistics.views}</Typography>
-              </Box>
-            </Tooltip>
-            <Tooltip title="Inquiries">
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <ShoppingCartIcon fontSize="small" sx={{ mr: 0.5 }} />
-                <Typography variant="caption">{listing.statistics.inquiries}</Typography>
-              </Box>
-            </Tooltip>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-            <IconButton
-              size="small"
-              color="primary"
-              onClick={() => handleEditClick(listing)}
-            >
-              <EditIcon />
-            </IconButton>
-            {listing.status === 'active' ? (
-              <IconButton
-                size="small"
-                color="error"
-                onClick={() => handleDeactivateListing(listing._id)}
-              >
-                <VisibilityOffIcon />
-              </IconButton>
-            ) : (
-              <IconButton
-                size="small"
-                color="success"
-                onClick={() => handleReactivateListing(listing._id)}
-              >
-                <VisibilityIcon />
-              </IconButton>
-            )}
-          </Box>
-        </CardContent>
-      </Card>
-    </Grid>
-  );
+  const renderListingCard = (listing: MarketplaceListing) => {
+    const imageString = listing.images?.length ? listing.images[0] : null;
 
-  const renderListingDialog = (isEdit: boolean) => (
-    <Dialog
-      open={isEdit ? editDialogOpen : createDialogOpen}
-      onClose={() => (isEdit ? setEditDialogOpen(false) : setCreateDialogOpen(false))}
-      maxWidth="md"
-      fullWidth
-    >
-      <DialogTitle>{isEdit ? 'Edit Listing' : 'Create New Listing'}</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-          {!isEdit && (
-            <FormControl fullWidth>
-              <InputLabel id="select-crop">Select Crop</InputLabel>
-              <Select
-                labelId="select-crop"
-                label="Select Crop"
-                value={formData.cropId}
-                onChange={(e) => setFormData({ ...formData, cropId: e.target.value })}
-              >
-                {readyCrops.map((crop) => (
-                  <MenuItem key={crop._id} value={crop._id}>
-                    {crop.name} - {crop.variety} ({crop.currentStage})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+    let imageUrl = '';
+    if (imageString) {
+        if (imageString.startsWith('http')) {
+            imageUrl = imageString;
+        } else {
+            imageUrl = `data:image/jpeg;base64,${imageString}`; 
+        }
+    }
+
+    return (
+      <Grid item xs={12} sm={6} md={4} key={listing._id}>
+        <Card>
+          {imageUrl ? (
+            <CardMedia
+              component="img"
+              height="200"
+              image={imageUrl}
+              alt={listing.title}
+            />
+          ) : (
+               <Box sx={{ height: 200, bgcolor: 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ImageIcon sx={{ fontSize: 60, color: 'grey.400' }} />
+               </Box>
           )}
-          <TextField
-            margin="normal"
-            id="title"
-            name="title"
-            label="Title"
-            fullWidth
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          />
-          <TextField
-            label="Description"
-            margin="normal"
-            id="description"
-            name="description"
-            fullWidth
-            multiline
-            rows={3}
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          />
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <TextField
-                label="Available Quantity"
-                type="number"
-                fullWidth
-                value={formData.quantity.available}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    quantity: { ...formData.quantity, available: Number(e.target.value) },
-                  })
-                }
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              {listing.title}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {listing.crop.name} - {listing.crop.variety}
+            </Typography>
+            <Box sx={{ my: 1 }}>
+              <Chip
+                label={capitalize(listing.status)}
+                color={listing.status === 'active' ? 'success' : 'default'}
+                size="small"
+                sx={{ mr: 1 }}
               />
-            </Grid>
-            <Grid item xs={6}>
-              <FormControl fullWidth>
-                <InputLabel id="unit-label">Unit</InputLabel>
-                <Select
-                  labelId="unit-label"
-                  label="Unit"
-                  value={formData.quantity.unit}
+              {listing.quality?.isOrganic && (
+                <Chip label="Organic" color="success" size="small" sx={{ mr: 1 }} />
+              )}
+              <Chip label={`Grade ${listing.quality?.grade}`} size="small" />
+            </Box>
+            <Typography variant="h6" color="primary" gutterBottom>
+              ₹{listing.pricing.pricePerUnit}/{listing.quantity.unit}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Available: {listing.quantity.available} {listing.quantity.unit}
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+              <Tooltip title="Views">
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <VisibilityIcon fontSize="small" sx={{ mr: 0.5 }} />
+                  <Typography variant="caption">{listing.statistics.views}</Typography>
+                </Box>
+              </Tooltip>
+              <Tooltip title="Inquiries">
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <ShoppingCartIcon fontSize="small" sx={{ mr: 0.5 }} />
+                  <Typography variant="caption">{listing.statistics.inquiries}</Typography>
+                </Box>
+              </Tooltip>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={() => handleEditClick(listing)}
+              >
+                <EditIcon />
+              </IconButton>
+              {listing.status === 'active' ? (
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => handleDeactivateListing(listing._id)}
+                >
+                  <VisibilityOffIcon />
+                </IconButton>
+              ) : (
+                <IconButton
+                  size="small"
+                  color="success"
+                  onClick={() => handleReactivateListing(listing._id)}
+                >
+                  <VisibilityIcon />
+                </IconButton>
+              )}
+            </Box>
+          </CardContent>
+        </Card>
+      </Grid>
+    );
+  };
+
+  const renderListingDialog = (isEdit: boolean) => {
+    
+    const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+                const base64String = (reader.result as string).split(',')[1]; 
+                resolve(base64String);
+            };
+            reader.onerror = (error) => reject(error);
+        });
+    };
+    
+    const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedImageFiles(e.target.files);
+    };
+
+    const handleUploadImages = async () => {
+        if (!selectedImageFiles || selectedImageFiles.length === 0) return;
+
+        setIsProcessing(true);
+        setError(null);
+        
+        try {
+            const base64Promises: Promise<string>[] = Array.from(selectedImageFiles).map(fileToBase64);
+            const newBase64Images = await Promise.all(base64Promises);
+            setFormData((prev) => ({
+                ...prev,
+                images: [...prev.images, ...newBase64Images], 
+            }));
+
+            setSelectedImageFiles(null);
+        } catch (err: any) {
+            setError('Error converting image files to Base64.');
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleRemoveImage = (index: number) => {
+        setFormData((prev) => ({
+            ...prev,
+            images: prev.images.filter((_, i) => i !== index),
+        }));
+    };
+    
+    const handleCertFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedCertFiles(e.target.files);
+    };
+
+    const handleUploadCerts = async () => {
+        if (!selectedCertFiles || selectedCertFiles.length === 0) return;
+
+        setIsProcessing(true);
+        setError(null);
+
+        try {
+            const base64Promises: Promise<string>[] = Array.from(selectedCertFiles).map(fileToBase64);
+            const newBase64Certs = await Promise.all(base64Promises);
+            
+            setFormData((prev) => ({
+                ...prev,
+                qualityAttributes: {
+                    ...prev.qualityAttributes,
+                    certifications: [...(prev.qualityAttributes.certifications ?? []), ...newBase64Certs],
+                },
+            }));
+
+            setSelectedCertFiles(null);
+        } catch (err: any) {
+            setError('Error converting certification files to Base64.');
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleRemoveCert = (index: number) => {
+        setFormData((prev) => ({
+            ...prev,
+            qualityAttributes: {
+                ...prev.qualityAttributes,
+                certifications: (prev.qualityAttributes.certifications ?? []).filter((_, i) => i !== index),
+            },
+        }));
+    };
+
+    return (
+      <Dialog
+        open={isEdit ? editDialogOpen : createDialogOpen}
+        onClose={() => (isEdit ? setEditDialogOpen(false) : setCreateDialogOpen(false))}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>{isEdit ? 'Edit Listing' : 'Create New Listing'}</DialogTitle>
+        
+        <DialogContent dividers>
+          <Box sx={{ pt: 1 }}>
+            <Grid container spacing={3}>
+              
+              {!isEdit && (
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel id="select-crop">Select Crop</InputLabel>
+                    <Select
+                      labelId="select-crop"
+                      label="Select Crop"
+                      value={formData.cropId}
+                      onChange={(e) => setFormData({ ...formData, cropId: e.target.value })}
+                    >
+                      {readyCrops.map((crop) => (
+                        <MenuItem key={crop._id} value={crop._id}>
+                          {crop.name} - {crop.variety} ({crop.currentStage})
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              )}
+
+              <Grid item xs={12}>
+                <TextField
+                  label="Title"
+                  fullWidth
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  label="Description"
+                  fullWidth
+                  multiline
+                  rows={3}
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Available Quantity"
+                  type="number"
+                  fullWidth
+                  value={formData.quantity.available}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      quantity: { ...formData.quantity, unit: e.target.value },
+                      quantity: { ...formData.quantity, available: Number(e.target.value) },
                     })
                   }
-                >
-                  <MenuItem value="kg">Kilograms (kg)</MenuItem>
-                  <MenuItem value="quintal">Quintal</MenuItem>
-                  <MenuItem value="ton">Ton</MenuItem>
-                </Select>
-              </FormControl>
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel id="unit-label">Unit</InputLabel>
+                  <Select
+                    labelId="unit-label"
+                    label="Unit"
+                    value={formData.quantity.unit}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        quantity: { ...formData.quantity, unit: e.target.value },
+                      })
+                    }
+                  >
+                    <MenuItem value="kg">Kilograms (kg)</MenuItem>
+                    <MenuItem value="quintal">Quintal</MenuItem>
+                    <MenuItem value="ton">Ton</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Minimum Order Quantity"
+                  type="number"
+                  fullWidth
+                  value={formData.quantity.minimum}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      quantity: { ...formData.quantity, minimum: Number(e.target.value) },
+                    })
+                  }
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Price Per Unit"
+                  type="number"
+                  fullWidth
+                  value={formData.pricing.pricePerUnit}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      pricing: { ...formData.pricing, pricePerUnit: Number(e.target.value) },
+                    })
+                  }
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={4}>
+                <FormControl fullWidth>
+                  <InputLabel id="grade">Grade</InputLabel>
+                  <Select
+                    labelId="grade"
+                    label="Grade"
+                    value={formData.qualityAttributes?.grade}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        qualityAttributes: {
+                          ...formData.qualityAttributes,
+                          grade: e.target.value,
+                        },
+                      })
+                    }
+                  >
+                    <MenuItem value="A">Grade A</MenuItem>
+                    <MenuItem value="B">Grade B</MenuItem>
+                    <MenuItem value="C">Grade C</MenuItem>
+                    <MenuItem value="premium">Premium</MenuItem>
+                    <MenuItem value="standard">Standard</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} sm={4}>
+                <FormControl fullWidth>
+                  <InputLabel id="organic-label">Is Organic?</InputLabel>
+                  <Select
+                    labelId="organic-label"
+                    label="Is Organic?"
+                    value={formData.qualityAttributes.isOrganic ? 'yes' : 'no'}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        qualityAttributes: {
+                          ...formData.qualityAttributes,
+                          isOrganic: e.target.value === 'yes',
+                        },
+                      })
+                    }
+                  >
+                    <MenuItem value="yes">Yes</MenuItem>
+                    <MenuItem value="no">No</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} sm={4}>
+                <FormControl fullWidth>
+                  <InputLabel id="health-status-label">Health Status</InputLabel>
+                  <Select
+                    labelId="health-status-label"
+                    label="Health Status"
+                    value={formData.qualityAttributes.healthStatus || 'good'}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        qualityAttributes: {
+                          ...formData.qualityAttributes,
+                          healthStatus: e.target.value,
+                        },
+                      })
+                    }
+                  >
+                    <MenuItem value="excellent">Excellent</MenuItem>
+                    <MenuItem value="good">Good</MenuItem>
+                    <MenuItem value="fair">Fair</MenuItem>
+                    <MenuItem value="poor">Poor</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 1 }}>
+                  🖼️ Product Images ({formData.images.length})
+                </Typography>
+
+                <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+                    <Typography variant="subtitle1" gutterBottom>
+                        Current Images ({formData.images.length})
+                    </Typography>
+                    {formData.images.length === 0 ? (
+                        <Typography variant="body2" color="text.secondary">No images uploaded yet.</Typography>
+                    ) : (
+                        <List dense>
+                            {formData.images.map((base64String, index) => (
+                                <ListItem
+                                    key={index}
+                                    secondaryAction={
+                                        <IconButton edge="end" aria-label="delete" onClick={() => handleRemoveImage(index)}>
+                                            <DeleteIcon color="error" />
+                                        </IconButton>
+                                    }
+                                    sx={{ borderBottom: '1px solid #eee' }}
+                                >
+                                    <CardMedia
+                                        component="img"
+                                        sx={{ width: 40, height: 40, mr: 2, objectFit: 'cover', borderRadius: 1 }}
+                                        image={`data:image/jpeg;base64,${base64String}`} 
+                                        alt={`Image ${index + 1}`}
+                                    />
+                                    <ListItemText 
+                                        primary={`Image ${index + 1}`}
+                                        primaryTypographyProps={{ 
+                                            variant: 'body2', 
+                                            noWrap: true, 
+                                            sx: { maxWidth: '80%' } 
+                                        }} 
+                                    />
+                                </ListItem>
+                            ))}
+                        </List>
+                    )}
+                </Paper>
+
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Upload New Images
+                  </Typography>
+                  <Grid container spacing={2} alignItems="center">
+                    
+                    <Grid item xs={12} sm={8}>
+                      <input
+                          accept="image/*"
+                          id="image-upload-button"
+                          type="file"
+                          multiple
+                          onChange={handleImageFileChange}
+                          style={{ display: 'none' }}
+                      />
+                      <label htmlFor="image-upload-button">
+                          <Button 
+                              variant="outlined" 
+                              component="span" 
+                              fullWidth 
+                              startIcon={<FileUploadIcon />}
+                          >
+                              {selectedImageFiles ? `${selectedImageFiles.length} file(s) selected` : 'Select Image Files'}
+                          </Button>
+                      </label>
+                    </Grid>
+
+                    <Grid item xs={12} sm={4}>
+                      <Button
+                        onClick={handleUploadImages}
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        disabled={!selectedImageFiles || isProcessing}
+                        fullWidth
+                      >
+                        {isProcessing ? <CircularProgress size={24} color="inherit" /> : 'Add Images'}
+                      </Button>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 1 }}>
+                    📜 Certifications ({(formData.qualityAttributes.certifications ?? []).length})
+                </Typography>
+
+                <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+                    <Typography variant="subtitle1" gutterBottom>
+                        Current Certifications ({(formData.qualityAttributes.certifications ?? []).length})
+                    </Typography>
+                    
+                    {(formData.qualityAttributes.certifications ?? []).length === 0 ? (
+                        <Typography variant="body2" color="text.secondary">No certification files uploaded yet.</Typography>
+                    ) : (
+                        <List dense>
+                            {(formData.qualityAttributes.certifications ?? []).map((base64String, index) => (
+                                <ListItem
+                                    key={index}
+                                    secondaryAction={
+                                        <IconButton edge="end" aria-label="delete" onClick={() => handleRemoveCert(index)}>
+                                            <DeleteIcon color="error" />
+                                        </IconButton>
+                                    }
+                                    sx={{ borderBottom: '1px solid #eee' }}
+                                >
+                                    <DescriptionIcon sx={{ mr: 2, color: 'info.main' }} />
+                                    <ListItemText 
+                                        primary={`Certification File ${index + 1}`}
+                                        secondary={`Content Type: ${base64String.substring(0, 10)}... (Base64)`}
+                                        primaryTypographyProps={{ variant: 'body2' }} 
+                                        secondaryTypographyProps={{ variant: 'caption' }}
+                                    />
+                                </ListItem>
+                            ))}
+                        </List>
+                    )}
+                </Paper>
+
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Upload New Certifications (PDF, Image)
+                  </Typography>
+                  <Grid container spacing={2} alignItems="center">
+                    
+                    <Grid item xs={12} sm={8}>
+                      <input
+                          accept=".pdf, image/*, .doc, .docx" 
+                          id="cert-upload-button"
+                          type="file"
+                          multiple
+                          onChange={handleCertFileChange}
+                          style={{ display: 'none' }}
+                      />
+                      <label htmlFor="cert-upload-button">
+                          <Button 
+                              variant="outlined" 
+                              component="span" 
+                              fullWidth 
+                              startIcon={<FileUploadIcon />}
+                          >
+                              {selectedCertFiles ? `${selectedCertFiles.length} file(s) selected` : 'Select Certification Files'}
+                          </Button>
+                      </label>
+                    </Grid>
+
+                    <Grid item xs={12} sm={4}>
+                      <Button
+                        onClick={handleUploadCerts}
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        disabled={!selectedCertFiles || isProcessing}
+                        fullWidth
+                      >
+                        {isProcessing ? <CircularProgress size={24} color="inherit" /> : 'Add Certs'}
+                      </Button>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              </Grid>
+
+
             </Grid>
-          </Grid>
-          <TextField
-            label="Price Per Unit"
-            type="number"
-            fullWidth
-            value={formData.pricing.pricePerUnit}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                pricing: { ...formData.pricing, pricePerUnit: Number(e.target.value) },
-              })
-            }
-            InputProps={{
-              startAdornment: <InputAdornment position="start">₹</InputAdornment>,
-            }}
-          />
-          <FormControl fullWidth>
-            <InputLabel id="grade">Grade</InputLabel>
-            <Select
-              labelId="grade"
-              label="Grade"
-              value={formData.qualityAttributes?.grade}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  qualityAttributes: {
-                    ...formData.qualityAttributes,
-                    grade: e.target.value,
-                  },
-                })
-              }
-            >
-              <MenuItem value="A">Grade A</MenuItem>
-              <MenuItem value="B">Grade B</MenuItem>
-              <MenuItem value="C">Grade C</MenuItem>
-              <MenuItem value="premium">Premium</MenuItem>
-              <MenuItem value="standard">Standard</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => (isEdit ? setEditDialogOpen(false) : setCreateDialogOpen(false))}>
-          Cancel
-        </Button>
-        <Button
-          onClick={isEdit ? handleUpdateListing : handleCreateListing}
-          variant="contained"
-          disabled={loading}
-        >
-          {loading ? <CircularProgress size={24} /> : isEdit ? 'Update' : 'Create'}
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => (isEdit ? setEditDialogOpen(false) : setCreateDialogOpen(false))}>
+            Cancel
+          </Button>
+          <Button
+            onClick={isEdit ? handleUpdateListing : handleCreateListing}
+            variant="contained"
+            disabled={loading || isProcessing}
+          >
+            {loading ? <CircularProgress size={24} /> : isEdit ? 'Update' : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
 
   return (
     <Container maxWidth="xl">
@@ -632,8 +1006,8 @@ const FarmerMarketplace: React.FC = () => {
         </Paper>
       </Box>
 
-      {renderListingDialog(false)}
-      {renderListingDialog(true)}
+      {createDialogOpen && renderListingDialog(false)}
+      {editDialogOpen && renderListingDialog(true)}
     </Container>
   );
 };
