@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import buyerMarketplaceService, { MarketplaceListing, ListingFilters } from '../../services/buyerMarketplaceService';
@@ -38,7 +37,7 @@ import {
   Refresh as RefreshIcon,
   Star as StarIcon,
   LocalOffer as LocalOfferIcon,
-  LocalFlorist as EcoIcon,
+  Nature as EcoIcon,
 } from '@mui/icons-material';
 import { RootState } from '../../store';
 
@@ -94,6 +93,8 @@ const BuyerMarketplace: React.FC = () => {
   const [inquiryPhone, setInquiryPhone] = useState('');
   const [inquiryQuantity, setInquiryQuantity] = useState('');
 
+
+
   useEffect(() => {
     loadInitialData();
   }, []);
@@ -144,9 +145,12 @@ const BuyerMarketplace: React.FC = () => {
       if (organicOnly) filters.isOrganic = true;
 
       const response = await buyerMarketplaceService.getListings(filters);
-      
-      if (response.success) {
-        setListings(response.data);
+      console.log('Listings response:', response.data);
+
+      if (response.success  ) {
+        const listings = setListings(response.data);
+        console.log('User info in BuyerMarketplace:', user);
+        console.log('Listings state:', listings);
         if (response.pagination) {
           setTotalPages(response.pagination.pages || 1);
         }
@@ -282,7 +286,7 @@ const BuyerMarketplace: React.FC = () => {
             <Chip label={`Grade ${listing.qualityAttributes.grade}`} size="small" />
           </Box>
           <Typography variant="h6" color="primary" gutterBottom>
-            \u20b9{listing.pricing.pricePerUnit}/{listing.quantity.unit}
+            ₹{listing.pricing.pricePerUnit}/{listing.quantity.unit}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Available: {listing.quantity.available} {listing.quantity.unit}
@@ -329,9 +333,11 @@ const BuyerMarketplace: React.FC = () => {
             variant="outlined"
             startIcon={<RefreshIcon />}
             onClick={() => {
+              console.log('Refreshing data for tab:', tabValue);
               if (tabValue === 0) loadListings();
               else if (tabValue === 1) loadFeaturedListings();
               else if (tabValue === 2) loadOrganicListings();
+              console.log('Data refreshed', listings)
             }}
             disabled={loading}
           >
@@ -584,7 +590,7 @@ const BuyerMarketplace: React.FC = () => {
                 <Grid item xs={6}>
                   <Typography variant="subtitle2">Price:</Typography>
                   <Typography variant="body2">
-                    \u20b9{selectedListing.pricing.pricePerUnit}/{selectedListing.quantity.unit}
+                    ₹{selectedListing.pricing.pricePerUnit}/{selectedListing.quantity.unit}
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>

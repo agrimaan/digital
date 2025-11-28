@@ -76,7 +76,7 @@ router.post('/login', [
         email: user.email,
         role: user.role,
         phoneNumber: user.phoneNumber,
-        address: user.address,
+        address: user?.address,
         profileImage: user.profileImage,
         isVerified: user.isVerified
       }

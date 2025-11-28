@@ -1,4 +1,5 @@
 
+import axios from 'axios';
 import api from './api';
 
 // Types
@@ -96,9 +97,11 @@ export interface MarketplaceStatistics {
   averagePrice: number;
   organicListings: number;
 }
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
 
 class BuyerMarketplaceService {
-  private baseURL = '/api/crops/buyer/marketplace';
+  private baseURL = `${API_BASE_URL}/api/crops/buyer/marketplace`;
+
 
   /**
    * Get all marketplace listings with optional filters
@@ -117,16 +120,16 @@ class BuyerMarketplaceService {
     const queryString = params.toString();
     const url = queryString ? `${this.baseURL}/listings?${queryString}` : `${this.baseURL}/listings`;
     
-    const response: any = await api.get(url);
-    return response.data;
+    const response: any = await axios.get(url);
+    return response;
   }
 
   /**
    * Get a single listing by ID
    */
   async getListing(id: string): Promise<{ success: boolean; data: MarketplaceListing }> {
-    const response: any = await api.get(`${this.baseURL}/listings/${id}`);
-    return response.data;
+    const response: any = await axios.get(`${this.baseURL}/listings/${id}`);
+    return response;
   }
 
   /**
@@ -145,16 +148,16 @@ class BuyerMarketplaceService {
       params.append('limit', String(filters.limit));
     }
 
-    const response: any = await api.get(`${this.baseURL}/listings/nearby?${params.toString()}`);
-    return response.data;
+    const response: any = await axios.get(`${this.baseURL}/listings/nearby?${params.toString()}`);
+    return response;
   }
 
   /**
    * Get listings by crop name
    */
   async getListingsByCrop(cropName: string): Promise<{ success: boolean; data: MarketplaceListing[] }> {
-    const response: any = await api.get(`${this.baseURL}/listings/crop/${encodeURIComponent(cropName)}`);
-    return response.data;
+    const response: any = await axios(`${this.baseURL}/listings/crop/${encodeURIComponent(cropName)}`);
+    return response;
   }
 
   /**
@@ -169,8 +172,8 @@ class BuyerMarketplaceService {
     const queryString = queryParams.toString();
     const url = queryString ? `${this.baseURL}/listings/organic?${queryString}` : `${this.baseURL}/listings/organic`;
     
-    const response: any = await api.get(url);
-    return response.data;
+    const response: any = await axios.get(url);
+    return response;
   }
 
   /**
@@ -178,16 +181,16 @@ class BuyerMarketplaceService {
    */
   async getFeaturedListings(limit?: number): Promise<{ success: boolean; data: MarketplaceListing[] }> {
     const url = limit ? `${this.baseURL}/listings/featured?limit=${limit}` : `${this.baseURL}/listings/featured`;
-    const response: any = await api.get(url);
-    return response.data;
+    const response: any = await axios.get(url);
+    return response;
   }
 
   /**
    * Get available crop types
    */
   async getAvailableCrops(): Promise<{ success: boolean; data: string[] }> {
-    const response: any = await api.get(`${this.baseURL}/crops`);
-    return response.data;
+    const response: any = await axios.get(`${this.baseURL}/crops`);
+    return response;
   }
 
   /**
@@ -197,24 +200,24 @@ class BuyerMarketplaceService {
     const url = cropName 
       ? `${this.baseURL}/varieties?crop=${encodeURIComponent(cropName)}`
       : `${this.baseURL}/varieties`;
-    const response: any = await api.get(url);
-    return response.data;
+    const response: any = await axios.get(url);
+    return response;
   }
 
   /**
    * Get marketplace statistics
    */
   async getStatistics(): Promise<{ success: boolean; data: MarketplaceStatistics }> {
-    const response: any = await api.get(`${this.baseURL}/statistics`);
-    return response.data;
+    const response: any = await axios.get(`${this.baseURL}/statistics`);
+    return response;
   }
 
   /**
    * Record an inquiry for a listing
    */
   async recordInquiry(listingId: string, data: InquiryData): Promise<{ success: boolean; message: string }> {
-    const response: any = await api.post(`${this.baseURL}/listings/${listingId}/inquiry`, data);
-    return response.data;
+    const response: any = await axios.post(`${this.baseURL}/listings/${listingId}/inquiry`, data);
+    return response;
   }
 
   /**
@@ -232,7 +235,7 @@ class BuyerMarketplaceService {
     }
 
     const response: any = await api.get(`${this.baseURL}/listings?${params.toString()}`);
-    return response.data;
+    return response;
   }
 }
 
