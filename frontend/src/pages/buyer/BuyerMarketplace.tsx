@@ -31,12 +31,10 @@ import {
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  FilterList as FilterListIcon,
   LocationOn as LocationOnIcon,
   Close as CloseIcon,
   Refresh as RefreshIcon,
   Star as StarIcon,
-  LocalOffer as LocalOfferIcon,
   Nature as EcoIcon,
 } from '@mui/icons-material';
 import { RootState } from '../../store';

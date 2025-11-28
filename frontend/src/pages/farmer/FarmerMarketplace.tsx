@@ -28,7 +28,8 @@ import {
   Tooltip,
   List,
   ListItem,
-  ListItemText
+  ListItemText,
+  Divider,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -45,6 +46,7 @@ import {
   Description as DescriptionIcon
 } from '@mui/icons-material';
 import { farmerMarketplaceService, MarketplaceListing, CreateListingData } from '../../services/farmerMarketplaceService';
+
 interface CustomCreateListingData extends CreateListingData {
     images: string[];
 }
@@ -53,6 +55,13 @@ interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
   value: number;
+}
+interface ConfirmationDialogState {
+    open: boolean;
+    listingId: string | null;
+    action: 'deactivate' | 'reactivate' | null;
+    title: string;
+    message: string;
 }
 
 function TabPanel(props: TabPanelProps) {
@@ -82,6 +91,15 @@ const FarmerMarketplace: React.FC = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedListing, setSelectedListing] = useState<MarketplaceListing | null>(null);
+  const [totalListings, setTotalListings] = useState(0);
+  const [totalActiveListings, setTotalActiveListings] = useState(0);
+  const [confirmationDialog, setConfirmationDialog] = useState<ConfirmationDialogState>({
+    open: false,
+    listingId: null,
+    action: null,
+    title: '',
+    message: '',
+  });
 
   const [formData, setFormData] = useState<CustomCreateListingData>({
     cropId: '',
@@ -119,6 +137,27 @@ const FarmerMarketplace: React.FC = () => {
     loadData();
   }, [tabValue]);
 
+  useEffect(() => {
+    const fetchInitialReadyCrops = async () => {
+      try {
+        const data = await farmerMarketplaceService.getReadyCrops();
+        setReadyCrops(data.data.crops || []);
+      } catch (err) {
+        console.error("Failed to fetch initial Ready Crops data:", err);
+      }
+    };
+    fetchInitialReadyCrops();
+  }, []);
+
+  useEffect(() => {
+      if (success) {
+        const timer = setTimeout(() => {
+          setSuccess(null);
+        }, 5000);
+        return () => clearTimeout(timer);
+      }
+    }, [success]);
+
   const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
   const loadData = async () => {
@@ -126,8 +165,13 @@ const FarmerMarketplace: React.FC = () => {
     setError(null);
     try {
       if (tabValue === 0) {
-        const data = await farmerMarketplaceService.getMyListings();
-        setListings(data.data.listings || []);
+        const listingsResponse = await farmerMarketplaceService.getMyListings();
+        setListings(listingsResponse.data.listings || []);
+        setTotalListings(listingsResponse.data.count || 0);
+        if (listingsResponse.data.count) {
+          const activeCount = listingsResponse.data.listings.filter(item => item.status === "active").length;
+          setTotalActiveListings(activeCount);
+        }
       } else if (tabValue === 1) {
         const data = await farmerMarketplaceService.getReadyCrops();
         setReadyCrops(data.data.crops || []);
@@ -143,6 +187,38 @@ const FarmerMarketplace: React.FC = () => {
     }
   };
 
+  const resetForm = () => {
+    setSelectedImageFiles(null);
+    setSelectedCertFiles(null);
+    setIsProcessing(false);
+    setFormData({
+      cropId: '',
+      title: '',
+      description: '',
+      quantity: {
+        available: 0,
+        unit: 'kg',
+        minimum: 1,
+      },
+      pricing: {
+        pricePerUnit: 0,
+        currency: 'INR',
+        negotiable: false,
+      },
+      harvestInfo: {
+        expectedDate: new Date().toISOString().split('T')[0],
+        actualDate: new Date().toISOString().split('T')[0],
+      },
+      qualityAttributes: {
+        grade: 'A',
+        isOrganic: false,
+        healthStatus: 'good',
+        certifications: [],
+      },
+      images: [],
+    });
+  };
+  
   const handleCreateListing = async () => {
     setLoading(true);
     setError(null);
@@ -178,30 +254,39 @@ const FarmerMarketplace: React.FC = () => {
     }
   };
 
-  const handleDeactivateListing = async (id: string) => {
-    if (!window.confirm('Are you sure you want to deactivate this listing?')) return;
-    setLoading(true);
-    setError(null);
-    try {
-      await farmerMarketplaceService.deactivateListing(id);
-      setSuccess('Listing deactivated successfully!');
-      loadData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to deactivate listing');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleConfirmAction = (id: string, action: 'deactivate' | 'reactivate') => {
+    const listing = listings.find(l => l._id === id);
+    if (!listing) return;
 
-  const handleReactivateListing = async (id: string) => {
+    setConfirmationDialog({
+      open: true,
+      listingId: id,
+      action: action,
+      title: action === 'deactivate' ? 'Deactivate Listing' : 'Reactivate Listing',
+      message: action === 'deactivate' 
+        ? `Are you sure you want to remove "${listing.title}" from the marketplace? Buyers will no longer be able to view or purchase this listing.`
+        : `Are you sure you want to publish "${listing.title}" to the marketplace? It will become visible to buyers immediately.`
+    });
+  };
+  const handleExecuteAction = async () => {
+    const { listingId, action } = confirmationDialog;
+    if (!listingId || !action) return;
+
+    setConfirmationDialog({ ...confirmationDialog, open: false });
     setLoading(true);
     setError(null);
+
     try {
-      await farmerMarketplaceService.reactivateListing(id);
-      setSuccess('Listing reactivated successfully!');
+      if (action === 'deactivate') {
+        await farmerMarketplaceService.deactivateListing(listingId);
+        setSuccess('Listing deactivated successfully!');
+      } else {
+        await farmerMarketplaceService.reactivateListing(listingId);
+        setSuccess('Listing reactivated successfully!');
+      }
       loadData();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to reactivate listing');
+      setError(err.response?.data?.message || `Failed to ${action} listing`);
     } finally {
       setLoading(false);
     }
@@ -230,39 +315,6 @@ const FarmerMarketplace: React.FC = () => {
     });
     setEditDialogOpen(true);
   };
-
-  const resetForm = () => {
-    setSelectedImageFiles(null);
-    setSelectedCertFiles(null);
-    setIsProcessing(false);
-    setFormData({
-      cropId: '',
-      title: '',
-      description: '',
-      quantity: {
-        available: 0,
-        unit: 'kg',
-        minimum: 1,
-      },
-      pricing: {
-        pricePerUnit: 0,
-        currency: 'INR',
-        negotiable: false,
-      },
-      harvestInfo: {
-        expectedDate: new Date().toISOString().split('T')[0],
-        actualDate: new Date().toISOString().split('T')[0],
-      },
-      qualityAttributes: {
-        grade: 'A',
-        isOrganic: false,
-        healthStatus: 'good',
-        certifications: [],
-      },
-      images: [],
-    });
-  };
-
   const renderListingCard = (listing: MarketplaceListing) => {
     const imageString = listing.images?.length ? listing.images[0] : null;
 
@@ -341,7 +393,7 @@ const FarmerMarketplace: React.FC = () => {
                 <IconButton
                   size="small"
                   color="error"
-                  onClick={() => handleDeactivateListing(listing._id)}
+                  onClick={() => handleConfirmAction(listing._id, 'deactivate')}
                 >
                   <VisibilityOffIcon />
                 </IconButton>
@@ -349,7 +401,7 @@ const FarmerMarketplace: React.FC = () => {
                 <IconButton
                   size="small"
                   color="success"
-                  onClick={() => handleReactivateListing(listing._id)}
+                  onClick={() => handleConfirmAction(listing._id, 'reactivate')}
                 >
                   <VisibilityIcon />
                 </IconButton>
@@ -362,6 +414,14 @@ const FarmerMarketplace: React.FC = () => {
   };
 
   const renderListingDialog = (isEdit: boolean) => {
+    const handleClose = () => {
+    if (isEdit) {
+        setEditDialogOpen(false);
+    } else {
+        setCreateDialogOpen(false);
+        resetForm();
+    }
+  };
     
     const fileToBase64 = (file: File): Promise<string> => {
         return new Promise((resolve, reject) => {
@@ -451,7 +511,7 @@ const FarmerMarketplace: React.FC = () => {
     return (
       <Dialog
         open={isEdit ? editDialogOpen : createDialogOpen}
-        onClose={() => (isEdit ? setEditDialogOpen(false) : setCreateDialogOpen(false))}
+        onClose={handleClose}
         maxWidth="md"
         fullWidth
       >
@@ -471,11 +531,14 @@ const FarmerMarketplace: React.FC = () => {
                       value={formData.cropId}
                       onChange={(e) => setFormData({ ...formData, cropId: e.target.value })}
                     >
-                      {readyCrops.map((crop) => (
+                      {/* Using readyCrops state, which is now guaranteed to be loaded on mount */}
+                      {readyCrops.length > 0 ? readyCrops.map((crop) => (
                         <MenuItem key={crop._id} value={crop._id}>
                           {crop.name} - {crop.variety} ({crop.currentStage})
                         </MenuItem>
-                      ))}
+                      )) : (
+                        <MenuItem disabled>No ready crops found.</MenuItem>
+                      )}
                     </Select>
                   </FormControl>
                 </Grid>
@@ -812,7 +875,7 @@ const FarmerMarketplace: React.FC = () => {
         </DialogContent>
 
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => (isEdit ? setEditDialogOpen(false) : setCreateDialogOpen(false))}>
+          <Button onClick={handleClose}>
             Cancel
           </Button>
           <Button
@@ -826,6 +889,42 @@ const FarmerMarketplace: React.FC = () => {
       </Dialog>
     );
   };
+
+  const renderConfirmationDialog = () => (
+    <Dialog
+      open={confirmationDialog.open}
+      onClose={() => setConfirmationDialog({ ...confirmationDialog, open: false })}
+      maxWidth="xs"
+      fullWidth
+    >
+      <DialogTitle>{confirmationDialog.title}</DialogTitle>
+      <DialogContent dividers>
+        <Typography variant="body1" sx={{ mb: 2 }}>
+          {confirmationDialog.message}
+        </Typography>
+        <Divider /> 
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+            This action is final and will update the listing status immediately.
+        </Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button 
+            onClick={() => setConfirmationDialog({ ...confirmationDialog, open: false })}
+            disabled={loading}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleExecuteAction}
+          variant="contained"
+          color={confirmationDialog.action === 'deactivate' ? 'error' : 'success'}
+          disabled={loading}
+        >
+          {loading ? <CircularProgress size={24} /> : confirmationDialog.action === 'deactivate' ? 'Deactivate' : 'Reactivate'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 
   return (
     <Container maxWidth="xl">
@@ -961,7 +1060,7 @@ const FarmerMarketplace: React.FC = () => {
                 <Grid item xs={12} sm={6} md={3}>
                   <Paper sx={{ p: 3, textAlign: 'center' }}>
                     <TrendingUpIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
-                    <Typography variant="h4">{statistics.totalListings || 0}</Typography>
+                    <Typography variant="h4">{totalListings}</Typography>
                     <Typography variant="body2" color="text.secondary">
                       Total Listings
                     </Typography>
@@ -970,7 +1069,7 @@ const FarmerMarketplace: React.FC = () => {
                 <Grid item xs={12} sm={6} md={3}>
                   <Paper sx={{ p: 3, textAlign: 'center' }}>
                     <VisibilityIcon sx={{ fontSize: 48, color: 'success.main', mb: 1 }} />
-                    <Typography variant="h4">{statistics.activeListings || 0}</Typography>
+                    <Typography variant="h4">{totalActiveListings}</Typography>
                     <Typography variant="body2" color="text.secondary">
                       Active Listings
                     </Typography>
@@ -1008,6 +1107,7 @@ const FarmerMarketplace: React.FC = () => {
 
       {createDialogOpen && renderListingDialog(false)}
       {editDialogOpen && renderListingDialog(true)}
+      {renderConfirmationDialog()}
     </Container>
   );
 };
