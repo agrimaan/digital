@@ -121,7 +121,8 @@ class BuyerMarketplaceService {
     const url = queryString ? `${this.baseURL}/listings?${queryString}` : `${this.baseURL}/listings`;
     
     const response: any = await axios.get(url);
-    return response;
+    console.log("getListings response:", response);
+    return response.data;
   }
 
   /**

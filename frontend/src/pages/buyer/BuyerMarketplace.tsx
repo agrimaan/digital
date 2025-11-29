@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import buyerMarketplaceService, { MarketplaceListing, ListingFilters } from '../../services/buyerMarketplaceService';
+
 import {
   Box,
   Button,
@@ -31,10 +32,12 @@ import {
 } from '@mui/material';
 import {
   Search as SearchIcon,
+  FilterList as FilterListIcon,
   LocationOn as LocationOnIcon,
   Close as CloseIcon,
   Refresh as RefreshIcon,
   Star as StarIcon,
+  LocalOffer as LocalOfferIcon,
   Nature as EcoIcon,
 } from '@mui/icons-material';
 import { RootState } from '../../store';
@@ -44,6 +47,20 @@ interface TabPanelProps {
   index: number;
   value: number;
 }
+// Define the actual API response structure
+interface MarketplaceResponse {
+  success: boolean;
+  data: {
+    listings: MarketplaceListing[];
+    pagination?: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+    };
+  };
+}
+
 
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
@@ -90,8 +107,6 @@ const BuyerMarketplace: React.FC = () => {
   const [inquiryMessage, setInquiryMessage] = useState('');
   const [inquiryPhone, setInquiryPhone] = useState('');
   const [inquiryQuantity, setInquiryQuantity] = useState('');
-
-
 
   useEffect(() => {
     loadInitialData();
@@ -142,15 +157,23 @@ const BuyerMarketplace: React.FC = () => {
       if (maxPrice) filters.maxPrice = parseFloat(maxPrice);
       if (organicOnly) filters.isOrganic = true;
 
-      const response = await buyerMarketplaceService.getListings(filters);
-      console.log('Listings response:', response.data);
-
-      if (response.success  ) {
-        const listings = setListings(response.data);
-        console.log('User info in BuyerMarketplace:', user);
-        console.log('Listings state:', listings);
-        if (response.pagination) {
-          setTotalPages(response.pagination.pages || 1);
+      const response = await buyerMarketplaceService.getListings(filters) as any;
+      console.log('BuyerMarketplace - getListings response:', response.success ? response : 'No response');
+      if (response.success) {
+        const listingsData = (response.data as any)?.listings || [];
+        console.log('BuyerMarketplace - API Response:', response);
+        console.log('BuyerMarketplace - Listings Data:', listingsData);
+        console.log('BuyerMarketplace - Is Array:', Array.isArray(listingsData));
+        console.log('BuyerMarketplace - Length:', listingsData.length);
+        
+        const finalListings = Array.isArray(listingsData) ? listingsData : [];
+        console.log('BuyerMarketplace - Setting listings state to:', finalListings);
+        setListings(finalListings);
+        console.log('BuyerMarketplace - After setListings call', listings);
+        
+        const paginationData = (response.data as any)?.pagination;
+        if (paginationData) {
+          setTotalPages(paginationData.pages || 1);
         }
       }
     } catch (err: any) {
@@ -166,7 +189,8 @@ const BuyerMarketplace: React.FC = () => {
     try {
       const response = await buyerMarketplaceService.getFeaturedListings(12);
       if (response.success) {
-        setFeaturedListings(response.data);
+        const listingsData = (response.data as any)?.listings || [];
+        setFeaturedListings(Array.isArray(listingsData) ? listingsData : []);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load featured listings');
@@ -181,7 +205,8 @@ const BuyerMarketplace: React.FC = () => {
     try {
       const response = await buyerMarketplaceService.getOrganicListings({ page, limit: 12 });
       if (response.success) {
-        setOrganicListings(response.data);
+        const listingsData = (response.data as any)?.listings || [];
+        setOrganicListings(Array.isArray(listingsData) ? listingsData : []);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load organic listings');
@@ -278,10 +303,10 @@ const BuyerMarketplace: React.FC = () => {
             {listing.crop.name} - {listing.crop.variety}
           </Typography>
           <Box sx={{ my: 1 }}>
-            {listing.qualityAttributes.isOrganic && (
+            {listing.qualityAttributes?.isOrganic && (
               <Chip icon={<EcoIcon />} label="Organic" color="success" size="small" sx={{ mr: 1 }} />
             )}
-            <Chip label={`Grade ${listing.qualityAttributes.grade}`} size="small" />
+            <Chip label={`Grade ${listing.qualityAttributes?.grade}`} size="small" />
           </Box>
           <Typography variant="h6" color="primary" gutterBottom>
             ₹{listing.pricing.pricePerUnit}/{listing.quantity.unit}
@@ -331,11 +356,9 @@ const BuyerMarketplace: React.FC = () => {
             variant="outlined"
             startIcon={<RefreshIcon />}
             onClick={() => {
-              console.log('Refreshing data for tab:', tabValue);
               if (tabValue === 0) loadListings();
               else if (tabValue === 1) loadFeaturedListings();
               else if (tabValue === 2) loadOrganicListings();
-              console.log('Data refreshed', listings)
             }}
             disabled={loading}
           >
@@ -508,7 +531,19 @@ const BuyerMarketplace: React.FC = () => {
             ) : (
               <>
                 <Grid container spacing={3}>
-                  {listings.map(renderListingCard)}
+                  {(() => {
+                    console.log('BuyerMarketplace - Map check - listings:', listings);
+                    console.log('BuyerMarketplace - Map check - type:', typeof listings);
+                    console.log('BuyerMarketplace - Map check - isArray:', Array.isArray(listings));
+                    console.log('BuyerMarketplace - Map check - length:', listings?.length);
+                    if (listings && Array.isArray(listings) && listings.length > 0) {
+                      return listings.map((listing, index) => {
+                        console.log('BuyerMarketplace - Mapping item:', index, listing);
+                        return renderListingCard({...listing, _id: listing._id || `temp-${index}`});
+                      });
+                    }
+                    return null;
+                  })()}
                 </Grid>
                 {totalPages > 1 && (
                   <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
@@ -582,7 +617,7 @@ const BuyerMarketplace: React.FC = () => {
                 <Grid item xs={6}>
                   <Typography variant="subtitle2">Grade:</Typography>
                   <Typography variant="body2">
-                    {selectedListing.qualityAttributes.grade}
+                    {selectedListing.qualityAttributes?.grade}
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
