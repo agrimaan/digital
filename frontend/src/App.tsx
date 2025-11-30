@@ -7,6 +7,7 @@ import {
 } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from './store';
+import { CartProvider } from './contexts/CartContext';
 
 // Common pages
 import Login from './pages/common/Login';
@@ -31,6 +32,7 @@ import EditSensor from './pages/farmer/EditSensor';
 // Buyer pages
 import BuyerDashboard from './pages/buyer/BuyerDashboard';
 import BuyerMarketplace from './pages/buyer/BuyerMarketplace';
+import BuyerCart from './pages/buyer/BuyerCart';
 import OrderHistory from './pages/buyer/OrderHistory';
 
 // Admin pages
@@ -122,7 +124,8 @@ const App: React.FC = () => {
   // No loading logic is needed here anymore, as AuthInitializer handles it.
 
   return (
-    <Router>
+  <Router>
+    <CartProvider>
       <Routes>
         {/* Public Routes */}
         <Route
@@ -175,6 +178,7 @@ const App: React.FC = () => {
                   <Routes>
                     <Route path="/" element={<BuyerDashboard />} />
                     <Route path="marketplace" element={<BuyerMarketplace />} />
+                       <Route path="cart" element={<BuyerCart />} />
                     <Route path="orders" element={<OrderHistory />} />
                     <Route path="profile" element={<Profile />} />
                   </Routes>
@@ -306,7 +310,8 @@ const App: React.FC = () => {
         {/* 404 Not Found */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </Router>
+    </CartProvider>
+  </Router>
   );
 };
 

@@ -45,6 +45,7 @@ export interface MarketplaceListing {
   farmLocation: {
     type: string;
     coordinates: number[];
+
     address?: {
       village?: string;
       district?: string;

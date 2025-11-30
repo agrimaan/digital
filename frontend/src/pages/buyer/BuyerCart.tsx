@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+
+import React, { useState, useEffect } from 'react';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -17,11 +18,17 @@ import {
   Card,
   CardContent,
   Grid,
+  CircularProgress,
+  Alert,
+  TextField,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
@@ -30,90 +37,157 @@ import {
   Add as AddIcon,
   Remove as RemoveIcon
 } from '@mui/icons-material';
-
-// Mock cart items
-interface CartItem {
-  id: number;
-  cropName: string;
-  variety: string;
-  quantity: number;
-  unit: string;
-  pricePerUnit: number;
-  totalPrice: number;
-  seller: string;
-  image: string;
-}
-
-const mockCartItems: CartItem[] = [
-  {
-    id: 1,
-    cropName: 'Wheat',
-    variety: 'Hard Red Winter',
-    quantity: 10,
-    unit: 'tons',
-    pricePerUnit: 250,
-    totalPrice: 2500,
-    seller: 'John Smith Farm',
-    image: 'https://images.unsplash.com/photo-1574323347407-f5e1c5a6ec21?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
-  },
-  {
-    id: 2,
-    cropName: 'Corn',
-    variety: 'Sweet Corn',
-    quantity: 5,
-    unit: 'tons',
-    pricePerUnit: 180,
-    totalPrice: 900,
-    seller: 'Green Valley Co-op',
-    image: 'https://images.unsplash.com/photo-1601472543578-74691771b8be?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
-  }
-];
+import { useCart } from '../../contexts/CartContext';
+import orderService, { CreateOrderData, ShippingAddress } from '../../services/orderService';
 
 const BuyerCart: React.FC = () => {
-  const [cartItems, setCartItems] = useState<CartItem[]>(mockCartItems);
+  const navigate = useNavigate();
+  const { cart, loading, error, updateQuantity, removeItem, clearCart, refreshCart } = useCart();
+  
   const [checkoutDialog, setCheckoutDialog] = useState(false);
-  const [shippingAddress, setShippingAddress] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('');
+  const [orderLoading, setOrderLoading] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const [orderSuccess, setOrderSuccess] = useState(false);
+  
+  // Shipping address form
+  const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
+    street: '',
+    city: '',
+    state: '',
+    country: 'India',
+    postalCode: '',
+    contactName: '',
+    contactPhone: ''
+  });
+  
+  const [paymentMethod, setPaymentMethod] = useState<string>('upi');
+  const [notes, setNotes] = useState('');
+
+  useEffect(() => {
+    refreshCart();
+  }, []);
 
   // Calculate cart totals
-  const cartTotal = cartItems.reduce((total, item) => total + item.totalPrice, 0);
-  const shippingCost = cartItems.length > 0 ? 250 : 0;
+  const cartTotal = cart?.totalAmount || 0;
+  const shippingCost = cart && cart.items.length > 0 ? 250 : 0;
   const taxRate = 0.08;
   const taxAmount = cartTotal * taxRate;
   const orderTotal = cartTotal + shippingCost + taxAmount;
 
   // Handle quantity change
-  const handleQuantityChange = (id: number, change: number) => {
-    setCartItems(prev => prev.map(item => {
-      if (item.id === id) {
-        const newQuantity = Math.max(1, item.quantity + change);
-        return {
-          ...item,
-          quantity: newQuantity,
-          totalPrice: newQuantity * item.pricePerUnit
-        };
-      }
-      return item;
-    }));
+  const handleQuantityChange = async (listingId: string, change: number) => {
+    const item = cart?.items.find(i => i.listing === listingId);
+    if (!item) return;
+    
+    const newQuantity = Math.max(1, item.quantity + change);
+    try {
+      await updateQuantity(listingId, newQuantity);
+    } catch (err) {
+      console.error('Error updating quantity:', err);
+    }
   };
 
   // Handle remove item
-  const handleRemoveItem = (id: number) => {
-    setCartItems(prev => prev.filter(item => item.id !== id));
+  const handleRemoveItem = async (listingId: string) => {
+    try {
+      await removeItem(listingId);
+    } catch (err) {
+      console.error('Error removing item:', err);
+    }
   };
 
   // Handle checkout
   const handleCheckout = () => {
     setCheckoutDialog(true);
+    setOrderError(null);
+  };
+
+  // Validate form
+  const isFormValid = () => {
+    return (
+      shippingAddress.street &&
+      shippingAddress.city &&
+      shippingAddress.state &&
+      shippingAddress.country &&
+      shippingAddress.postalCode &&
+      shippingAddress.contactName &&
+      shippingAddress.contactPhone &&
+      paymentMethod
+    );
   };
 
   // Handle place order
-  const handlePlaceOrder = () => {
-    // In a real app, this would make an API call to place the order
-    alert('Order placed successfully!');
-    setCartItems([]);
-    setCheckoutDialog(false);
+  const handlePlaceOrder = async () => {
+    if (!cart || cart.items.length === 0) {
+      setOrderError('Cart is empty');
+      return;
+    }
+
+    if (!isFormValid()) {
+      setOrderError('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setOrderLoading(true);
+      setOrderError(null);
+
+      // Group items by seller
+      const itemsBySeller = cart.items.reduce((acc, item) => {
+        if (!acc[item.seller]) {
+          acc[item.seller] = [];
+        }
+        acc[item.seller].push(item);
+        return acc;
+      }, {} as Record<string, typeof cart.items>);
+
+      // Create separate orders for each seller
+      const orderPromises = Object.entries(itemsBySeller).map(([seller, items]) => {
+        const orderData: CreateOrderData = {
+          seller,
+          items: items.map(item => ({
+            product: item.listing,
+            name: `${item.cropName} - ${item.variety}`,
+            quantity: item.quantity,
+            unit: item.unit,
+            price: item.pricePerUnit,
+            totalPrice: item.totalPrice
+          })),
+          paymentMethod,
+          shippingAddress,
+          notes
+        };
+        
+        return orderService.createOrder(orderData);
+      });
+
+      await Promise.all(orderPromises);
+      
+      // Clear cart after successful order
+      await clearCart();
+      
+      setOrderSuccess(true);
+      
+      // Redirect to orders page after 2 seconds
+      setTimeout(() => {
+        navigate('/buyer/orders');
+      }, 2000);
+      
+    } catch (err: any) {
+      console.error('Error placing order:', err);
+      setOrderError(err.message || 'Failed to place order');
+    } finally {
+      setOrderLoading(false);
+    }
   };
+
+  if (loading && !cart) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4, textAlign: 'center' }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -133,7 +207,13 @@ const BuyerCart: React.FC = () => {
         </Button>
       </Box>
 
-      {cartItems.length === 0 ? (
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {!cart || cart.items.length === 0 ? (
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <Typography variant="h6" gutterBottom>
             Your cart is empty
@@ -166,50 +246,59 @@ const BuyerCart: React.FC = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {cartItems.map((item) => (
-                    <TableRow key={item.id}>
+                  {cart.items.map((item) => (
+                    <TableRow key={item.listing}>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Box
-                            component="img"
-                            sx={{ width: 60, height: 60, mr: 2, objectFit: 'cover' }}
-                            src={item.image}
-                            alt={item.cropName}
-                          />
+                          {item.images && item.images.length > 0 && (
+                            <Box
+                              component="img"
+                              sx={{ width: 60, height: 60, mr: 2, objectFit: 'cover', borderRadius: 1 }}
+                              src={item.images[0]}
+                              alt={item.cropName}
+                            />
+                          )}
                           <Box>
                             <Typography variant="body1">
                               {item.cropName} - {item.variety}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              Seller: {item.seller}
+                              Seller: {item.sellerName || 'Unknown'}
                             </Typography>
+                            {item.farmLocation && (
+                              <Typography variant="caption" color="text.secondary">
+                                {item.farmLocation.city}, {item.farmLocation.state}
+                              </Typography>
+                            )}
                           </Box>
                         </Box>
                       </TableCell>
-                      <TableCell>${item.pricePerUnit}/{item.unit}</TableCell>
+                      <TableCell>\u20b9{item.pricePerUnit}/{item.unit}</TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <IconButton 
                             size="small" 
-                            onClick={() => handleQuantityChange(item.id, -1)}
-                            disabled={item.quantity <= 1}
+                            onClick={() => handleQuantityChange(item.listing, -1)}
+                            disabled={item.quantity <= 1 || loading}
                           >
                             <RemoveIcon fontSize="small" />
                           </IconButton>
                           <Typography sx={{ mx: 1 }}>{item.quantity}</Typography>
                           <IconButton 
                             size="small" 
-                            onClick={() => handleQuantityChange(item.id, 1)}
+                            onClick={() => handleQuantityChange(item.listing, 1)}
+                            disabled={loading}
                           >
                             <AddIcon fontSize="small" />
                           </IconButton>
                         </Box>
                       </TableCell>
-                      <TableCell align="right">${item.totalPrice.toLocaleString()}</TableCell>
+                      <TableCell align="right">\u20b9{item.totalPrice.toLocaleString()}</TableCell>
                       <TableCell>
                         <IconButton 
                           color="error" 
-                          onClick={() => handleRemoveItem(item.id)}
+                          onClick={() => handleRemoveItem(item.listing)}
+                          disabled={loading}
                         >
                           <DeleteIcon />
                         </IconButton>
@@ -231,20 +320,20 @@ const BuyerCart: React.FC = () => {
                 <Box sx={{ my: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                     <Typography variant="body1">Subtotal</Typography>
-                    <Typography variant="body1">${cartTotal.toLocaleString()}</Typography>
+                    <Typography variant="body1">\u20b9{cartTotal.toLocaleString()}</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                     <Typography variant="body1">Shipping</Typography>
-                    <Typography variant="body1">${shippingCost.toLocaleString()}</Typography>
+                    <Typography variant="body1">\u20b9{shippingCost.toLocaleString()}</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                     <Typography variant="body1">Tax (8%)</Typography>
-                    <Typography variant="body1">${taxAmount.toLocaleString()}</Typography>
+                    <Typography variant="body1">\u20b9{taxAmount.toLocaleString()}</Typography>
                   </Box>
                   <Divider sx={{ my: 2 }} />
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="h6">Total</Typography>
-                    <Typography variant="h6">${orderTotal.toLocaleString()}</Typography>
+                    <Typography variant="h6">\u20b9{orderTotal.toLocaleString()}</Typography>
                   </Box>
                 </Box>
                 <Button
@@ -255,6 +344,7 @@ const BuyerCart: React.FC = () => {
                   startIcon={<ShoppingCartIcon />}
                   onClick={handleCheckout}
                   sx={{ mt: 2 }}
+                  disabled={loading}
                 >
                   Proceed to Checkout
                 </Button>
@@ -267,65 +357,176 @@ const BuyerCart: React.FC = () => {
       {/* Checkout Dialog */}
       <Dialog
         open={checkoutDialog}
-        onClose={() => setCheckoutDialog(false)}
+        onClose={() => !orderLoading && setCheckoutDialog(false)}
         maxWidth="sm"
         fullWidth
       >
         <DialogTitle>Checkout</DialogTitle>
         <DialogContent>
-          <Typography variant="body1" gutterBottom>
-            Complete your order by providing shipping and payment information.
-          </Typography>
-          <TextField
-            label="Shipping Address"
-            multiline
-            rows={3}
-            fullWidth
-            margin="normal"
-            value={shippingAddress}
-            onChange={(e) => setShippingAddress(e.target.value)}
-          />
-          <TextField
-            label="Payment Method"
-            fullWidth
-            margin="normal"
-            value={paymentMethod}
-            onChange={(e) => setPaymentMethod(e.target.value)}
-            helperText="For demo purposes only. No real payment will be processed."
-          />
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Order Summary
-            </Typography>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="body1">Subtotal</Typography>
-              <Typography variant="body1">${cartTotal.toLocaleString()}</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="body1">Shipping</Typography>
-              <Typography variant="body1">${shippingCost.toLocaleString()}</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="body1">Tax (8%)</Typography>
-              <Typography variant="body1">${taxAmount.toLocaleString()}</Typography>
-            </Box>
-            <Divider sx={{ my: 2 }} />
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography variant="h6">Total</Typography>
-              <Typography variant="h6">${orderTotal.toLocaleString()}</Typography>
-            </Box>
-          </Box>
+          {orderSuccess ? (
+            <Alert severity="success" sx={{ mt: 2 }}>
+              Order placed successfully! Redirecting to orders page...
+            </Alert>
+          ) : (
+            <>
+              <Typography variant="body1" gutterBottom sx={{ mt: 2 }}>
+                Complete your order by providing shipping and payment information.
+              </Typography>
+              
+              {orderError && (
+                <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
+                  {orderError}
+                </Alert>
+              )}
+
+              <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>
+                Shipping Address
+              </Typography>
+              
+              <TextField
+                label="Contact Name"
+                fullWidth
+                margin="normal"
+                required
+                value={shippingAddress.contactName}
+                onChange={(e) => setShippingAddress({ ...shippingAddress, contactName: e.target.value })}
+              />
+              
+              <TextField
+                label="Contact Phone"
+                fullWidth
+                margin="normal"
+                required
+                value={shippingAddress.contactPhone}
+                onChange={(e) => setShippingAddress({ ...shippingAddress, contactPhone: e.target.value })}
+              />
+              
+              <TextField
+                label="Street Address"
+                fullWidth
+                margin="normal"
+                required
+                value={shippingAddress.street}
+                onChange={(e) => setShippingAddress({ ...shippingAddress, street: e.target.value })}
+              />
+              
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <TextField
+                    label="City"
+                    fullWidth
+                    margin="normal"
+                    required
+                    value={shippingAddress.city}
+                    onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="State"
+                    fullWidth
+                    margin="normal"
+                    required
+                    value={shippingAddress.state}
+                    onChange={(e) => setShippingAddress({ ...shippingAddress, state: e.target.value })}
+                  />
+                </Grid>
+              </Grid>
+              
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Postal Code"
+                    fullWidth
+                    margin="normal"
+                    required
+                    value={shippingAddress.postalCode}
+                    onChange={(e) => setShippingAddress({ ...shippingAddress, postalCode: e.target.value })}
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Country"
+                    fullWidth
+                    margin="normal"
+                    required
+                    value={shippingAddress.country}
+                    onChange={(e) => setShippingAddress({ ...shippingAddress, country: e.target.value })}
+                  />
+                </Grid>
+              </Grid>
+
+              <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>
+                Payment Method
+              </Typography>
+              
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Payment Method</InputLabel>
+                <Select
+                  value={paymentMethod}
+                  label="Payment Method"
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                >
+                  <MenuItem value="upi">UPI</MenuItem>
+                  <MenuItem value="bank_transfer">Bank Transfer</MenuItem>
+                  <MenuItem value="credit_card">Credit Card</MenuItem>
+                  <MenuItem value="debit_card">Debit Card</MenuItem>
+                  <MenuItem value="cash">Cash on Delivery</MenuItem>
+                </Select>
+              </FormControl>
+              
+              <TextField
+                label="Order Notes (Optional)"
+                multiline
+                rows={3}
+                fullWidth
+                margin="normal"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Any special instructions for the seller..."
+              />
+
+              <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
+                <Typography variant="h6" gutterBottom>
+                  Order Summary
+                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body1">Subtotal</Typography>
+                  <Typography variant="body1">\u20b9{cartTotal.toLocaleString()}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body1">Shipping</Typography>
+                  <Typography variant="body1">\u20b9{shippingCost.toLocaleString()}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body1">Tax (8%)</Typography>
+                  <Typography variant="body1">\u20b9{taxAmount.toLocaleString()}</Typography>
+                </Box>
+                <Divider sx={{ my: 2 }} />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="h6">Total</Typography>
+                  <Typography variant="h6">\u20b9{orderTotal.toLocaleString()}</Typography>
+                </Box>
+              </Box>
+            </>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCheckoutDialog(false)}>Cancel</Button>
-          <Button 
-            variant="contained" 
-            color="primary"
-            onClick={handlePlaceOrder}
-            disabled={!shippingAddress || !paymentMethod}
-          >
-            Place Order
-          </Button>
+          {!orderSuccess && (
+            <>
+              <Button onClick={() => setCheckoutDialog(false)} disabled={orderLoading}>
+                Cancel
+              </Button>
+              <Button 
+                variant="contained" 
+                color="primary"
+                onClick={handlePlaceOrder}
+                disabled={orderLoading || !isFormValid()}
+              >
+                {orderLoading ? <CircularProgress size={24} /> : 'Place Order'}
+              </Button>
+            </>
+          )}
         </DialogActions>
       </Dialog>
     </Container>
