@@ -262,18 +262,19 @@ const BuyerMarketplace: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
+        console.log('Adding to cart listing:', selectedListing);
 
         await addToCart({
           listing: selectedListing._id,
-          cropName: selectedListing.crop.cropName,
-          variety: selectedListing.crop.variety || '',
+          cropName: selectedListing.cropName,
+          variety: selectedListing.variety || '',
           quantity: cartQuantity,
           unit: selectedListing.quantity.unit,
           pricePerUnit: selectedListing.pricing.pricePerUnit,
-          seller: selectedListing.farmer,
-          sellerName: selectedListing.farmer,
+          seller: selectedListing.sellerName || "Agrimaan123",
+          sellerName: selectedListing.farmer || "Agrimaan",
           images: selectedListing.images,
-          farmLocation: selectedListing.farmLocation
+          farmLocation: selectedListing.farmLocation || "Agrimaan Farm",
         });
 
         setSuccess('Item added to cart successfully!');
@@ -302,12 +303,12 @@ const BuyerMarketplace: React.FC = () => {
            listing: selectedListing._id,
            farmer: selectedListing.farmer,
            farmerName: selectedListing.farmer,
-           cropName: selectedListing.crop.cropName,
-           variety: selectedListing.crop.variety,
+           cropName: selectedListing.cropName,
+           variety: selectedListing.variety,
            message: inquiryMessage,
            buyerPhone: inquiryPhone,
            interestedQuantity: inquiryQuantity ? parseFloat(inquiryQuantity) : undefined,
-           quantityUnit: selectedListing.quantity.unit
+           quantityUnit: selectedListing.unit
          });
    
          setSuccess('Inquiry sent successfully!');
@@ -353,7 +354,7 @@ const BuyerMarketplace: React.FC = () => {
             {listing.title}
           </Typography>
           <Typography variant="body2" color="text.secondary" gutterBottom>
-            {listing.crop.cropName} - {listing.crop.variety}
+            {listing.cropName} - {listing.variety}
           </Typography>
           <Box sx={{ my: 1 }}>
             {listing.quality?.isOrganic && (
@@ -684,7 +685,7 @@ const BuyerMarketplace: React.FC = () => {
                 <Grid item xs={6}>
                   <Typography variant="subtitle2">Crop:</Typography>
                   <Typography variant="body2">
-                    {selectedListing.crop.cropName} - {selectedListing.crop.variety}
+                    {selectedListing.cropName} - {selectedListing.variety}
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
@@ -743,7 +744,7 @@ const BuyerMarketplace: React.FC = () => {
           {selectedListing && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="h6" gutterBottom>
-                {selectedListing.crop.cropName} - {selectedListing.crop.variety}
+                {selectedListing.cropName} - {selectedListing.variety}
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Price: ₹{selectedListing.pricing.pricePerUnit}/{selectedListing.quantity.unit}

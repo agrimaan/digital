@@ -14,8 +14,15 @@ export interface CartItem {
   sellerName?: string;
   images?: string[];
   farmLocation?: {
-    city?: string;
-    state?: string;
+
+    cordinates?: number[];
+    address?: {
+      village?: string;
+      district?: string;
+      state?: string;
+      pincode?: string;
+    }
+
   };
   addedAt?: string;
 }
@@ -42,13 +49,11 @@ export interface AddToCartData {
   sellerName?: string;
   images?: string[];
   farmLocation?: {
-    coordinates: number[];
+    cordinates?: number[];
     address?: {
-    village?: string;
-    district?: string;
-    state?: string;
-    pincode?: string;
-    }
+      city?: string;
+      state?: string; 
+  }
 };
 qualityAttributes?: {
         grade?: string;

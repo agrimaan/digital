@@ -5,10 +5,52 @@ import api from './api';
 // Types
 export interface MarketplaceListing {
   _id: string;
+  title: string;
+  description: string;
+  crop: string;
+  variety: string;
   farmer: string;
+  cropName: string;
+  farmLocation: {
+    type: string;
+    coordinates: number[];
+    address?: {
+      village?: string;
+      district?: string;
+      state?: string;
+      pincode?: string;
+    }
+  };
+  images: string[];
+  pricing: {
+    currency: string;
+    negotiable: boolean;
+    pricePerUnit: number;
+    bulkDiscounts?: Array<{
+      minQuantity: number;
+      discountPercentage: number;
+    }>;
+  }
+  quantity: {
+    available: number;
+    unit: string;
+  };
+  harvestInfo: {
+    expectedDate: string;
+    actualDate?: string;
+  }
+  quality: {
+    grade: string;
+    isOrganic: boolean;
+    certifications: string[];
+  };
+  seller: string;
+  sellerName: string;
+  unit: string;
+  isOrganic: boolean;  
+/*
   crop: {
     _id: string;
-    cropName: string;
     variety: string;
     currentStage: string;
   };
@@ -42,10 +84,6 @@ export interface MarketplaceListing {
     taste?: string;
     shelfLife?: number;
   };
-  farmLocation: {
-    type: string;
-    coordinates: number[];
-
     address?: {
       village?: string;
       district?: string;
@@ -64,6 +102,7 @@ export interface MarketplaceListing {
   isPrivate: boolean;
   createdAt: string;
   updatedAt: string;
+  */
 }
 
 export interface ListingFilters {

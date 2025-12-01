@@ -263,17 +263,17 @@ const BuyerCart: React.FC = () => {
                               {item.cropName} - {item.variety}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              Seller: {item.sellerName || 'Unknown'}
+                              Seller: {item.sellerName || 'Agrimaan'}
                             </Typography>
                             {item.farmLocation && (
                               <Typography variant="caption" color="text.secondary">
-                                {item.farmLocation.city}, {item.farmLocation.state}
+                                {item.farmLocation.address?.village}, {item.farmLocation.address?.district}, {item.farmLocation.address?.state}
                               </Typography>
                             )}
                           </Box>
                         </Box>
                       </TableCell>
-                      <TableCell>\u20b9{item.pricePerUnit}/{item.unit}</TableCell>
+                      <TableCell>₹{item.pricePerUnit}/{item.unit}</TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <IconButton 
@@ -293,7 +293,7 @@ const BuyerCart: React.FC = () => {
                           </IconButton>
                         </Box>
                       </TableCell>
-                      <TableCell align="right">\u20b9{item.totalPrice.toLocaleString()}</TableCell>
+                      <TableCell align="right">₹{item.totalPrice.toLocaleString()}</TableCell>
                       <TableCell>
                         <IconButton 
                           color="error" 
@@ -320,20 +320,20 @@ const BuyerCart: React.FC = () => {
                 <Box sx={{ my: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                     <Typography variant="body1">Subtotal</Typography>
-                    <Typography variant="body1">\u20b9{cartTotal.toLocaleString()}</Typography>
+                    <Typography variant="body1">₹{cartTotal.toLocaleString()}</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                     <Typography variant="body1">Shipping</Typography>
-                    <Typography variant="body1">\u20b9{shippingCost.toLocaleString()}</Typography>
+                    <Typography variant="body1">₹{shippingCost.toLocaleString()}</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                     <Typography variant="body1">Tax (8%)</Typography>
-                    <Typography variant="body1">\u20b9{taxAmount.toLocaleString()}</Typography>
+                    <Typography variant="body1">₹{taxAmount.toLocaleString()}</Typography>
                   </Box>
                   <Divider sx={{ my: 2 }} />
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="h6">Total</Typography>
-                    <Typography variant="h6">\u20b9{orderTotal.toLocaleString()}</Typography>
+                    <Typography variant="h6">₹{orderTotal.toLocaleString()}</Typography>
                   </Box>
                 </Box>
                 <Button
@@ -492,20 +492,20 @@ const BuyerCart: React.FC = () => {
                 </Typography>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography variant="body1">Subtotal</Typography>
-                  <Typography variant="body1">\u20b9{cartTotal.toLocaleString()}</Typography>
+                  <Typography variant="body1">₹{cartTotal.toLocaleString()}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography variant="body1">Shipping</Typography>
-                  <Typography variant="body1">\u20b9{shippingCost.toLocaleString()}</Typography>
+                  <Typography variant="body1">₹{shippingCost.toLocaleString()}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography variant="body1">Tax (8%)</Typography>
-                  <Typography variant="body1">\u20b9{taxAmount.toLocaleString()}</Typography>
+                  <Typography variant="body1">₹{taxAmount.toLocaleString()}</Typography>
                 </Box>
                 <Divider sx={{ my: 2 }} />
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="h6">Total</Typography>
-                  <Typography variant="h6">\u20b9{orderTotal.toLocaleString()}</Typography>
+                  <Typography variant="h6">₹{orderTotal.toLocaleString()}</Typography>
                 </Box>
               </Box>
             </>
