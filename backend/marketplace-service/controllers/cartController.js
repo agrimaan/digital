@@ -47,6 +47,11 @@ exports.addToCart = async (req, res) => {
       return responseHandler.error(res, 400, 'Missing required fields');
     }
     
+
+      // PURCHASE RESTRICTION: Prevent users from buying their own products
+      if (seller === buyerId) {
+        return responseHandler.error(res, 403, 'You cannot buy your own products');
+      }
     // Find or create cart
     let cart = await Cart.findOne({ buyer: buyerId });
     
