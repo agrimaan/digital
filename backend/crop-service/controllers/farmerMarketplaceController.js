@@ -17,8 +17,6 @@ exports.createListing = async (req, res) => {
       cropId,
       quantity,
       pricing,
-      negotiable,
-      minimumOrderQuantity,
       qualityAttributes,
       description,
       images,
@@ -31,7 +29,6 @@ exports.createListing = async (req, res) => {
     if (!crop) {
       return responseHandler.notFound(res, 'Crop not found or you do not have permission');
     }
-    console.log('Test is', quantity);  
     // Validate crop is ready for harvest
     if (!['maturity', 'harvested'].includes(crop.growthStage)) {
       return responseHandler.badRequest(
@@ -252,7 +249,7 @@ exports.deactivateListing = async (req, res) => {
     // Update crop marketplace listing status
     const crop = await Crop.findById(listing.crop);
     if (crop && crop.marketplaceListing) {
-      crop.marketplaceListing.status = 'unlisted';
+      crop.marketplaceListing.status = 'inactive';
       crop.marketplaceListing.unlistedDate = new Date();
       await crop.save();
     }
@@ -313,10 +310,10 @@ exports.getReadyCrops = async (req, res) => {
       growthStage: { $in: ['maturity', 'harvested'] },
       isActive: true,
       $or: [
-        { 'marketplaceListing.status': { $ne: 'active' } },
+        { 'marketplaceListing.status': { $eq: 'unlisted' } },
         { marketplaceListing: { $exists: false } }
       ]
-    }).select('name variety growthStage expectedHarvestDate actualHarvestDate actualYield unit');
+    }).select('name variety growthStage expectedHarvestDate actualHarvestDate actualYield unit expectedYield');
 
     return responseHandler.success(
       res,

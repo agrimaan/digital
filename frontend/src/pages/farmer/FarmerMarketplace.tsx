@@ -1022,10 +1022,10 @@ const FarmerMarketplace: React.FC = () => {
                           Variety: {crop.variety}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          Stage: {crop.currentStage}
+                          Stage: {capitalize(crop.growthStage)}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          Expected Yield: {crop.expectedYield} {crop.yieldUnit}
+                          Expected Yield: {crop.expectedYield} {crop.unit}
                         </Typography>
                         <Button
                           variant="contained"
