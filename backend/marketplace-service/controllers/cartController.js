@@ -41,6 +41,7 @@ exports.addToCart = async (req, res) => {
       farmLocation
     } = req.body;
     
+    console.log('Add to cart request body:', req.body);
     // Validate required fields
     if (!listing || !cropName || !quantity || !unit || !pricePerUnit || !seller) {
       return responseHandler.error(res, 400, 'Missing required fields');

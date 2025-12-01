@@ -300,13 +300,13 @@ const BuyerMarketplace: React.FC = () => {
             {listing.title}
           </Typography>
           <Typography variant="body2" color="text.secondary" gutterBottom>
-            {listing.crop.name} - {listing.crop.variety}
+            {listing.crop.cropName} - {listing.crop.variety}
           </Typography>
           <Box sx={{ my: 1 }}>
-            {listing.qualityAttributes?.isOrganic && (
+            {listing.quality?.isOrganic && (
               <Chip icon={<EcoIcon />} label="Organic" color="success" size="small" sx={{ mr: 1 }} />
             )}
-            <Chip label={`Grade ${listing.qualityAttributes?.grade}`} size="small" />
+            <Chip label={`Grade ${listing.quality?.grade}`} size="small" />
           </Box>
           <Typography variant="h6" color="primary" gutterBottom>
             ₹{listing.pricing.pricePerUnit}/{listing.quantity.unit}
@@ -611,13 +611,13 @@ const BuyerMarketplace: React.FC = () => {
                 <Grid item xs={6}>
                   <Typography variant="subtitle2">Crop:</Typography>
                   <Typography variant="body2">
-                    {selectedListing.crop.name} - {selectedListing.crop.variety}
+                    {selectedListing.crop.cropName} - {selectedListing.crop.variety}
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2">Grade:</Typography>
                   <Typography variant="body2">
-                    {selectedListing.qualityAttributes?.grade}
+                    {selectedListing.quality?.grade}
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>

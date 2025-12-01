@@ -33,6 +33,7 @@ export interface Cart {
 export interface AddToCartData {
   listing: string;
   cropName: string;
+  description?: string;
   variety: string;
   quantity: number;
   unit: string;
@@ -40,7 +41,23 @@ export interface AddToCartData {
   seller: string;
   sellerName?: string;
   images?: string[];
-  farmLocation?: number[];
+  farmLocation?: {
+    coordinates: number[];
+    address?: {
+    village?: string;
+    district?: string;
+    state?: string;
+    pincode?: string;
+    }
+};
+qualityAttributes?: {
+        grade?: string;
+        isOrganic?: boolean;
+        certifications?: string[];
+        appearance?: string;
+        taste?: string;
+        shelfLife?: number;
+      };
 }
 
 class CartService {
@@ -66,6 +83,7 @@ class CartService {
    * Add item to cart
    */
   async addToCart(itemData: AddToCartData): Promise<{ success: boolean; data: Cart }> {
+    console.log('Adding to cart:', itemData);
     const response = await api.post(`${this.baseURL}/items`, itemData) as any;
     return response;
   }

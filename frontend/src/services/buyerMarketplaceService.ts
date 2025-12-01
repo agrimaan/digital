@@ -8,7 +8,7 @@ export interface MarketplaceListing {
   farmer: string;
   crop: {
     _id: string;
-    name: string;
+    cropName: string;
     variety: string;
     currentStage: string;
   };
@@ -34,7 +34,7 @@ export interface MarketplaceListing {
     actualDate?: string;
     method?: string;
   };
-  qualityAttributes: {
+  quality: {
     grade: string;
     isOrganic: boolean;
     certifications: string[];

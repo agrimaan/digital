@@ -37,6 +37,9 @@ app.get('/health', (req, res) => {
 app.use('/api/marketplace/products', require('./routes/productRoutes'));
 app.use('/api/marketplace/orders', require('./routes/orderRoutes'));
 app.use('/api/marketplace/cart', require('./routes/cartRoutes'));
+app.use('/api/marketplace/inquiries', require('./routes/inquiryRoutes'));
+//app.use('/api/marketplace/reviews', require('./routes/reviewRoutes'));
+
 
 
 // Error handling middleware

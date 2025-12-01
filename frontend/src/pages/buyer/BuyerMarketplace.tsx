@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { Link as RouterLink } from 'react-router-dom';
 import buyerMarketplaceService, { MarketplaceListing, ListingFilters } from '../../services/buyerMarketplaceService';
 import { useCart } from '../../contexts/CartContext';
+   import inquiryService from '../../services/inquiryService';
 
 import {
   Box,
@@ -264,16 +265,15 @@ const BuyerMarketplace: React.FC = () => {
 
         await addToCart({
           listing: selectedListing._id,
-          cropName: selectedListing.crop.name,
-          variety: selectedListing.crop.variety,
+          cropName: selectedListing.crop.cropName,
+          variety: selectedListing.crop.variety || '',
           quantity: cartQuantity,
           unit: selectedListing.quantity.unit,
           pricePerUnit: selectedListing.pricing.pricePerUnit,
           seller: selectedListing.farmer,
           sellerName: selectedListing.farmer,
           images: selectedListing.images,
-          farmLocation: selectedListing.farmLocation.coordinates
-          //qualityAttributes: selectedListing.qualityAttributes
+          farmLocation: selectedListing.farmLocation
         });
 
         setSuccess('Item added to cart successfully!');
@@ -289,35 +289,39 @@ const BuyerMarketplace: React.FC = () => {
       }
     };
 
-  const handleSubmitInquiry = async () => {
-    if (!selectedListing || !inquiryMessage) {
-      setError('Please provide a message');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await buyerMarketplaceService.recordInquiry(selectedListing._id, {
-        message: inquiryMessage,
-        contactPhone: inquiryPhone,
-        interestedQuantity: inquiryQuantity ? parseFloat(inquiryQuantity) : undefined,
-      });
-
-      if (response.success) {
-        setSuccess('Inquiry sent successfully!');
-        setInquiryDialogOpen(false);
-        setInquiryMessage('');
-        setInquiryPhone('');
-        setInquiryQuantity('');
-        setTimeout(() => setSuccess(null), 3000);
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to send inquiry');
-    } finally {
-      setLoading(false);
-    }
-  };
+     const handleSubmitInquiry = async () => {
+       if (!selectedListing || !inquiryMessage) {
+         setError('Please provide a message');
+         return;
+       }
+   
+       setLoading(true);
+       setError(null);
+       try {
+         await inquiryService.createInquiry({
+           listing: selectedListing._id,
+           farmer: selectedListing.farmer,
+           farmerName: selectedListing.farmer,
+           cropName: selectedListing.crop.cropName,
+           variety: selectedListing.crop.variety,
+           message: inquiryMessage,
+           buyerPhone: inquiryPhone,
+           interestedQuantity: inquiryQuantity ? parseFloat(inquiryQuantity) : undefined,
+           quantityUnit: selectedListing.quantity.unit
+         });
+   
+         setSuccess('Inquiry sent successfully!');
+         setInquiryDialogOpen(false);
+         setInquiryMessage('');
+         setInquiryPhone('');
+         setInquiryQuantity('');
+         setTimeout(() => setSuccess(null), 3000);
+       } catch (err: any) {
+         setError(err.message || 'Failed to send inquiry');
+       } finally {
+         setLoading(false);
+       }
+     };
 
   const renderListingCard = (listing: MarketplaceListing) => (
     <Grid item xs={12} sm={6} md={4} key={listing._id}>
@@ -349,13 +353,13 @@ const BuyerMarketplace: React.FC = () => {
             {listing.title}
           </Typography>
           <Typography variant="body2" color="text.secondary" gutterBottom>
-            {listing.crop.name} - {listing.crop.variety}
+            {listing.crop.cropName} - {listing.crop.variety}
           </Typography>
           <Box sx={{ my: 1 }}>
-            {listing.qualityAttributes?.isOrganic && (
+            {listing.quality?.isOrganic && (
               <Chip icon={<EcoIcon />} label="Organic" color="success" size="small" sx={{ mr: 1 }} />
             )}
-            <Chip label={`Grade ${listing.qualityAttributes?.grade}`} size="small" />
+            <Chip label={`Grade ${listing.quality?.grade}`} size="small" />
           </Box>
           <Typography variant="h6" color="primary" gutterBottom>
             ₹{listing.pricing.pricePerUnit}/{listing.quantity.unit}
@@ -376,20 +380,28 @@ const BuyerMarketplace: React.FC = () => {
                  variant="outlined"
                  size="small"
                  onClick={() => handleViewDetails(listing)}
-                 sx={{ flex: 1 }}
-               >
-                 View
-               </Button>
-               <Button
-                 variant="contained"
-                 size="small"
-                 color="primary"
-                 onClick={() => handleOpenAddToCart(listing)}
-                 sx={{ flex: 1 }}
-               >
-                 Add to Cart
-               </Button>
-             </Box>
+                   sx={{ flex: 1 }}
+                 >
+                   View
+                 </Button>
+                 <Button
+                   variant="outlined"
+                   size="small"
+                   onClick={() => handleOpenInquiry(listing)}
+                   sx={{ flex: 1 }}
+                 >
+                   Inquire
+                 </Button>
+                 <Button
+                   variant="contained"
+                   size="small"
+                   color="primary"
+                   onClick={() => handleOpenAddToCart(listing)}
+                   sx={{ flex: 1 }}
+                 >
+                   Add to Cart
+                 </Button>
+               </Box>
         </CardContent>
       </Card>
     </Grid>
@@ -672,13 +684,13 @@ const BuyerMarketplace: React.FC = () => {
                 <Grid item xs={6}>
                   <Typography variant="subtitle2">Crop:</Typography>
                   <Typography variant="body2">
-                    {selectedListing.crop.name} - {selectedListing.crop.variety}
+                    {selectedListing.crop.cropName} - {selectedListing.crop.variety}
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2">Grade:</Typography>
                   <Typography variant="body2">
-                    {selectedListing.qualityAttributes?.grade}
+                    {selectedListing.quality?.grade}
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
@@ -731,7 +743,7 @@ const BuyerMarketplace: React.FC = () => {
           {selectedListing && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="h6" gutterBottom>
-                {selectedListing.crop.name} - {selectedListing.crop.variety}
+                {selectedListing.crop.cropName} - {selectedListing.crop.variety}
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Price: ₹{selectedListing.pricing.pricePerUnit}/{selectedListing.quantity.unit}

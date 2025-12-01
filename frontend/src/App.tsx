@@ -23,6 +23,7 @@ import FieldDetail from './pages/farmer/FieldDetail';
 import Crops from './pages/farmer/CropManagement';
 import Weather from './pages/farmer/Weather';
 import FarmerMarketplace from './pages/farmer/FarmerMarketplace';
+import FarmerInquiries from './pages/farmer/FarmerInquiries';
 import Analytics from './pages/farmer/Analytics';
 import AddField from './pages/farmer/AddField';
 import Sensors from './pages/farmer/Sensors';
@@ -33,6 +34,7 @@ import EditSensor from './pages/farmer/EditSensor';
 import BuyerDashboard from './pages/buyer/BuyerDashboard';
 import BuyerMarketplace from './pages/buyer/BuyerMarketplace';
 import BuyerCart from './pages/buyer/BuyerCart';
+import BuyerInquiries from './pages/buyer/BuyerInquiries';
 import OrderHistory from './pages/buyer/OrderHistory';
 
 // Admin pages
