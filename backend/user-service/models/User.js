@@ -1,7 +1,7 @@
-
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 const UserSchema = new mongoose.Schema({
   firstName: {
@@ -37,8 +37,38 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['farmer', 'buyer', 'logistics', 'investor', 'agronomist', 'admin', 'supplier'],
+    enum: ['farmer', 'buyer', 'business', 'logistics', 'investor', 'agronomist', 'admin', 'supplier'],
     default: 'farmer'
+  },
+  // Business-specific information (only for business role)
+  businessInfo: {
+    companyName: {
+      type: String,
+      trim: true
+    },
+    businessType: {
+      type: String,
+      enum: ['fertilizer_supplier', 'equipment_supplier', 'seed_supplier', 'pesticide_supplier', 'general_supplier', 'other'],
+      trim: true
+    },
+    registrationNumber: {
+      type: String,
+      trim: true
+    },
+    taxId: {
+      type: String,
+      trim: true
+    },
+    website: {
+      type: String,
+      trim: true
+    },
+    description: {
+      type: String,
+      maxlength: [500, 'Description cannot exceed 500 characters']
+    },
+    certifications: [String],
+    establishedYear: Number
   },
   address: {
     type: String,

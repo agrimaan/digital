@@ -44,6 +44,60 @@ exports.register = async (req, res) => {
   }
 };
 
+// @desc    Register business user
+// @route   POST /api/auth/register/business
+// @access  Public
+exports.registerBusiness = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return responseHandler.badRequest(res, 'Validation error', errors.array());
+  }
+
+  const { 
+    firstName, 
+    lastName, 
+    email, 
+    password, 
+    phoneNumber, 
+    address,
+    businessInfo 
+  } = req.body;
+
+  try {
+    // Check if user already exists
+    const userExists = await userService.userExistsByEmail(email);
+
+    if (userExists) {
+      return responseHandler.badRequest(res, 'User already exists');
+    }
+
+    // Validate business info
+    if (!businessInfo || !businessInfo.companyName || !businessInfo.businessType) {
+      return responseHandler.badRequest(res, 'Company name and business type are required for business registration');
+    }
+
+    // Create business user
+    const userData = {
+      firstName,
+      lastName,
+      email,
+      password,
+      role: 'business',
+      phoneNumber,
+      address,
+      businessInfo
+    };
+
+    const result = await authService.registerUser(userData);
+    return responseHandler.success(res, 201, {
+      token: result.token,
+      user: result.user
+    }, 'Business registered successfully');
+  } catch (error) {
+    return responseHandler.error(res, 500, 'Error registering business', error);
+  }
+};
+
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public

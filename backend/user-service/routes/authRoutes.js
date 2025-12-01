@@ -16,10 +16,26 @@ router.post('/register', [
   check('address', 'Address is required').not().isEmpty().trim(),
   check('email', 'Please include a valid email').isEmail().normalizeEmail(),
   check('password', 'Please enter a password with 6 or more characters').isLength({ min: 7 }),
-  check('role', 'Role must be one of: farmer, buyer, logistics, investor, agronomist, admin, supplier')
+  check('role', 'Role must be one of: farmer, buyer, business, logistics, investor, agronomist, admin, supplier')
     .optional()
-    .isIn(['farmer', 'buyer', 'logistics', 'investor', 'agronomist', 'admin', 'supplier'])
+    .isIn(['farmer', 'buyer', 'business', 'logistics', 'investor', 'agronomist', 'admin', 'supplier'])
 ], authController.register);
+
+// @route   POST /api/auth/register/business
+// @desc    Register a new business user
+// @access  Public
+router.post('/register/business', [
+  check('firstName', 'First name is required').not().isEmpty().trim(),
+  check('lastName', 'Last name is required').not().isEmpty().trim(),
+  check('phoneNumber', 'Phone number is required').not().isEmpty().trim(),
+  check('address', 'Address is required').not().isEmpty().trim(),
+  check('email', 'Please include a valid email').isEmail().normalizeEmail(),
+  check('password', 'Please enter a password with 6 or more characters').isLength({ min: 7 }),
+  check('businessInfo.companyName', 'Company name is required').not().isEmpty().trim(),
+  check('businessInfo.businessType', 'Business type is required').not().isEmpty()
+    .isIn(['fertilizer_supplier', 'equipment_supplier', 'seed_supplier', 'pesticide_supplier', 'general_supplier', 'other'])
+], authController.registerBusiness);
+
 console.log("within user-service just before login post");
 
 
@@ -66,10 +82,7 @@ router.post('/login', [
     // Generate JWT token
     const token = user.getSignedJwtToken();
 
-    res.json({
-      success: true,
-      token,
-      user: {
+      const userResponse = {
         id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -79,8 +92,18 @@ router.post('/login', [
         address: user?.address,
         profileImage: user.profileImage,
         isVerified: user.isVerified
+      };
+
+      // Include business info if user is a business
+      if (user.role === 'business' && user.businessInfo) {
+        userResponse.businessInfo = user.businessInfo;
       }
-    });
+
+      res.json({
+        success: true,
+        token,
+        user: userResponse
+      });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({

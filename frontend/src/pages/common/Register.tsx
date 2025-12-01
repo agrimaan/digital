@@ -62,6 +62,9 @@ const Register: React.FC = () => {
         case 'buyer':
           navigate('/buyer');
           break;
+        case 'business':
+          navigate('/business');
+          break;
         case 'admin':
           navigate('/admin');
           break;
@@ -367,6 +370,7 @@ const Register: React.FC = () => {
                 <MenuItem value="farmer">Farmer</MenuItem>
                 <MenuItem value="buyer">Buyer</MenuItem>
                 <MenuItem value="logistics">Logistics Provider</MenuItem>
+                  <MenuItem value="business">Business (Fertilizer/Equipment Supplier)</MenuItem>
                 <MenuItem value="agronomist">Agronomist</MenuItem>
                 <MenuItem value="investor">Investor</MenuItem>
                 <MenuItem value="supplier">Supplier</MenuItem>

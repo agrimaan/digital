@@ -106,6 +106,11 @@ exports.createOrder = async (req, res) => {
       if (product.quantity.available < item.quantity) {
         return responseHandler.badRequest(res, `Insufficient quantity available for ${product.name}`);
       }
+
+        // PURCHASE RESTRICTION: Prevent users from buying their own products
+        if (product.seller === req.user.id) {
+          return responseHandler.error(res, 403, `You cannot buy your own product: ${product.name}`);
+        }
       
       const totalPrice = product.price.value * item.quantity;
       
